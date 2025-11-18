@@ -5,7 +5,7 @@ const express = require('express');
 const { readJson, writeJson } = require('../utils/jsonStore');
 
 const router = express.Router();
-const DATA_FILE = path.resolve(__dirname, '../../data/dimensions.json');
+const DATA_FILE = path.resolve(__dirname, '../../data/questionSets.json');
 
 router.get('/', async (_req, res, next) => {
   try {
@@ -18,16 +18,16 @@ router.get('/', async (_req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { name, description, bonusCriteria, penaltyCriteria } = req.body || {};
+    const { name, description, dimensionIds, questionIds } = req.body || {};
     if (!name) return res.status(400).json({ error: 'missing_name' });
     const now = new Date().toISOString();
-    const id = `dim_${now.replace(/[-:.TZ]/g, '').slice(0, 12)}`;
+    const id = `set_${now.replace(/[-:.TZ]/g, '').slice(0, 12)}`;
     const record = {
       id,
       name,
       description: description || '',
-      bonusCriteria: Array.isArray(bonusCriteria) ? bonusCriteria : (typeof bonusCriteria === 'string' ? splitCriteria(bonusCriteria) : []),
-      penaltyCriteria: Array.isArray(penaltyCriteria) ? penaltyCriteria : (typeof penaltyCriteria === 'string' ? splitCriteria(penaltyCriteria) : []),
+      dimensionIds: Array.isArray(dimensionIds) ? dimensionIds : [],
+      questionIds: Array.isArray(questionIds) ? questionIds : [],
       createdAt: now,
       updatedAt: now
     };
@@ -51,8 +51,6 @@ router.patch('/:id', async (req, res, next) => {
     const nextObj = {
       ...current,
       ...req.body,
-      bonusCriteria: normalizeCriteria(req.body.bonusCriteria, current.bonusCriteria),
-      penaltyCriteria: normalizeCriteria(req.body.penaltyCriteria, current.penaltyCriteria),
       updatedAt: now
     };
     list[idx] = nextObj;
@@ -63,31 +61,6 @@ router.patch('/:id', async (req, res, next) => {
   }
 });
 
-router.delete('/:id', async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const list = await readJson(DATA_FILE);
-    const idx = list.findIndex(x => x.id === id);
-    if (idx === -1) return res.status(404).json({ error: 'not_found' });
-    const [removed] = list.splice(idx, 1);
-    await writeJson(DATA_FILE, list);
-    res.json({ ok: true, removed });
-  } catch (err) {
-    next(err);
-  }
-});
-
-function splitCriteria(text) {
-  return text
-    .split(/[\n,]/g)
-    .map(s => s.trim())
-    .filter(Boolean);
-}
-function normalizeCriteria(input, fallback) {
-  if (Array.isArray(input)) return input;
-  if (typeof input === 'string') return splitCriteria(input);
-  return fallback;
-}
-
 module.exports = router;
+
 

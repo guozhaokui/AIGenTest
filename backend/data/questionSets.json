@@ -1,0 +1,44 @@
+[
+  {
+    "id": "set_landscape_basic",
+    "name": "风景基础测评集",
+    "description": "用于基础风景类题目的构图/光影/一致性评估",
+    "dimensionIds": [
+      "dim_composition",
+      "dim_lighting",
+      "dim_consistency",
+      "dim_202511181148"
+    ],
+    "questionIds": [
+      "q_city_sunrise_001"
+    ],
+    "createdAt": "2025-11-18T11:00:00.000Z",
+    "updatedAt": "2025-11-18T11:48:20.590Z"
+  },
+  {
+    "id": "set_202511181138",
+    "name": "test1",
+    "description": "",
+    "dimensionIds": [
+      "dim_composition",
+      "dim_lighting",
+      "dim_consistency"
+    ],
+    "questionIds": [],
+    "createdAt": "2025-11-18T11:38:07.115Z",
+    "updatedAt": "2025-11-18T11:38:07.115Z"
+  },
+  {
+    "id": "set_202511181143",
+    "name": "sss",
+    "description": "",
+    "dimensionIds": [],
+    "questionIds": [
+      "q_202511181143",
+      "q_202511181143",
+      "q_202511181143"
+    ],
+    "createdAt": "2025-11-18T11:43:18.300Z",
+    "updatedAt": "2025-11-18T11:43:36.835Z"
+  }
+]

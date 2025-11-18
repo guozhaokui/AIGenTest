@@ -17,8 +17,44 @@ export function listDimensions() {
   return api.get('/dimensions').then(r => r.data);
 }
 
+export function createDimension(payload) {
+  return api.post('/dimensions', payload).then(r => r.data);
+}
+
+export function updateDimension(id, payload) {
+  return api.patch(`/dimensions/${id}`, payload).then(r => r.data);
+}
+
+export function deleteDimension(id) {
+  return api.delete(`/dimensions/${id}`).then(r => r.data);
+}
+
 export function listQuestions() {
   return api.get('/questions').then(r => r.data);
+}
+
+export function listQuestionSets() {
+  return api.get('/question-sets').then(r => r.data);
+}
+
+export function createQuestionSet(payload) {
+  return api.post('/question-sets', payload).then(r => r.data);
+}
+
+export function updateQuestionSet(id, payload) {
+  return api.patch(`/question-sets/${id}`, payload).then(r => r.data);
+}
+
+export function createQuestion(payload) {
+  return api.post('/questions', payload).then(r => r.data);
+}
+
+export function updateQuestion(id, payload) {
+  return api.patch(`/questions/${id}`, payload).then(r => r.data);
+}
+
+export function deleteQuestion(id) {
+  return api.delete(`/questions/${id}`).then(r => r.data);
 }
 
 export function submitEvaluation(payload) {

@@ -1,3 +1,15 @@
-[]
-
-
+[
+  {
+    "id": "ev_20251118113236",
+    "runId": null,
+    "questionId": "q_city_sunrise_001",
+    "generatedImagePath": null,
+    "scoresByDimension": {
+      "dim_composition": 0,
+      "dim_lighting": 0,
+      "dim_consistency": 0
+    },
+    "comment": "",
+    "createdAt": "2025-11-18T11:32:36.764Z"
+  }
+]

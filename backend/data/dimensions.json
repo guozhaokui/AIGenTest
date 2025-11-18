@@ -3,8 +3,14 @@
     "id": "dim_composition",
     "name": "构图",
     "description": "主体突出、元素布局合理，视觉引导清晰",
-    "bonusCriteria": ["主体清晰", "中心构图或三分法构图合理"],
-    "penaltyCriteria": ["主体歪斜", "画面杂乱、边角干扰"],
+    "bonusCriteria": [
+      "主体清晰",
+      "中心构图或三分法构图合理"
+    ],
+    "penaltyCriteria": [
+      "主体歪斜",
+      "画面杂乱、边角干扰"
+    ],
     "createdAt": "2025-11-18T10:00:00.000Z",
     "updatedAt": "2025-11-18T10:00:00.000Z"
   },
@@ -12,8 +18,14 @@
     "id": "dim_lighting",
     "name": "光影",
     "description": "光源方向与强弱合理，层次分明",
-    "bonusCriteria": ["光影氛围统一", "体积与阴影自然"],
-    "penaltyCriteria": ["光源冲突", "过曝或过暗细节丢失"],
+    "bonusCriteria": [
+      "光影氛围统一",
+      "体积与阴影自然"
+    ],
+    "penaltyCriteria": [
+      "光源冲突",
+      "过曝或过暗细节丢失"
+    ],
     "createdAt": "2025-11-18T10:00:00.000Z",
     "updatedAt": "2025-11-18T10:00:00.000Z"
   },
@@ -21,11 +33,24 @@
     "id": "dim_consistency",
     "name": "一致性",
     "description": "人物/物体外观与上下文一致，无穿帮",
-    "bonusCriteria": ["形体/配件一致", "场景元素协调"],
-    "penaltyCriteria": ["多余肢体/错位", "文字扭曲严重"],
+    "bonusCriteria": [
+      "形体/配件一致",
+      "场景元素协调"
+    ],
+    "penaltyCriteria": [
+      "多余肢体/错位",
+      "文字扭曲严重"
+    ],
     "createdAt": "2025-11-18T10:00:00.000Z",
     "updatedAt": "2025-11-18T10:00:00.000Z"
+  },
+  {
+    "id": "dim_202511181148",
+    "name": "世界知识",
+    "description": "",
+    "bonusCriteria": [],
+    "penaltyCriteria": [],
+    "createdAt": "2025-11-18T11:48:09.742Z",
+    "updatedAt": "2025-11-18T11:48:09.742Z"
   }
 ]
-
-

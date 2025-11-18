@@ -19,11 +19,13 @@ const dimensions = require('./routes/dimensions');
 const questions = require('./routes/questions');
 const examples = require('./routes/examples');
 const evaluations = require('./routes/evaluations');
+const questionSets = require('./routes/question-sets');
 
 app.use('/api/dimensions', dimensions);
 app.use('/api/questions', questions);
 app.use('/api/examples', examples);
 app.use('/api/evaluations', evaluations);
+app.use('/api/question-sets', questionSets);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
