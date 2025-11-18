@@ -1,0 +1,16 @@
+[
+  {
+    "id": "ex_city_sunrise_a",
+    "questionId": "q_city_sunrise_001",
+    "imagePath": "backend/uploads/examples/city_sunrise_a.jpg",
+    "note": "参考样例 A"
+  },
+  {
+    "id": "ex_city_sunrise_b",
+    "questionId": "q_city_sunrise_001",
+    "imagePath": "backend/uploads/examples/city_sunrise_b.jpg",
+    "note": "参考样例 B"
+  }
+]
+
+

@@ -1,0 +1,18 @@
+[
+  {
+    "id": "run_20251118_city_v15",
+    "modelName": "MyGenModel v1.5",
+    "itemIds": [],
+    "totalScore": 0,
+    "dimensionScores": {},
+    "startedAt": "2025-11-18T10:00:00.000Z",
+    "endedAt": "2025-11-18T10:20:00.000Z",
+    "exportFiles": {
+      "json": "backend/exports/run_20251118_city_v15/run.json",
+      "csv": "backend/exports/run_20251118_city_v15/scores.csv",
+      "zip": "backend/exports/run_20251118_city_v15.zip"
+    }
+  }
+]
+
+

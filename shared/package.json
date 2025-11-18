@@ -1,0 +1,17 @@
+{
+  "name": "@ai-eval/shared",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Shared constants and types for AI image evaluation system",
+  "license": "MIT",
+  "main": "index.js",
+  "type": "commonjs",
+  "files": [
+    "index.js",
+    "constants.js",
+    "types.js",
+    "README.md"
+  ]
+}
+
+

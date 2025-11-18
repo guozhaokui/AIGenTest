@@ -1,0 +1,13 @@
+[
+  {
+    "id": "q_city_sunrise_001",
+    "prompt": "一幅清晨城市日出，暖色调，强调光影层次与建筑剪影",
+    "dimensionIds": ["dim_composition", "dim_lighting", "dim_consistency"],
+    "scoringRule": "每个维度 0-10 分，综合取平均；明显穿帮扣 2-5 分",
+    "exampleIds": ["ex_city_sunrise_a", "ex_city_sunrise_b"],
+    "createdAt": "2025-11-18T10:00:00.000Z",
+    "updatedAt": "2025-11-18T10:00:00.000Z"
+  }
+]
+
+
