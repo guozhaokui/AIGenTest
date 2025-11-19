@@ -30,7 +30,12 @@ export function deleteDimension(id) {
 }
 
 export function listQuestions() {
-  return api.get('/questions').then(r => r.data);
+  return api.get('/questions').then(r => {
+    const data = r.data;
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.items)) return data.items;
+    return [];
+  });
 }
 export function listQuestionsPaged(params = {}) {
   return api.get('/questions', { params }).then(r => r.data);

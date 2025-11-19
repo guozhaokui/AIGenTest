@@ -41,7 +41,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import EvaluationPanel from '../components/EvaluationPanel.vue';
-import { listDimensions, listQuestions, listQuestionSets, addRunItem, startRun, finishRun, getRun, getRunItems } from '../services/api';
+import { listDimensions, listQuestions, listQuestionsPaged, listQuestionSets, addRunItem, startRun, finishRun, getRun, getRunItems } from '../services/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -100,7 +100,9 @@ async function init() {
 
 async function loadSetQuestions() {
   try {
-    const all = await listQuestions();
+    // 取全量题库（评估需要完整集合）
+    const paged = await listQuestionsPaged({ page: 1, pageSize: 100000 });
+    const all = Array.isArray(paged?.items) ? paged.items : (Array.isArray(paged) ? paged : []);
     const set = questionSets.value.find(s => s.id === selectedSetId.value);
     if (!set) {
       questions.value = [];
