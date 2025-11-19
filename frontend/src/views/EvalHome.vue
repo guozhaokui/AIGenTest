@@ -24,6 +24,7 @@
       <EvaluationPanel
         :dimensions="dimensions"
         :questions="[currentQuestion]"
+        :initial-images="initialImages"
         @submit="submitScores" />
       <div style="display:flex; gap:8px; margin-top:12px;">
         <el-button :disabled="currentIndex===0" @click="prev">上一题</el-button>
@@ -37,9 +38,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import EvaluationPanel from '../components/EvaluationPanel.vue';
-import { listDimensions, listQuestions, listQuestionSets, addRunItem, startRun, finishRun } from '../services/api';
+import { listDimensions, listQuestions, listQuestionSets, addRunItem, startRun, finishRun, getRun, getRunItems } from '../services/api';
+
+const route = useRoute();
+const router = useRouter();
 
 const dimensions = ref([]);
 const questions = ref([]);
@@ -58,11 +63,36 @@ const progressText = computed(() => {
   if (!questions.value.length) return '';
   return `进度：${currentIndex.value + 1} / ${questions.value.length}`;
 });
+const initialImages = ref({});
 
 async function init() {
   try {
     dimensions.value = await listDimensions();
     questionSets.value = await listQuestionSets();
+    // 支持从历史进入继续/重新评估：?runId=xxx
+    const rid = route.query.runId;
+    if (typeof rid === 'string' && rid) {
+      const meta = await getRun(rid);
+      const its = await getRunItems(rid);
+      runId.value = rid;
+      selectedSetId.value = meta.questionSetId || '';
+      started.value = true;
+      finished.value = Boolean(meta.endedAt);
+      // 预置图片
+      const map = {};
+      for (const it of its || []) {
+        if (it.questionId && it.generatedImagePath) {
+          let url = (it.generatedImagePath || '').replace(/\\\\/g, '/').replace(/\\/g, '/');
+          if (!url.startsWith('/')) url = '/' + url;
+          if (!url.startsWith('/uploads/')) {
+            url = url.replace(/^\/backend\/uploads\//, '/uploads/').replace(/^\/uploads\//, '/uploads/');
+          }
+          map[it.questionId] = url;
+        }
+      }
+      initialImages.value = map;
+      await loadSetQuestions();
+    }
   } catch (e) {
     ElMessage.error('初始化失败');
   }
@@ -100,6 +130,7 @@ async function start() {
     runId.value = run.id;
     started.value = true;
     finished.value = false;
+    initialImages.value = {};
     await loadSetQuestions();
   } catch (e) {
     ElMessage.error('开始失败');

@@ -166,6 +166,60 @@ router.get('/:runId/items', async (req, res, next) => {
   }
 });
 
+// 克隆某次运行（重新评估用）
+router.post('/:runId/clone', async (req, res, next) => {
+  try {
+    const { runId } = req.params;
+    const { runName } = req.body || {};
+    const srcDir = path.join(BASE_DIR, runId);
+    const srcMeta = await readJson(path.join(srcDir, 'run.json'));
+    const srcItems = await readJson(path.join(srcDir, 'items.json'));
+
+    const now = new Date().toISOString();
+    const newId = `run_${now.replace(/[-:.TZ]/g, '').slice(0, 14)}_${Math.random().toString(36).slice(2, 6)}`;
+    const dstDir = path.join(BASE_DIR, newId);
+    await ensureDir(dstDir);
+
+    const dstMeta = {
+      id: newId,
+      modelName: srcMeta.modelName || '',
+      questionSetId: srcMeta.questionSetId || '',
+      runName: runName || `${srcMeta.runName || ''}_retry`,
+      runDesc: srcMeta.runDesc || '',
+      itemIds: [],
+      totalScore: null,
+      dimensionScores: {},
+      startedAt: now,
+      endedAt: null,
+      overallComment: ''
+    };
+    const dstItems = (srcItems || []).map(() => ({
+      // 评分与评论清空，图片路径沿用
+      id: undefined, // 让后续新增时生成新的 itemId；这里仅作为占位展示
+      runId: newId,
+      questionId: undefined,
+      generatedImagePath: undefined,
+      scoresByDimension: {},
+      comment: '',
+      createdAt: now
+    }));
+    // 实际更合理：把已有条目中的 questionId 与图片拷贝，清空分数
+    for (let i = 0; i < dstItems.length; i += 1) {
+      const s = srcItems[i];
+      if (!s) continue;
+      dstItems[i].questionId = s.questionId;
+      dstItems[i].generatedImagePath = s.generatedImagePath || null;
+    }
+
+    await writeJson(path.join(dstDir, 'run.json'), dstMeta);
+    await writeJson(path.join(dstDir, 'items.json'), dstItems);
+
+    res.json(dstMeta);
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
 
 

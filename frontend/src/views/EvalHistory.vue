@@ -22,7 +22,10 @@
         <el-card>
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <span style="font-weight:600;">批次详情</span>
-            <el-button size="small" @click="backToList">返回列表</el-button>
+            <div style="display:flex; gap:8px;">
+              <el-button size="small" type="primary" @click="retry">重新评估</el-button>
+              <el-button size="small" @click="backToList">返回列表</el-button>
+            </div>
           </div>
           <p><b>名称：</b>{{ currentRun.runName || '-' }}</p>
           <p><b>描述：</b>{{ currentRun.runDesc || '-' }}</p>
@@ -62,7 +65,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { listRuns, getRun, getRunItems, listQuestions, listDimensions } from '../services/api';
+import { listRuns, getRun, getRunItems, listQuestions, listDimensions, cloneRun } from '../services/api';
+import { useRouter } from 'vue-router';
 
 const runs = ref([]);
 const questions = ref([]);
@@ -126,6 +130,20 @@ function backToList() {
   currentRun.value = null;
   items.value = [];
   currentIndex.value = 0;
+}
+
+const router = useRouter();
+async function retry() {
+  try {
+    if (!currentRun.value) return;
+    const name = window.prompt('输入新的评估名称（可修改）', (currentRun.value.runName || '') + '_retry');
+    if (!name) return;
+    const newRun = await cloneRun(currentRun.value.id, { runName: name });
+    // 跳转到开始页面，并携带 runId 直接进入评估（复用已有图片）
+    router.push({ path: '/eval/start', query: { runId: newRun.id } });
+  } catch (e) {
+    ElMessage.error('重新评估失败');
+  }
 }
 </script>
 

@@ -35,12 +35,16 @@ export default {
   props: {
     dimensions: { type: Array, default: () => [] },
     questions: { type: Array, default: () => [] },
-    modelName: { type: String, default: '' }
+    modelName: { type: String, default: '' },
+    initialImages: { type: Object, default: () => ({}) } // { [questionId]: imageUrl }
   },
   emits: ['submit'],
   setup(props, { emit }) {
     const imageByQ = ref({});
     const genLoading = ref({});
+
+    // 预置已有图片（用于重新评估）
+    imageByQ.value = { ...(props.initialImages || {}) };
 
     async function generate(q) {
       try {
