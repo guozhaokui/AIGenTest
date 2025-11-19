@@ -16,9 +16,8 @@ router.post('/', async (req, res, next) => {
     if (!prompt) return res.status(400).json({ error: 'missing_prompt' });
     if (!GOOGLE_API_KEY) return res.status(500).json({ error: 'missing_api_key', message: 'Set GOOGLE_API_KEY in environment' });
 
-    // 仅使用 GoogleGenAI SDK：Imagen 用 generateImages；Gemini 用 generateContent
+    // 仅使用 GoogleGenAI SDK：统一使用 generateContent
     const imagesModel = modelName || 'gemini-2.5-flash-image';
-    const imagesCount = Math.max(1, Number.isFinite(+numberOfImages) ? +numberOfImages : (Number.isFinite(+count) ? +count : 1));
 
     // 调试信息：代理、模型、数量、掩码后的 key
     const httpsProxy = process.env.HTTPS_PROXY || '';
@@ -29,90 +28,42 @@ router.post('/', async (req, res, next) => {
     console.log('[generate] request:', {
       model: imagesModel,
       prompt,
-      numberOfImages: imagesCount,
       apiKey: maskKey(GOOGLE_API_KEY)
     });
 
-    // Imagen 系列：使用 generateImages；否则（Gemini 系列）使用 generateContent
-    if (/^imagen-/i.test(imagesModel)) {
-      try {
-        const generatedList = await callGoogleGenerateImagesSDK({
-          apiKey: GOOGLE_API_KEY,
-          model: imagesModel,
-          prompt,
-          numberOfImages: imagesCount
-        });
-
-        if (Array.isArray(generatedList) && generatedList.length > 0) {
-          const savedPaths = [];
-          for (const { dataBase64, mimeType } of generatedList) {
-            if (!dataBase64) continue;
-            const buf = Buffer.from(dataBase64, 'base64');
-            const hash = crypto.createHash('md5').update(buf).digest('hex');
-            const sub1 = hash.slice(0, 2);
-            const sub2 = hash.slice(2, 4);
-            const ext = mimeToExt(mimeType);
-            const dir = path.join(UPLOAD_DIR, sub1, sub2);
-            await fs.mkdir(dir, { recursive: true });
-            const filename = `${hash}${ext}`;
-            const abs = path.join(dir, filename);
-            await fs.writeFile(abs, buf);
-            const rel = path.relative(process.cwd(), abs).replace(/\\/g, '/');
-            savedPaths.push(rel);
-          }
-          // eslint-disable-next-line no-console
-          console.log('[generate] success: saved', savedPaths.length, 'image(s)');
-          if (savedPaths.length > 0) {
-            return res.json({ imagePath: savedPaths[0], imagePaths: savedPaths });
-          }
-        }
+    try {
+      const { dataBase64, mimeType } = await callGoogleGenerateContentSDK({
+        apiKey: GOOGLE_API_KEY,
+        model: imagesModel,
+        prompt
+      });
+      if (!dataBase64) {
         return res.status(500).json({ error: 'no_image_returned' });
-      } catch (sdkImgErr) {
-        // eslint-disable-next-line no-console
-        console.error('[generate] generateImages error:', serializeError(sdkImgErr));
-        return res.status(500).json({
-          error: 'sdk_generate_failed',
-          name: sdkImgErr?.name,
-          code: sdkImgErr?.code,
-          status: sdkImgErr?.status,
-          message: sdkImgErr?.message || String(sdkImgErr)
-        });
       }
-    } else {
-      try {
-        const { dataBase64, mimeType } = await callGoogleGenerateContentSDK({
-          apiKey: GOOGLE_API_KEY,
-          model: imagesModel,
-          prompt
-        });
-        if (!dataBase64) {
-          return res.status(500).json({ error: 'no_image_returned' });
-        }
-        const buf = Buffer.from(dataBase64, 'base64');
-        const hash = crypto.createHash('md5').update(buf).digest('hex');
-        const sub1 = hash.slice(0, 2);
-        const sub2 = hash.slice(2, 4);
-        const ext = mimeToExt(mimeType);
-        const dir = path.join(UPLOAD_DIR, sub1, sub2);
-        await fs.mkdir(dir, { recursive: true });
-        const filename = `${hash}${ext}`;
-        const abs = path.join(dir, filename);
-        await fs.writeFile(abs, buf);
-        const rel = path.relative(process.cwd(), abs).replace(/\\/g, '/');
-        // eslint-disable-next-line no-console
-        console.log('[generate] success: saved 1 image (generateContent)');
-        return res.json({ imagePath: rel, imagePaths: [rel] });
-      } catch (sdkErr) {
-        // eslint-disable-next-line no-console
-        console.error('[generate] generateContent error:', serializeError(sdkErr));
-        return res.status(500).json({
-          error: 'sdk_generate_failed',
-          name: sdkErr?.name,
-          code: sdkErr?.code,
-          status: sdkErr?.status,
-          message: sdkErr?.message || String(sdkErr)
-        });
-      }
+      const buf = Buffer.from(dataBase64, 'base64');
+      const hash = crypto.createHash('md5').update(buf).digest('hex');
+      const sub1 = hash.slice(0, 2);
+      const sub2 = hash.slice(2, 4);
+      const ext = mimeToExt(mimeType);
+      const dir = path.join(UPLOAD_DIR, sub1, sub2);
+      await fs.mkdir(dir, { recursive: true });
+      const filename = `${hash}${ext}`;
+      const abs = path.join(dir, filename);
+      await fs.writeFile(abs, buf);
+      const rel = path.relative(process.cwd(), abs).replace(/\\/g, '/');
+      // eslint-disable-next-line no-console
+      console.log('[generate] success: saved 1 image (generateContent)');
+      return res.json({ imagePath: rel, imagePaths: [rel] });
+    } catch (sdkErr) {
+      // eslint-disable-next-line no-console
+      console.error('[generate] generateContent error:', serializeError(sdkErr));
+      return res.status(500).json({
+        error: 'sdk_generate_failed',
+        name: sdkErr?.name,
+        code: sdkErr?.code,
+        status: sdkErr?.status,
+        message: sdkErr?.message || String(sdkErr)
+      });
     }
   } catch (err) {
     // eslint-disable-next-line no-console
@@ -120,35 +71,6 @@ router.post('/', async (req, res, next) => {
     next(err);
   }
 });
-
-async function callGoogleGenerateImagesSDK({ apiKey, model, prompt, numberOfImages }) {
-  // 动态引入，避免未安装时报错
-  let GoogleGenAI;
-  try {
-    // eslint-disable-next-line global-require
-    ({ GoogleGenAI } = require('@google/genai'));
-  } catch (e) {
-    throw new Error('sdk_not_available');
-  }
-  const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateImages({
-    model,
-    prompt,
-    config: {
-      numberOfImages: Math.max(1, Number.isFinite(+numberOfImages) ? +numberOfImages : 1)
-    }
-  });
-  // 结构：response.generatedImages[].image.imageBytes（base64）
-  const out = [];
-  const list = response?.generatedImages || [];
-  for (const it of list) {
-    const imgBytes = it?.image?.imageBytes;
-    if (imgBytes) {
-      out.push({ dataBase64: imgBytes, mimeType: 'image/png' });
-    }
-  }
-  return out;
-}
 
 async function callGoogleGenerateContentSDK({ apiKey, model, prompt }) {
   // 动态引入，避免未安装时报错

@@ -52,5 +52,16 @@
     "exampleIds": [],
     "createdAt": "2025-11-19T02:29:32.919Z",
     "updatedAt": "2025-11-19T02:29:32.919Z"
+  },
+  {
+    "id": "bae56a4a-f191-40a0-994c-9f6b21a0ee59",
+    "prompt": "生成一个美女，站在河边，背景是原始森林，有一种远古感",
+    "dimensionIds": [
+      "dim_composition"
+    ],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T07:02:17.283Z",
+    "updatedAt": "2025-11-19T07:02:17.283Z"
   }
 ]
