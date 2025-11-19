@@ -16,44 +16,6 @@
     "updatedAt": "2025-11-18T10:00:00.000Z"
   },
   {
-    "id": "q_202511181143",
-    "prompt": "sdfdsfs",
-    "dimensionIds": [],
-    "scoringRule": "sdfsf",
-    "exampleIds": [],
-    "createdAt": "2025-11-18T11:43:29.319Z",
-    "updatedAt": "2025-11-18T11:43:29.319Z"
-  },
-  {
-    "id": "q_202511181143",
-    "prompt": "sdfesf",
-    "dimensionIds": [],
-    "scoringRule": "sdfsfsf",
-    "exampleIds": [],
-    "createdAt": "2025-11-18T11:43:33.038Z",
-    "updatedAt": "2025-11-18T11:43:33.038Z"
-  },
-  {
-    "id": "q_202511181143",
-    "prompt": "sfsef",
-    "dimensionIds": [],
-    "scoringRule": "sfsef",
-    "exampleIds": [],
-    "createdAt": "2025-11-18T11:43:36.821Z",
-    "updatedAt": "2025-11-18T11:43:36.821Z"
-  },
-  {
-    "id": "4e9290d4-30f5-4316-a1f5-72879c0f9055",
-    "prompt": "uuid第一题",
-    "dimensionIds": [
-      "dim_composition"
-    ],
-    "scoringRule": "",
-    "exampleIds": [],
-    "createdAt": "2025-11-19T02:29:32.919Z",
-    "updatedAt": "2025-11-19T02:29:32.919Z"
-  },
-  {
     "id": "bae56a4a-f191-40a0-994c-9f6b21a0ee59",
     "prompt": "生成一个美女，站在河边，背景是原始森林，有一种远古感",
     "dimensionIds": [

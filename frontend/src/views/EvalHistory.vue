@@ -1,26 +1,37 @@
 <template>
   <section>
     <h2 style="margin-bottom:12px;">评估历史</h2>
-    <el-row :gutter="12">
-      <el-col :span="8">
-        <el-card header="批次列表" style="margin-bottom:12px;">
+
+    <!-- 未选择时：仅显示列表 -->
+    <el-row v-if="!currentRun" :gutter="12">
+      <el-col :span="24">
+        <el-card header="批次列表">
           <el-table :data="runs" size="small" @row-click="selectRun" style="width:100%;" v-loading="loading">
             <el-table-column prop="id" label="ID" />
-            <el-table-column prop="runName" label="名称" width="160" />
-            <el-table-column prop="startedAt" label="开始时间" width="180" />
-            <el-table-column prop="endedAt" label="结束时间" width="180" />
+            <el-table-column prop="runName" label="名称" width="200" />
+            <el-table-column prop="startedAt" label="开始时间" width="220" />
+            <el-table-column prop="endedAt" label="结束时间" width="220" />
           </el-table>
         </el-card>
       </el-col>
-      <el-col :span="16">
-        <el-card header="批次详情" v-if="currentRun">
+    </el-row>
+
+    <!-- 已选择时：隐藏列表，详情占满 -->
+    <el-row v-else :gutter="12">
+      <el-col :span="24">
+        <el-card>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-weight:600;">批次详情</span>
+            <el-button size="small" @click="backToList">返回列表</el-button>
+          </div>
           <p><b>名称：</b>{{ currentRun.runName || '-' }}</p>
           <p><b>描述：</b>{{ currentRun.runDesc || '-' }}</p>
           <p><b>模型：</b>{{ currentRun.modelName || '-' }}</p>
           <p><b>总分：</b>{{ currentRun.totalScore ?? '-' }}</p>
+          <p><b>整体评价：</b>{{ currentRun.overallComment || '-' }}</p>
           <div style="margin:8px 0;">
             <el-tag v-for="(v,k) in currentRun.dimensionScores || {}" :key="k" size="small" style="margin-right:6px;">
-              {{ k }}: {{ v }}
+              {{ dimName(k) }}: {{ v }}
             </el-tag>
           </div>
           <el-divider />
@@ -32,7 +43,7 @@
               </div>
               <p style="white-space: pre-wrap;">{{ promptByQuestion(currentItem.questionId) }}</p>
               <div style="margin:6px 0;">
-                <el-tag v-for="(v,k) in currentItem.scoresByDimension || {}" :key="k" size="small" style="margin-right:6px;">{{ k }}: {{ v }}</el-tag>
+                <el-tag v-for="(v,k) in currentItem.scoresByDimension || {}" :key="k" size="small" style="margin-right:6px;">{{ dimName(k) }}: {{ v }}</el-tag>
               </div>
               <p><b>主观评价：</b>{{ currentItem.comment || '-' }}</p>
               <p style="color:#999;">{{ currentItem.createdAt }}</p>
@@ -43,7 +54,6 @@
             </div>
           </div>
         </el-card>
-        <el-empty v-else description="请选择左侧批次" />
       </el-col>
     </el-row>
   </section>
@@ -52,10 +62,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { listRuns, getRun, getRunItems, listQuestions } from '../services/api';
+import { listRuns, getRun, getRunItems, listQuestions, listDimensions } from '../services/api';
 
 const runs = ref([]);
 const questions = ref([]);
+const dimensions = ref([]);
 const loading = ref(false);
 const currentRun = ref(null);
 const items = ref([]);
@@ -76,12 +87,17 @@ function promptByQuestion(qid) {
   const q = questions.value.find(x => x.id === qid);
   return q ? q.prompt : '';
 }
+function dimName(id) {
+  const d = dimensions.value.find(x => x.id === id);
+  return d ? d.name : id;
+}
 
 async function loadAll() {
   try {
     loading.value = true;
     runs.value = await listRuns();
     questions.value = await listQuestions();
+    dimensions.value = await listDimensions();
   } catch (e) {
     ElMessage.error('加载失败');
   } finally {
@@ -105,6 +121,11 @@ function prev() {
 }
 function next() {
   if (currentIndex.value < items.value.length - 1) currentIndex.value += 1;
+}
+function backToList() {
+  currentRun.value = null;
+  items.value = [];
+  currentIndex.value = 0;
 }
 </script>
 

@@ -109,7 +109,12 @@ async function start() {
 async function submitScores({ questionId, scores, comment, generatedImagePath }) {
   try {
     if (!runId.value) return ElMessage.warning('尚未开始评估');
-    await addRunItem(runId.value, { questionId, scoresByDimension: scores, comment, generatedImagePath });
+    const commentText = typeof comment === 'string'
+      ? comment
+      : (scores && typeof scores.comment === 'string' ? scores.comment : '');
+    const pureScores = { ...(scores || {}) };
+    if ('comment' in pureScores) delete pureScores.comment;
+    await addRunItem(runId.value, { questionId, scoresByDimension: pureScores, comment: commentText, generatedImagePath });
     if (currentIndex.value < questions.value.length - 1) {
       currentIndex.value += 1;
     } else {
