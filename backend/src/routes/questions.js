@@ -8,10 +8,22 @@ const { randomUUID } = require('crypto');
 const router = express.Router();
 const DATA_FILE = path.resolve(__dirname, '../../data/questions.json');
 
-router.get('/', async (_req, res, next) => {
+router.get('/', async (req, res, next) => {
   try {
-    const data = await readJson(DATA_FILE);
-    res.json(data);
+    const list = await readJson(DATA_FILE);
+    // 分页与搜索
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const pageSize = Math.min(Math.max(parseInt(req.query.pageSize, 10) || 10, 1), 200);
+    const q = (req.query.q || '').toString().trim();
+    let filtered = list;
+    if (q) {
+      const kw = q.toLowerCase();
+      filtered = list.filter(it => (it.prompt || '').toLowerCase().includes(kw));
+    }
+    const total = filtered.length;
+    const start = (page - 1) * pageSize;
+    const items = filtered.slice(start, start + pageSize);
+    res.json({ items, total, page, pageSize });
   } catch (err) {
     next(err);
   }
@@ -71,6 +83,28 @@ router.delete('/:id', async (req, res, next) => {
     const [removed] = list.splice(idx, 1);
     await writeJson(DATA_FILE, list);
     res.json({ ok: true, removed });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 复制问题（生成新 UUID）
+router.post('/:id/clone', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const list = await readJson(DATA_FILE);
+    const src = list.find(x => x.id === id);
+    if (!src) return res.status(404).json({ error: 'not_found' });
+    const now = new Date().toISOString();
+    const newQ = {
+      ...src,
+      id: randomUUID(),
+      createdAt: now,
+      updatedAt: now
+    };
+    list.push(newQ);
+    await writeJson(DATA_FILE, list);
+    res.json(newQ);
   } catch (err) {
     next(err);
   }

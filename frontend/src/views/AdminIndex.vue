@@ -5,6 +5,7 @@
         <el-menu-item index="/admin">概览</el-menu-item>
         <el-menu-item index="/admin/dimensions">维度编辑</el-menu-item>
         <el-menu-item index="/admin/question-sets">试题集管理</el-menu-item>
+        <el-menu-item index="/admin/questions">问题管理</el-menu-item>
       </el-menu>
     </aside>
     <main style="flex:1; padding:16px;">

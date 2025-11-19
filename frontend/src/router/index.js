@@ -5,6 +5,7 @@ const AdminHome = () => import('../views/AdminHome.vue');
 const Dimensions = () => import('../views/Dimensions.vue');
 const QuestionSets = () => import('../views/QuestionSets.vue');
 const QuestionSetDetail = () => import('../views/QuestionSetDetail.vue');
+const QuestionsAdmin = () => import('../views/QuestionsAdmin.vue');
 const EvalIndex = () => import('../views/EvalIndex.vue');
 const EvalHome = () => import('../views/EvalHome.vue'); // start
 const EvalHistory = () => import('../views/EvalHistory.vue');
@@ -18,7 +19,8 @@ const routes = [
       { path: '', name: 'AdminHome', component: AdminHome },
       { path: 'dimensions', name: 'Dimensions', component: Dimensions },
       { path: 'question-sets', name: 'QuestionSets', component: QuestionSets },
-      { path: 'question-sets/:id', name: 'QuestionSetDetail', component: QuestionSetDetail }
+      { path: 'question-sets/:id', name: 'QuestionSetDetail', component: QuestionSetDetail },
+      { path: 'questions', name: 'QuestionsAdmin', component: QuestionsAdmin }
     ]
   },
   {

@@ -32,6 +32,12 @@ export function deleteDimension(id) {
 export function listQuestions() {
   return api.get('/questions').then(r => r.data);
 }
+export function listQuestionsPaged(params = {}) {
+  return api.get('/questions', { params }).then(r => r.data);
+}
+export function cloneQuestion(id) {
+  return api.post(`/questions/${id}/clone`).then(r => r.data);
+}
 
 export function listQuestionSets() {
   return api.get('/question-sets').then(r => r.data);
