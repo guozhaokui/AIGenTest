@@ -62,6 +62,25 @@ export function submitEvaluation(payload) {
   return api.post('/evaluations', payload).then(r => r.data);
 }
 
+// Runs API
+export function startRun(payload) {
+  // { modelName?, questionSetId }
+  return api.post('/runs/start', payload).then(r => r.data);
+}
+export function addRunItem(runId, payload) {
+  // { questionId, scoresByDimension, comment?, generatedImagePath? }
+  return api.post(`/runs/${runId}/items`, payload).then(r => r.data);
+}
+export function finishRun(runId) {
+  return api.post(`/runs/${runId}/finish`).then(r => r.data);
+}
+
+// Generate image
+export function generateImage(payload) {
+  // { prompt, modelName? }
+  return api.post('/generate', payload).then(r => r.data);
+}
+
 export default api;
 
 

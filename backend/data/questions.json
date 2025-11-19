@@ -41,5 +41,16 @@
     "exampleIds": [],
     "createdAt": "2025-11-18T11:43:36.821Z",
     "updatedAt": "2025-11-18T11:43:36.821Z"
+  },
+  {
+    "id": "4e9290d4-30f5-4316-a1f5-72879c0f9055",
+    "prompt": "uuid第一题",
+    "dimensionIds": [
+      "dim_composition"
+    ],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T02:29:32.919Z",
+    "updatedAt": "2025-11-19T02:29:32.919Z"
   }
 ]

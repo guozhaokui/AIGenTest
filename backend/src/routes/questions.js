@@ -3,6 +3,7 @@
 const path = require('path');
 const express = require('express');
 const { readJson, writeJson } = require('../utils/jsonStore');
+const { randomUUID } = require('crypto');
 
 const router = express.Router();
 const DATA_FILE = path.resolve(__dirname, '../../data/questions.json');
@@ -21,7 +22,7 @@ router.post('/', async (req, res, next) => {
     const { prompt, dimensionIds, scoringRule, exampleIds } = req.body || {};
     if (!prompt) return res.status(400).json({ error: 'missing_prompt' });
     const now = new Date().toISOString();
-    const id = `q_${now.replace(/[-:.TZ]/g, '').slice(0, 12)}`;
+    const id = randomUUID();
     const record = {
       id,
       prompt,

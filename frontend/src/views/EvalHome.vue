@@ -3,12 +3,17 @@
     <h1 style="margin-bottom:12px;">评估端</h1>
 
     <el-card header="选择试题集" style="margin-bottom:12px;">
-      <el-select v-model="selectedSetId" placeholder="请选择试题集" @change="onSelectSet" style="min-width:320px;">
-        <el-option v-for="s in questionSets" :key="s.id" :label="s.name" :value="s.id" />
-      </el-select>
+      <div style="display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
+        <el-select v-model="selectedSetId" placeholder="请选择试题集" :disabled="started" style="min-width:320px;">
+          <el-option v-for="s in questionSets" :key="s.id" :label="s.name" :value="s.id" />
+        </el-select>
+        <el-input v-model="modelName" placeholder="模型名称（可选）" :disabled="started" style="width:260px;" />
+        <el-button type="primary" :disabled="!selectedSetId || started" @click="start">开始评估</el-button>
+        <el-button type="success" :disabled="!started || finished" @click="finish">结束本次</el-button>
+      </div>
     </el-card>
 
-    <template v-if="selectedSetId && currentQuestion">
+    <template v-if="started && currentQuestion">
       <el-alert :title="progressText" type="info" :closable="false" style="margin-bottom:12px;" />
       <EvaluationPanel
         :dimensions="dimensions"
@@ -28,12 +33,16 @@
 import { ref, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import EvaluationPanel from '../components/EvaluationPanel.vue';
-import { listDimensions, listQuestions, listQuestionSets, submitEvaluation } from '../services/api';
+import { listDimensions, listQuestions, listQuestionSets, addRunItem, startRun, finishRun } from '../services/api';
 
 const dimensions = ref([]);
 const questions = ref([]);
 const questionSets = ref([]);
 const selectedSetId = ref('');
+const modelName = ref('');
+const started = ref(false);
+const finished = ref(false);
+const runId = ref('');
 const currentIndex = ref(0);
 const currentQuestion = computed(() => questions.value[currentIndex.value] || null);
 const progressText = computed(() => {
@@ -50,7 +59,7 @@ async function init() {
   }
 }
 
-async function onSelectSet() {
+async function loadSetQuestions() {
   try {
     const all = await listQuestions();
     const set = questionSets.value.find(s => s.id === selectedSetId.value);
@@ -74,16 +83,41 @@ async function onSelectSet() {
   }
 }
 
-async function submitScores({ questionId, scores }) {
+async function start() {
+  if (!selectedSetId.value) return ElMessage.warning('请先选择试题集');
   try {
-    await submitEvaluation({ questionId, scores });
+    const run = await startRun({ modelName: modelName.value, questionSetId: selectedSetId.value });
+    runId.value = run.id;
+    started.value = true;
+    finished.value = false;
+    await loadSetQuestions();
+  } catch (e) {
+    ElMessage.error('开始失败');
+  }
+}
+
+async function submitScores({ questionId, scores, generatedImagePath }) {
+  try {
+    if (!runId.value) return ElMessage.warning('尚未开始评估');
+    await addRunItem(runId.value, { questionId, scoresByDimension: scores, generatedImagePath });
     if (currentIndex.value < questions.value.length - 1) {
       currentIndex.value += 1;
     } else {
-      ElMessage.success('本试题集评估完成');
+      ElMessage.success('本试题集评估已全部提交，可点击“结束本次”结算');
     }
   } catch (e) {
     ElMessage.error('提交失败');
+  }
+}
+
+async function finish() {
+  try {
+    if (!runId.value) return;
+    await finishRun(runId.value);
+    finished.value = true;
+    ElMessage.success('已结束并汇总本次评估');
+  } catch (e) {
+    ElMessage.error('结束失败');
   }
 }
 

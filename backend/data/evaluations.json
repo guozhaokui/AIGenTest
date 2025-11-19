@@ -11,5 +11,19 @@
     },
     "comment": "",
     "createdAt": "2025-11-18T11:32:36.764Z"
+  },
+  {
+    "id": "ev_20251119025415",
+    "runId": null,
+    "questionId": "q_202511181143",
+    "generatedImagePath": null,
+    "scoresByDimension": {
+      "dim_composition": 4,
+      "dim_lighting": 5,
+      "dim_consistency": 4,
+      "dim_202511181148": 3
+    },
+    "comment": "",
+    "createdAt": "2025-11-19T02:54:15.902Z"
   }
 ]

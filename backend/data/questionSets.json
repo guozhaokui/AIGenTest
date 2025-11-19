@@ -31,14 +31,17 @@
   {
     "id": "set_202511181143",
     "name": "sss",
-    "description": "",
-    "dimensionIds": [],
+    "description": "uuid第一题",
+    "dimensionIds": [
+      "dim_composition"
+    ],
     "questionIds": [
       "q_202511181143",
       "q_202511181143",
-      "q_202511181143"
+      "q_202511181143",
+      "4e9290d4-30f5-4316-a1f5-72879c0f9055"
     ],
     "createdAt": "2025-11-18T11:43:18.300Z",
-    "updatedAt": "2025-11-18T11:43:36.835Z"
+    "updatedAt": "2025-11-19T02:29:32.926Z"
   }
 ]
