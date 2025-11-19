@@ -30,7 +30,7 @@ app.use(express.json({ limit: '2mb' }));
 app.use(morgan('dev'));
 
 // 静态文件（如需直接访问上传的图片）
-app.use('/uploads', express.static(path.resolve(__dirname, '../..', 'uploads')));
+app.use('/uploads', express.static(path.resolve(__dirname, '..', 'uploads')));
 
 // API
 const dimensions = require('./routes/dimensions');

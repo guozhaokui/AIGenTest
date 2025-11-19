@@ -50,10 +50,12 @@ router.post('/', async (req, res, next) => {
       const filename = `${hash}${ext}`;
       const abs = path.join(dir, filename);
       await fs.writeFile(abs, buf);
-      const rel = path.relative(process.cwd(), abs).replace(/\\/g, '/');
+      // 统一返回以 /uploads 开头的可访问路径
+      const relFromProject = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/'); // e.g. 'uploads/eval-images/...'
+      const publicPath = relFromProject.startsWith('uploads/') ? `/${relFromProject}` : `/uploads/${relFromProject}`;
       // eslint-disable-next-line no-console
       console.log('[generate] success: saved 1 image (generateContent)');
-      return res.json({ imagePath: rel, imagePaths: [rel] });
+      return res.json({ imagePath: publicPath, imagePaths: [publicPath] });
     } catch (sdkErr) {
       // eslint-disable-next-line no-console
       console.error('[generate] generateContent error:', serializeError(sdkErr));

@@ -77,8 +77,8 @@ export function finishRun(runId) {
 
 // Generate image
 export function generateImage(payload) {
-  // { prompt, modelName? }
-  return api.post('/generate', payload).then(r => r.data);
+  // { prompt, modelName?, questionId? }
+  return api.post('/generate', payload, { timeout: 120000 }).then(r => r.data);
 }
 
 export default api;
