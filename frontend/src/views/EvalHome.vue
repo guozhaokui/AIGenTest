@@ -2,15 +2,21 @@
   <section style="padding:16px;">
     <h1 style="margin-bottom:12px;">评估端</h1>
 
-    <el-card header="选择试题集" style="margin-bottom:12px;">
+    <el-card header="选择试题集与信息" style="margin-bottom:12px;">
       <div style="display:flex; gap:12px; align-items:center; flex-wrap: wrap;">
         <el-select v-model="selectedSetId" placeholder="请选择试题集" :disabled="started" style="min-width:320px;">
           <el-option v-for="s in questionSets" :key="s.id" :label="s.name" :value="s.id" />
         </el-select>
-        <el-input v-model="modelName" placeholder="模型名称（可选）" :disabled="started" style="width:260px;" />
+        <el-input v-model="modelName" placeholder="模型名称（可选）" :disabled="started" style="width:220px;" />
+        <el-input v-model="runName" placeholder="评估名称（必填）" :disabled="started" style="width:220px;" />
+        <el-input v-model="runDesc" placeholder="评估描述（可选）" :disabled="started" style="width:260px;" />
         <el-button type="primary" :disabled="!selectedSetId || started" @click="start">开始评估</el-button>
         <el-button type="success" :disabled="!started || finished" @click="finish">结束本次</el-button>
       </div>
+    </el-card>
+
+    <el-card v-if="started && !finished" header="整体主观评价" style="margin-bottom:12px;">
+      <el-input v-model="overallComment" type="textarea" :rows="3" placeholder="对本次评估的整体评价（可选）" />
     </el-card>
 
     <template v-if="started && currentQuestion">
@@ -40,6 +46,9 @@ const questions = ref([]);
 const questionSets = ref([]);
 const selectedSetId = ref('');
 const modelName = ref('');
+const runName = ref('');
+const runDesc = ref('');
+const overallComment = ref('');
 const started = ref(false);
 const finished = ref(false);
 const runId = ref('');
@@ -85,8 +94,9 @@ async function loadSetQuestions() {
 
 async function start() {
   if (!selectedSetId.value) return ElMessage.warning('请先选择试题集');
+  if (!runName.value.trim()) return ElMessage.warning('请填写评估名称');
   try {
-    const run = await startRun({ modelName: modelName.value, questionSetId: selectedSetId.value });
+    const run = await startRun({ modelName: modelName.value, questionSetId: selectedSetId.value, runName: runName.value, runDesc: runDesc.value });
     runId.value = run.id;
     started.value = true;
     finished.value = false;
@@ -96,10 +106,10 @@ async function start() {
   }
 }
 
-async function submitScores({ questionId, scores, generatedImagePath }) {
+async function submitScores({ questionId, scores, comment, generatedImagePath }) {
   try {
     if (!runId.value) return ElMessage.warning('尚未开始评估');
-    await addRunItem(runId.value, { questionId, scoresByDimension: scores, generatedImagePath });
+    await addRunItem(runId.value, { questionId, scoresByDimension: scores, comment, generatedImagePath });
     if (currentIndex.value < questions.value.length - 1) {
       currentIndex.value += 1;
     } else {
@@ -113,7 +123,7 @@ async function submitScores({ questionId, scores, generatedImagePath }) {
 async function finish() {
   try {
     if (!runId.value) return;
-    await finishRun(runId.value);
+    await finishRun(runId.value, { overallComment: overallComment.value });
     finished.value = true;
     ElMessage.success('已结束并汇总本次评估');
   } catch (e) {

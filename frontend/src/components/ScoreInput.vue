@@ -15,14 +15,19 @@
         </div>
       </el-form-item>
     </el-form>
+    <el-form label-width="96px">
+      <el-form-item label="主观评价">
+        <el-input v-model="comment" type="textarea" :rows="2" placeholder="写下你的评价（可选）" />
+      </el-form-item>
+    </el-form>
     <div style="margin-top:8px;">
-      <el-button type="primary" @click="emit('submit', { ...scores })">提交评分</el-button>
+      <el-button type="primary" @click="emit('submit', { ...scores, comment: comment })">提交评分</el-button>
     </div>
   </div>
 </template>
 
 <script setup>
-import { reactive, watchEffect } from 'vue';
+import { reactive, ref, watchEffect } from 'vue';
 
 const props = defineProps({
   dimensions: { type: Array, default: () => [] },
@@ -31,6 +36,7 @@ const props = defineProps({
 const emit = defineEmits(['submit']);
 
 const scores = reactive({});
+const comment = ref('');
 watchEffect(() => {
   for (const d of props.dimensions) {
     const val = props.initialScores[d.id] ?? 0;

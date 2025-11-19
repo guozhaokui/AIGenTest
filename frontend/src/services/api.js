@@ -64,15 +64,24 @@ export function submitEvaluation(payload) {
 
 // Runs API
 export function startRun(payload) {
-  // { modelName?, questionSetId }
+  // { modelName?, questionSetId, runName?, runDesc? }
   return api.post('/runs/start', payload).then(r => r.data);
 }
 export function addRunItem(runId, payload) {
   // { questionId, scoresByDimension, comment?, generatedImagePath? }
   return api.post(`/runs/${runId}/items`, payload).then(r => r.data);
 }
-export function finishRun(runId) {
-  return api.post(`/runs/${runId}/finish`).then(r => r.data);
+export function finishRun(runId, payload) {
+  return api.post(`/runs/${runId}/finish`, payload).then(r => r.data);
+}
+export function listRuns() {
+  return api.get('/runs').then(r => r.data);
+}
+export function getRun(runId) {
+  return api.get(`/runs/${runId}`).then(r => r.data);
+}
+export function getRunItems(runId) {
+  return api.get(`/runs/${runId}/items`).then(r => r.data);
 }
 
 // Generate image

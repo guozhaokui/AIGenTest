@@ -17,7 +17,7 @@ async function ensureDir(p) {
 
 router.post('/start', async (req, res, next) => {
   try {
-    const { modelName, questionSetId } = req.body || {};
+    const { modelName, questionSetId, runName, runDesc } = req.body || {};
     const now = new Date().toISOString();
     const runId = `run_${now.replace(/[-:.TZ]/g, '').slice(0, 14)}_${Math.random().toString(36).slice(2, 6)}`;
     const runDir = path.join(BASE_DIR, runId);
@@ -26,6 +26,8 @@ router.post('/start', async (req, res, next) => {
       id: runId,
       modelName: modelName || '',
       questionSetId: questionSetId || '',
+      runName: runName || '',
+      runDesc: runDesc || '',
       itemIds: [],
       totalScore: null,
       dimensionScores: {},
@@ -37,7 +39,7 @@ router.post('/start', async (req, res, next) => {
     // registry
     let reg = [];
     try { reg = await readJson(REGISTRY_FILE); } catch {}
-    reg.push({ id: runId, modelName: runMeta.modelName, questionSetId: runMeta.questionSetId, startedAt: now, endedAt: null });
+    reg.push({ id: runId, modelName: runMeta.modelName, questionSetId: runMeta.questionSetId, runName: runMeta.runName, startedAt: now, endedAt: null });
     await writeJson(REGISTRY_FILE, reg);
     res.json(runMeta);
   } catch (err) {
@@ -81,6 +83,7 @@ router.post('/:runId/items', async (req, res, next) => {
 router.post('/:runId/finish', async (req, res, next) => {
   try {
     const { runId } = req.params;
+    const { overallComment } = req.body || {};
     const runDir = path.join(BASE_DIR, runId);
     const itemsFile = path.join(runDir, 'items.json');
     const runFile = path.join(runDir, 'run.json');
@@ -105,6 +108,9 @@ router.post('/:runId/finish', async (req, res, next) => {
     meta.dimensionScores = dimensionScores;
     meta.totalScore = totalScore;
     meta.endedAt = new Date().toISOString();
+    if (typeof overallComment === 'string') {
+      meta.overallComment = overallComment;
+    }
     await writeJson(runFile, meta);
     // update registry endedAt
     let reg = [];
@@ -115,6 +121,39 @@ router.post('/:runId/finish', async (req, res, next) => {
       await writeJson(REGISTRY_FILE, reg);
     }
     res.json(meta);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 获取运行列表（registry）
+router.get('/', async (_req, res, next) => {
+  try {
+    let reg = [];
+    try { reg = await readJson(REGISTRY_FILE); } catch {}
+    res.json(reg);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 获取某次运行的元数据
+router.get('/:runId', async (req, res, next) => {
+  try {
+    const { runId } = req.params;
+    const meta = await readJson(path.join(BASE_DIR, runId, 'run.json'));
+    res.json(meta);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 获取某次运行的条目
+router.get('/:runId/items', async (req, res, next) => {
+  try {
+    const { runId } = req.params;
+    const items = await readJson(path.join(BASE_DIR, runId, 'items.json'));
+    res.json(items);
   } catch (err) {
     next(err);
   }

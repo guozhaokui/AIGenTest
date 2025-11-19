@@ -5,7 +5,9 @@ const AdminHome = () => import('../views/AdminHome.vue');
 const Dimensions = () => import('../views/Dimensions.vue');
 const QuestionSets = () => import('../views/QuestionSets.vue');
 const QuestionSetDetail = () => import('../views/QuestionSetDetail.vue');
-const EvalHome = () => import('../views/EvalHome.vue');
+const EvalIndex = () => import('../views/EvalIndex.vue');
+const EvalHome = () => import('../views/EvalHome.vue'); // start
+const EvalHistory = () => import('../views/EvalHistory.vue');
 
 const routes = [
   { path: '/', redirect: '/admin' },
@@ -19,7 +21,15 @@ const routes = [
       { path: 'question-sets/:id', name: 'QuestionSetDetail', component: QuestionSetDetail }
     ]
   },
-  { path: '/eval', name: 'EvalHome', component: EvalHome }
+  {
+    path: '/eval',
+    component: EvalIndex,
+    children: [
+      { path: '', redirect: '/eval/start' },
+      { path: 'start', name: 'EvalStart', component: EvalHome },
+      { path: 'history', name: 'EvalHistory', component: EvalHistory }
+    ]
+  }
 ];
 
 const router = createRouter({
