@@ -9,7 +9,6 @@ const { readJson, writeJson } = require('../utils/jsonStore');
 const router = express.Router();
 
 const BASE_DIR = path.resolve(__dirname, '../../data/runs');
-const REGISTRY_FILE = path.resolve(__dirname, '../../data/runs.json');
 
 async function ensureDir(p) {
   await fs.mkdir(p, { recursive: true });
@@ -36,11 +35,6 @@ router.post('/start', async (req, res, next) => {
     };
     await writeJson(path.join(runDir, 'run.json'), runMeta);
     await writeJson(path.join(runDir, 'items.json'), []);
-    // registry
-    let reg = [];
-    try { reg = await readJson(REGISTRY_FILE); } catch {}
-    reg.push({ id: runId, modelName: runMeta.modelName, questionSetId: runMeta.questionSetId, runName: runMeta.runName, startedAt: now, endedAt: null });
-    await writeJson(REGISTRY_FILE, reg);
     res.json(runMeta);
   } catch (err) {
     next(err);
@@ -112,14 +106,6 @@ router.post('/:runId/finish', async (req, res, next) => {
       meta.overallComment = overallComment;
     }
     await writeJson(runFile, meta);
-    // update registry endedAt
-    let reg = [];
-    try { reg = await readJson(REGISTRY_FILE); } catch {}
-    const idx = reg.findIndex(r => r.id === runId);
-    if (idx !== -1) {
-      reg[idx] = { ...reg[idx], endedAt: meta.endedAt };
-      await writeJson(REGISTRY_FILE, reg);
-    }
     res.json(meta);
   } catch (err) {
     next(err);
@@ -129,9 +115,30 @@ router.post('/:runId/finish', async (req, res, next) => {
 // 获取运行列表（registry）
 router.get('/', async (_req, res, next) => {
   try {
-    let reg = [];
-    try { reg = await readJson(REGISTRY_FILE); } catch {}
-    res.json(reg);
+    await ensureDir(BASE_DIR);
+    const entries = await fs.readdir(BASE_DIR, { withFileTypes: true });
+    const metas = [];
+    for (const ent of entries) {
+      if (!ent.isDirectory()) continue;
+      const dir = path.join(BASE_DIR, ent.name);
+      const runFile = path.join(dir, 'run.json');
+      try {
+        const meta = await readJson(runFile);
+        // 仅返回列表需要的字段（也可直接返回全部）
+        metas.push({
+          id: meta.id || ent.name,
+          runName: meta.runName || '',
+          modelName: meta.modelName || '',
+          questionSetId: meta.questionSetId || '',
+          startedAt: meta.startedAt || null,
+          endedAt: meta.endedAt || null
+        });
+      } catch {
+        // ignore invalid dirs
+      }
+    }
+    metas.sort((a, b) => String(b.startedAt || '').localeCompare(String(a.startedAt || '')));
+    res.json(metas);
   } catch (err) {
     next(err);
   }

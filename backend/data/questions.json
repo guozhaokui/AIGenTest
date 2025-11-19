@@ -63,5 +63,16 @@
     "exampleIds": [],
     "createdAt": "2025-11-19T07:02:17.283Z",
     "updatedAt": "2025-11-19T07:02:17.283Z"
+  },
+  {
+    "id": "9cd78946-2bb7-4687-b31f-45e49ee10893",
+    "prompt": "一个建筑草图，展现一个从十字路口看去的街道两边的建筑群，主体建筑是一个4层楼房，道路两边有简单的描绘的树木，以及街道上的简笔画的行人",
+    "dimensionIds": [
+      "dim_composition"
+    ],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:04:38.666Z",
+    "updatedAt": "2025-11-19T08:04:38.666Z"
   }
 ]
