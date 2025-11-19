@@ -8,6 +8,21 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 
+// 配置 HTTP(S) 代理（如存在）
+try {
+  const proxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+  if (proxy) {
+    // 动态引入，避免未安装时报错
+    // eslint-disable-next-line global-require
+    const { setGlobalDispatcher, ProxyAgent } = require('undici');
+    setGlobalDispatcher(new ProxyAgent(proxy));
+    /* eslint-disable no-console */
+    console.log('[backend] Using proxy:', proxy);
+  }
+} catch (e) {
+  // ignore
+}
+
 const app = express();
 
 app.use(cors());
