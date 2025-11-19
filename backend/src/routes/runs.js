@@ -9,6 +9,8 @@ const { readJson, writeJson } = require('../utils/jsonStore');
 const router = express.Router();
 
 const BASE_DIR = path.resolve(__dirname, '../../data/runs');
+const QUESTIONS_FILE = path.resolve(__dirname, '../../data/questions.json');
+const DIMENSIONS_FILE = path.resolve(__dirname, '../../data/dimensions.json');
 
 async function ensureDir(p) {
   await fs.mkdir(p, { recursive: true });
@@ -51,6 +53,33 @@ router.post('/:runId/items', async (req, res, next) => {
     const runFile = path.join(runDir, 'run.json');
     const now = new Date().toISOString();
     const id = randomUUID();
+
+    // 构造题目快照（避免题库后续变更影响历史回看）
+    let questionSnapshot = null;
+    try {
+      const [allQuestions, allDims] = await Promise.all([
+        readJson(QUESTIONS_FILE),
+        readJson(DIMENSIONS_FILE)
+      ]);
+      const q = allQuestions.find(x => x.id === questionId);
+      if (q) {
+        const dimIds = Array.isArray(q.dimensionIds) ? q.dimensionIds : [];
+        const dimNameMap = {};
+        for (const did of dimIds) {
+          const d = allDims.find(x => x.id === did);
+          dimNameMap[did] = d ? d.name : did;
+        }
+        questionSnapshot = {
+          id: q.id,
+          prompt: q.prompt,
+          dimensionIds: dimIds,
+          scoringRule: q.scoringRule || '',
+          dimNameMap
+        };
+      }
+    } catch (e) {
+      // ignore snapshot errors
+    }
     const item = {
       id,
       runId,
@@ -58,7 +87,8 @@ router.post('/:runId/items', async (req, res, next) => {
       generatedImagePath: generatedImagePath || null,
       scoresByDimension: scoresByDimension || {},
       comment: comment || '',
-      createdAt: now
+      createdAt: now,
+      questionSnapshot
     };
     let items = [];
     try { items = await readJson(itemsFile); } catch {}
@@ -203,12 +233,15 @@ router.post('/:runId/clone', async (req, res, next) => {
       comment: '',
       createdAt: now
     }));
-    // 实际更合理：把已有条目中的 questionId 与图片拷贝，清空分数
+    // 实际更合理：把已有条目中的 questionId 与图片、题目快照拷贝，清空分数
     for (let i = 0; i < dstItems.length; i += 1) {
       const s = srcItems[i];
       if (!s) continue;
       dstItems[i].questionId = s.questionId;
       dstItems[i].generatedImagePath = s.generatedImagePath || null;
+      if (s.questionSnapshot) {
+        dstItems[i].questionSnapshot = s.questionSnapshot;
+      }
     }
 
     await writeJson(path.join(dstDir, 'run.json'), dstMeta);

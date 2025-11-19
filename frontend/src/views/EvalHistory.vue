@@ -44,9 +44,9 @@
               <div v-if="currentItem.generatedImagePath" style="margin-bottom:8px;">
                 <img :src="normalize(currentItem.generatedImagePath)" style="max-width:100%; border:1px solid #eee; border-radius:4px;" />
               </div>
-              <p style="white-space: pre-wrap;">{{ promptByQuestion(currentItem.questionId) }}</p>
+              <p style="white-space: pre-wrap;">{{ promptByQuestion(currentItem.questionId, currentItem) }}</p>
               <div style="margin:6px 0;">
-                <el-tag v-for="(v,k) in currentItem.scoresByDimension || {}" :key="k" size="small" style="margin-right:6px;">{{ dimName(k) }}: {{ v }}</el-tag>
+                <el-tag v-for="(v,k) in currentItem.scoresByDimension || {}" :key="k" size="small" style="margin-right:6px;">{{ dimNameForItem(k, currentItem) }}: {{ v }}</el-tag>
               </div>
               <p><b>主观评价：</b>{{ currentItem.comment || '-' }}</p>
               <p style="color:#999;">{{ currentItem.createdAt }}</p>
@@ -87,13 +87,20 @@ function normalize(p) {
   }
   return url;
 }
-function promptByQuestion(qid) {
+function promptByQuestion(qid, item) {
+  const snap = item?.questionSnapshot?.prompt;
+  if (snap) return snap;
   const q = questions.value.find(x => x.id === qid);
   return q ? q.prompt : '';
 }
 function dimName(id) {
   const d = dimensions.value.find(x => x.id === id);
   return d ? d.name : id;
+}
+function dimNameForItem(id, item) {
+  const map = item?.questionSnapshot?.dimNameMap;
+  if (map && map[id]) return map[id];
+  return dimName(id);
 }
 
 async function loadAll() {
