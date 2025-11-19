@@ -41,5 +41,29 @@
     ],
     "createdAt": "2025-11-18T11:43:18.300Z",
     "updatedAt": "2025-11-19T08:04:43.214Z"
+  },
+  {
+    "id": "set_202511190823",
+    "name": "Laya游戏领域AI生图评估集v0.1",
+    "description": "测试一下",
+    "dimensionIds": [],
+    "questionIds": [
+      "784aa1a4-285b-4c38-be1f-1ffc9eaa4cee",
+      "18d30bf1-8a77-4146-9013-2aa12e5cf429",
+      "71178993-d79a-4cfd-9373-cf341c7f0897",
+      "57221b23-c7c2-4d47-8d50-e0cb56fa7bd9",
+      "4e373e12-9eb4-4f9c-8785-2e50066aa812",
+      "47b34efe-be29-4939-8dd3-0493a863b8b9",
+      "72e20cb5-ae48-427f-aacd-a0710a0f187c",
+      "02d571d3-938d-4533-91ba-ab76862cbee9",
+      "45987e36-c4ca-4401-8ba1-de9fb93532d1",
+      "55e6fd63-d088-4aae-a52b-04e759e499cc",
+      "d6f09af0-d801-4afd-b1df-4ef3804f5b4c",
+      "a62e60ad-1eb7-48b4-874b-eba52ea180fc",
+      "eb1c7a11-2415-4a6a-963d-1d2aac46caa3",
+      "cd122d0a-1c7b-47a9-913f-326cada61b34"
+    ],
+    "createdAt": "2025-11-19T08:23:19.879Z",
+    "updatedAt": "2025-11-19T08:59:01.549Z"
   }
 ]

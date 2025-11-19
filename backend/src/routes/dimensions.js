@@ -2,6 +2,7 @@
 
 const path = require('path');
 const express = require('express');
+const { randomUUID } = require('crypto');
 const { readJson, writeJson } = require('../utils/jsonStore');
 
 const router = express.Router();
@@ -18,10 +19,33 @@ router.get('/', async (_req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { name, description, bonusCriteria, penaltyCriteria } = req.body || {};
+    const { id: incomingId, name, description, bonusCriteria, penaltyCriteria } = req.body || {};
     if (!name) return res.status(400).json({ error: 'missing_name' });
     const now = new Date().toISOString();
-    const id = `dim_${now.replace(/[-:.TZ]/g, '').slice(0, 12)}`;
+    let list = await readJson(DATA_FILE);
+
+    // 如果传入了 id 且已存在，则视为“覆盖更新”（避免产生重复项）
+    if (incomingId) {
+      const idx = list.findIndex(x => x.id === incomingId);
+      if (idx !== -1) {
+        const current = list[idx];
+        const nextObj = {
+          ...current,
+          name,
+          description: description || '',
+          bonusCriteria: Array.isArray(bonusCriteria) ? bonusCriteria : (typeof bonusCriteria === 'string' ? splitCriteria(bonusCriteria) : current.bonusCriteria || []),
+          penaltyCriteria: Array.isArray(penaltyCriteria) ? penaltyCriteria : (typeof penaltyCriteria === 'string' ? splitCriteria(penaltyCriteria) : current.penaltyCriteria || []),
+          updatedAt: now
+        };
+        list[idx] = nextObj;
+        list = dedupeById(list);
+        await writeJson(DATA_FILE, list);
+        return res.json(nextObj);
+      }
+    }
+
+    // 正常创建新维度
+    const id = randomUUID();
     const record = {
       id,
       name,
@@ -31,8 +55,8 @@ router.post('/', async (req, res, next) => {
       createdAt: now,
       updatedAt: now
     };
-    const list = await readJson(DATA_FILE);
     list.push(record);
+    list = dedupeById(list);
     await writeJson(DATA_FILE, list);
     res.json(record);
   } catch (err) {
@@ -56,6 +80,7 @@ router.patch('/:id', async (req, res, next) => {
       updatedAt: now
     };
     list[idx] = nextObj;
+    list = dedupeById(list);
     await writeJson(DATA_FILE, list);
     res.json(nextObj);
   } catch (err) {
@@ -87,6 +112,13 @@ function normalizeCriteria(input, fallback) {
   if (Array.isArray(input)) return input;
   if (typeof input === 'string') return splitCriteria(input);
   return fallback;
+}
+function dedupeById(arr) {
+  const seen = new Map();
+  for (const item of arr) {
+    seen.set(item.id, item);
+  }
+  return Array.from(seen.values());
 }
 
 module.exports = router;

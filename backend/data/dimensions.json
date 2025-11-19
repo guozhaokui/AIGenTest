@@ -1,6 +1,6 @@
 [
   {
-    "id": "dim_composition",
+    "id": "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e",
     "name": "构图",
     "description": "主体突出、元素布局合理，视觉引导清晰",
     "bonusCriteria": [
@@ -15,7 +15,7 @@
     "updatedAt": "2025-11-18T10:00:00.000Z"
   },
   {
-    "id": "dim_lighting",
+    "id": "c8fb6061-e268-45cb-af19-7094e66801fa",
     "name": "光影",
     "description": "光源方向与强弱合理，层次分明",
     "bonusCriteria": [
@@ -30,7 +30,7 @@
     "updatedAt": "2025-11-18T10:00:00.000Z"
   },
   {
-    "id": "dim_consistency",
+    "id": "879a2bab-cfa1-49c9-bd5b-b0ee4a049b6f",
     "name": "一致性",
     "description": "人物/物体外观与上下文一致，无穿帮",
     "bonusCriteria": [
@@ -45,12 +45,96 @@
     "updatedAt": "2025-11-18T10:00:00.000Z"
   },
   {
-    "id": "dim_202511181148",
+    "id": "a73037d6-9532-4f69-88ce-3376d0fc983a",
     "name": "世界知识",
     "description": "",
     "bonusCriteria": [],
     "penaltyCriteria": [],
     "createdAt": "2025-11-18T11:48:09.742Z",
     "updatedAt": "2025-11-18T11:48:09.742Z"
+  },
+  {
+    "id": "7757859e-0835-41d7-9814-514724460210",
+    "name": "人体",
+    "description": "解剖正确，无畸形，动作合理",
+    "bonusCriteria": [],
+    "penaltyCriteria": [
+      "多个手指",
+      "动作扭曲",
+      "比例失调"
+    ],
+    "createdAt": "2025-11-19T09:19:34.869Z",
+    "updatedAt": "2025-11-19T09:19:34.869Z"
+  },
+  {
+    "id": "f543bd5e-7130-42d5-ad79-4cfcd14f8468",
+    "name": "文字",
+    "description": "",
+    "bonusCriteria": [
+      "能显示英文",
+      "能显示汉字"
+    ],
+    "penaltyCriteria": [],
+    "createdAt": "2025-11-19T09:24:42.851Z",
+    "updatedAt": "2025-11-19T09:24:42.851Z"
+  },
+  {
+    "id": "f55c6293-a0cd-4db1-8189-27f632f056ae",
+    "name": "美学",
+    "description": "画面有美感",
+    "bonusCriteria": [],
+    "penaltyCriteria": [],
+    "createdAt": "2025-11-19T09:25:04.746Z",
+    "updatedAt": "2025-11-19T09:25:04.746Z"
+  },
+  {
+    "id": "1a2832be-bd88-408d-ac51-1174f96328a1",
+    "name": "NSFW",
+    "description": "能瑟么",
+    "bonusCriteria": [],
+    "penaltyCriteria": [],
+    "createdAt": "2025-11-19T09:25:26.812Z",
+    "updatedAt": "2025-11-19T09:25:26.812Z"
+  },
+  {
+    "id": "ee401df5-6aae-43d6-9297-ae6575678299",
+    "name": "新奇度",
+    "description": "",
+    "bonusCriteria": [],
+    "penaltyCriteria": [],
+    "createdAt": "2025-11-19T09:25:45.378Z",
+    "updatedAt": "2025-11-19T09:25:45.378Z"
+  },
+  {
+    "id": "1b9889aa-37cc-44c6-9ca9-d927be14aaa9",
+    "name": "游戏资产",
+    "description": "",
+    "bonusCriteria": [
+      "UI",
+      "icon"
+    ],
+    "penaltyCriteria": [
+      "试试"
+    ],
+    "createdAt": "2025-11-19T09:26:44.851Z",
+    "updatedAt": "2025-11-19T09:33:27.219Z"
+  },
+  {
+    "id": "69edf6b9-3e5e-43fc-8fe8-941985938949",
+    "name": "风格",
+    "description": "",
+    "bonusCriteria": [],
+    "penaltyCriteria": [],
+    "createdAt": "2025-11-19T09:33:46.282Z",
+    "updatedAt": "2025-11-19T09:33:46.282Z"
+  },
+  {
+    "id": "c0d498b6-77cc-48bc-9b36-a21cfc499168",
+    "name": "跟随性",
+    "description": "跟随复杂指令的能力",
+    "bonusCriteria": [],
+    "penaltyCriteria": [],
+    "createdAt": "2025-11-19T09:36:17.548Z",
+    "updatedAt": "2025-11-19T09:36:33.308Z"
   }
 ]

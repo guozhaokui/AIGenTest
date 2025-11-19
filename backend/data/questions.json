@@ -36,5 +36,136 @@
     "exampleIds": [],
     "createdAt": "2025-11-19T08:04:38.666Z",
     "updatedAt": "2025-11-19T08:04:38.666Z"
+  },
+  {
+    "id": "784aa1a4-285b-4c38-be1f-1ffc9eaa4cee",
+    "prompt": "战场上的关羽，骑在马上，正在冲锋，背向镜头，看着前方的城楼，城楼上写着\"邺城\"，背景是无数的杂兵。要能表现杂乱的战场气氛，以及突出关羽的志在必得的气势",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:26:46.424Z",
+    "updatedAt": "2025-11-19T08:26:46.424Z"
+  },
+  {
+    "id": "18d30bf1-8a77-4146-9013-2aa12e5cf429",
+    "prompt": "写实风格。左边一颗银杏树，右边一颗水杉树。背景为纯蓝色",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:28:38.833Z",
+    "updatedAt": "2025-11-19T08:28:38.833Z"
+  },
+  {
+    "id": "71178993-d79a-4cfd-9373-cf341c7f0897",
+    "prompt": "生成一个卡通风格的游戏图标，背景为透明，内容是一个盾牌，盾牌由互相遮挡的展开的翅膀组成，纯线条，无颜色，具有一定复杂华丽感。",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:29:57.009Z",
+    "updatedAt": "2025-11-19T08:29:57.009Z"
+  },
+  {
+    "id": "57221b23-c7c2-4d47-8d50-e0cb56fa7bd9",
+    "prompt": "生成一个Diablo 1 风格的火焰图。",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:30:22.391Z",
+    "updatedAt": "2025-11-19T08:30:22.391Z"
+  },
+  {
+    "id": "4e373e12-9eb4-4f9c-8785-2e50066aa812",
+    "prompt": "一个写实风格的洛天依的假发，不需要其他元素，只有假发。背景透明。",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:31:06.429Z",
+    "updatedAt": "2025-11-19T08:31:06.429Z"
+  },
+  {
+    "id": "47b34efe-be29-4939-8dd3-0493a863b8b9",
+    "prompt": "一个粗糙度为0.5的干净光滑无锈的金属球，旁边是一个完全光滑的金属球，再旁边是一段红砖墙，主要展示材质特点，背景为空",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:32:45.045Z",
+    "updatedAt": "2025-11-19T08:32:45.045Z"
+  },
+  {
+    "id": "72e20cb5-ae48-427f-aacd-a0710a0f187c",
+    "prompt": "给\"人类深空先遣队\",设计一个icon，白底，简洁抽象",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:35:48.454Z",
+    "updatedAt": "2025-11-19T08:35:48.454Z"
+  },
+  {
+    "id": "02d571d3-938d-4533-91ba-ab76862cbee9",
+    "prompt": "生成一个宫崎骏风格的全景环境图，天上有浓密的云彩，地面是麦地，要有准确的变形，适合放到天空球上。",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:37:48.271Z",
+    "updatedAt": "2025-11-19T08:37:48.271Z"
+  },
+  {
+    "id": "45987e36-c4ca-4401-8ba1-de9fb93532d1",
+    "prompt": "生成一个标准的，符合历史的秦朝士兵站立图，无背景。",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:38:43.054Z",
+    "updatedAt": "2025-11-19T08:38:43.054Z"
+  },
+  {
+    "id": "55e6fd63-d088-4aae-a52b-04e759e499cc",
+    "prompt": "生成一个用于UI的图标元素，表示开始游戏，上面的文字是“开始”， 材质是玉石，背景透明。",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:39:51.262Z",
+    "updatedAt": "2025-11-19T08:39:51.262Z"
+  },
+  {
+    "id": "d6f09af0-d801-4afd-b1df-4ef3804f5b4c",
+    "prompt": "在漆黑的房间中有一张桌子，桌子上摆了四个白色的方块，方块中间有一个蜡烛，照亮部分场景，偏俯视的视角，UE渲染效果。",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:41:36.936Z",
+    "updatedAt": "2025-11-19T08:41:36.936Z"
+  },
+  {
+    "id": "a62e60ad-1eb7-48b4-874b-eba52ea180fc",
+    "prompt": "游戏设计用，一个白发少女，绿瞳，高马尾，左腿为赛博义肢，右大腿有兰花纹身。并列两个，左边一个无衣装，右边的是一个着日式和服风格的短裙，白色，红边。注意是相同的角色相同的动作。",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:53:18.568Z",
+    "updatedAt": "2025-11-19T08:53:18.568Z"
+  },
+  {
+    "id": "eb1c7a11-2415-4a6a-963d-1d2aac46caa3",
+    "prompt": "游戏用，一把旧的中式宝剑，刀鞘覆皮革，有复杂的铜制包边纹饰，并且刻金色小篆:\"人民创造历史\"",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:56:53.597Z",
+    "updatedAt": "2025-11-19T08:56:53.597Z"
+  },
+  {
+    "id": "cd122d0a-1c7b-47a9-913f-326cada61b34",
+    "prompt": "一个卡通少年角色，右手拎着一个黄鼠狼，由于被熏而捂鼻并表情夸张",
+    "dimensionIds": [
+      "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e",
+      "f55c6293-a0cd-4db1-8189-27f632f056ae",
+      "ee401df5-6aae-43d6-9297-ae6575678299",
+      "a73037d6-9532-4f69-88ce-3376d0fc983a"
+    ],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-19T08:58:55.668Z",
+    "updatedAt": "2025-11-19T09:47:19.874Z"
   }
 ]
