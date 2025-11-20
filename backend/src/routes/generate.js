@@ -10,6 +10,9 @@ const router = express.Router();
 
 const UPLOAD_DIR = path.resolve(__dirname, '../../uploads/eval-images');
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
+const MODELS_FILE = path.resolve(__dirname, '../../data/models.json');
+const { readJson } = require('../utils/jsonStore');
+const googleDriver = require('../services/modelDrivers/google');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -20,7 +23,18 @@ router.post('/', upload.any(), async (req, res, next) => {
     if (!GOOGLE_API_KEY) return res.status(500).json({ error: 'missing_api_key', message: 'Set GOOGLE_API_KEY in environment' });
 
     // 仅使用 GoogleGenAI SDK：统一使用 generateContent
-    const imagesModel = modelName || 'gemini-2.5-flash-image';
+    // 解析模型：支持传 modelId（优先），兼容 modelName（后备）
+    const models = await readJson(MODELS_FILE).catch(() => []);
+    let selected = null;
+    if (req.body && req.body.modelId) {
+      selected = models.find(m => m.id === req.body.modelId);
+    }
+    if (!selected && modelName) {
+      selected = models.find(m => (m.options && m.options.model) === modelName);
+    }
+    if (!selected) {
+      selected = models[0] || { id: 'google_gemini_image', driver: 'google', options: { model: 'gemini-2.5-flash-image' } };
+    }
 
     // 调试信息：代理、模型、数量、掩码后的 key
     const httpsProxy = process.env.HTTPS_PROXY || '';
@@ -29,7 +43,9 @@ router.post('/', upload.any(), async (req, res, next) => {
     console.log('[generate] proxy:', { HTTPS_PROXY: httpsProxy || null, HTTP_PROXY: httpProxy || null });
     // eslint-disable-next-line no-console
     console.log('[generate] request:', {
-      model: imagesModel,
+      modelId: selected.id,
+      driver: selected.driver,
+      model: selected.options?.model,
       prompt,
       apiKey: maskKey(GOOGLE_API_KEY)
     });
@@ -59,7 +75,22 @@ router.post('/', upload.any(), async (req, res, next) => {
     for (let p of pathCandidates) {
       try {
         if (!p) continue;
-        let rel = String(p).replace(/\\/g, '/');
+        const raw = String(p).trim();
+        // 远程 URL
+        if (/^https?:\/\//i.test(raw)) {
+          const resp = await fetch(raw);
+          if (!resp.ok) throw new Error(`fetch_failed: ${resp.status}`);
+          const ab = await resp.arrayBuffer();
+          const buf = Buffer.from(ab);
+          const ct = resp.headers.get('content-type') || 'image/png';
+          inputImages.push({
+            dataBase64: buf.toString('base64'),
+            mimeType: ct
+          });
+          continue;
+        }
+        // 本地 uploads 路径
+        let rel = raw.replace(/\\/g, '/');
         if (rel.startsWith('/')) rel = rel.slice(1);
         if (!rel.startsWith('uploads/')) rel = `uploads/${rel}`;
         const abs = path.resolve(path.join(__dirname, '../..', rel));
@@ -78,12 +109,22 @@ router.post('/', upload.any(), async (req, res, next) => {
     console.log('[generate] input images:', inputImages.length);
 
     try {
-      const { dataBase64, mimeType } = await callGoogleGenerateContentSDK({
-        apiKey: GOOGLE_API_KEY,
-        model: imagesModel,
-        prompt,
-        images: inputImages
-      });
+      let dataBase64 = null;
+      let mimeType = null;
+      if (selected.driver === 'google') {
+        const out = await googleDriver.generate({
+          apiKey: GOOGLE_API_KEY,
+          model: selected.options?.model || 'gemini-2.5-flash-image',
+          prompt,
+          images: inputImages
+        });
+        dataBase64 = out?.dataBase64;
+        mimeType = out?.mimeType;
+      } else {
+        const err = new Error(`unsupported_driver: ${selected.driver}`);
+        err.code = 'UNSUPPORTED_DRIVER';
+        throw err;
+      }
       if (!dataBase64) {
         return res.status(500).json({ error: 'no_image_returned' });
       }
@@ -125,46 +166,7 @@ router.post('/', upload.any(), async (req, res, next) => {
   }
 });
 
-async function callGoogleGenerateContentSDK({ apiKey, model, prompt, images }) {
-  // 动态引入，避免未安装时报错
-  let GoogleGenAI;
-  try {
-    // eslint-disable-next-line global-require
-    ({ GoogleGenAI } = require('@google/genai'));
-  } catch (e) {
-    throw new Error('sdk_not_available');
-  }
-  const ai = new GoogleGenAI({ apiKey });
-  const parts = [];
-  const imgs = Array.isArray(images) ? images : [];
-  for (const img of imgs) {
-    if (!img?.dataBase64) continue;
-    parts.push({
-      inlineData: {
-        data: img.dataBase64,
-        mimeType: img.mimeType || 'image/png'
-      }
-    });
-  }
-  parts.push({ text: prompt });
-  const response = await ai.models.generateContent({ model, contents: [{ role: 'user', parts }] });
-  // 提取 inlineData
-  try {
-    const candidates = response?.candidates || [];
-    for (const c of candidates) {
-      const parts = c?.content?.parts || [];
-      for (const p of parts) {
-        if (p?.inlineData?.data) {
-          return { dataBase64: p.inlineData.data, mimeType: p.inlineData.mimeType || 'image/png' };
-        }
-        if (p?.inline_data?.data) {
-          return { dataBase64: p.inline_data.data, mimeType: p.inline_data.mime_type || 'image/png' };
-        }
-      }
-    }
-  } catch {}
-  return { dataBase64: null, mimeType: null };
-}
+// 移除内联 Google 生成函数，改由驱动实现
 
 function maskKey(key) {
   if (!key || typeof key !== 'string') return null;

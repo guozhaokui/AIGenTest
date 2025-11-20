@@ -1,0 +1,11 @@
+[
+  {
+    "id": "google_gemini_image",
+    "name": "Gemini 2.5 Image",
+    "driver": "google",
+    "options": {
+      "model": "gemini-2.5-flash-image"
+    }
+  }
+]
+

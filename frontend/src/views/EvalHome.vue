@@ -7,7 +7,10 @@
         <el-select v-model="selectedSetId" placeholder="请选择试题集" :disabled="started" style="min-width:320px;">
           <el-option v-for="s in questionSets" :key="s.id" :label="s.name" :value="s.id" />
         </el-select>
-        <el-input v-model="modelName" placeholder="模型名称（可选）" :disabled="started" style="width:220px;" />
+        <el-select v-model="selectedModelId" placeholder="选择模型" :disabled="started" style="min-width:240px;">
+          <el-option v-for="m in models" :key="m.id" :label="m.name" :value="m.id" />
+        </el-select>
+        <el-input v-model="modelName" placeholder="自定义模型名（可选）" :disabled="started" style="width:220px;" />
         <el-input v-model="runName" placeholder="评估名称（必填）" :disabled="started" style="width:220px;" />
         <el-input v-model="runDesc" placeholder="评估描述（可选）" :disabled="started" style="width:260px;" />
         <el-button type="primary" :disabled="!selectedSetId || started" @click="start">开始评估</el-button>
@@ -41,7 +44,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import EvaluationPanel from '../components/EvaluationPanel.vue';
-import { listDimensions, listQuestions, listQuestionsPaged, listQuestionSets, addRunItem, startRun, finishRun, getRun, getRunItems } from '../services/api';
+import { listDimensions, listQuestions, listQuestionsPaged, listQuestionSets, addRunItem, startRun, finishRun, getRun, getRunItems, listModels } from '../services/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -51,6 +54,8 @@ const questions = ref([]);
 const questionSets = ref([]);
 const selectedSetId = ref('');
 const modelName = ref('');
+const models = ref([]);
+const selectedModelId = ref('');
 const runName = ref('');
 const runDesc = ref('');
 const overallComment = ref('');
@@ -69,6 +74,8 @@ async function init() {
   try {
     dimensions.value = await listDimensions();
     questionSets.value = await listQuestionSets();
+    models.value = await listModels();
+    if (models.value.length && !selectedModelId.value) selectedModelId.value = models.value[0].id;
     // 支持从历史进入继续/重新评估：?runId=xxx
     const rid = route.query.runId;
     if (typeof rid === 'string' && rid) {
@@ -114,6 +121,7 @@ async function loadSetQuestions() {
       title: q.title ?? '试题',
       prompt: q.prompt,
       imageUrls: Array.isArray(q.imageUrls) ? q.imageUrls : [],
+      modelId: selectedModelId.value || '',
       dimensionIds: Array.isArray(q.dimensionIds) ? q.dimensionIds : [],
       dimensionNames: (q.dimensionIds || []).map(id => {
         const d = dimensions.value.find(x => x.id === id);
@@ -130,7 +138,13 @@ async function start() {
   if (!selectedSetId.value) return ElMessage.warning('请先选择试题集');
   if (!runName.value.trim()) return ElMessage.warning('请填写评估名称');
   try {
-    const run = await startRun({ modelName: modelName.value, questionSetId: selectedSetId.value, runName: runName.value, runDesc: runDesc.value });
+    const chosen = models.value.find(m => m.id === selectedModelId.value);
+    const run = await startRun({
+      modelName: modelName.value || (chosen ? chosen.name : ''),
+      questionSetId: selectedSetId.value,
+      runName: runName.value,
+      runDesc: runDesc.value
+    });
     runId.value = run.id;
     started.value = true;
     finished.value = false;

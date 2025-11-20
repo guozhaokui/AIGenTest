@@ -61,8 +61,12 @@ export default {
       try {
         genLoading.value = { ...genLoading.value, [q.id]: true };
         // 传入题目自带的图片用于单图/多图编辑
-        const paths = Array.isArray(q.imageUrls) ? q.imageUrls.filter(Boolean).map(p => normalizeUploadUrl(p)) : [];
-        const { imagePath } = await generateImage({ prompt: q.prompt, modelName: props.modelName, questionId: q.id, imagePaths: paths });
+        // 注意：发送给后端时不要规范化为 /uploads/...，以便支持 http(s) 外链
+        const paths = Array.isArray(q.imageUrls) ? q.imageUrls.filter(Boolean).map(p => String(p)) : [];
+        const payload = { prompt: q.prompt, questionId: q.id, imagePaths: paths };
+        if (q.modelId) payload.modelId = q.modelId;
+        if (props.modelName) payload.modelName = props.modelName;
+        const { imagePath } = await generateImage(payload);
         // 后端已返回形如 '/uploads/...' 的公共路径，这里仅做兜底规范化
         let publicUrl = (imagePath || '').split('\\').join('/');
         if (!publicUrl.startsWith('/')) publicUrl = '/' + publicUrl;

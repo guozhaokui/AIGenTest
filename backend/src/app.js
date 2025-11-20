@@ -40,6 +40,7 @@ const evaluations = require('./routes/evaluations');
 const questionSets = require('./routes/question-sets');
 const runs = require('./routes/runs');
 const generate = require('./routes/generate');
+const models = require('./routes/models');
 
 app.use('/api/dimensions', dimensions);
 app.use('/api/questions', questions);
@@ -48,6 +49,7 @@ app.use('/api/evaluations', evaluations);
 app.use('/api/question-sets', questionSets);
 app.use('/api/runs', runs);
 app.use('/api/generate', generate);
+app.use('/api/models', models);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
