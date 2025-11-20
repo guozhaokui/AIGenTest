@@ -18,8 +18,12 @@
             <el-table-column label="已答题数" width="120">
               <template #default="{ row }">{{ counts[row.id] ?? '-' }}</template>
             </el-table-column>
-            <el-table-column prop="startedAt" label="开始时间" width="220" />
-            <el-table-column prop="endedAt" label="结束时间" width="220" />
+            <el-table-column label="开始时间" width="220">
+              <template #default="{ row }">{{ formatTime(row.startedAt) }}</template>
+            </el-table-column>
+            <el-table-column label="结束时间" width="220">
+              <template #default="{ row }">{{ formatTime(row.endedAt) }}</template>
+            </el-table-column>
             <el-table-column label="操作" width="140">
               <template #default="{ row }">
                 <el-button v-if="(counts[row.id] || 0) === 0" size="small" type="danger" @click.stop="removeRun(row)">删除</el-button>
@@ -63,7 +67,7 @@
                 <el-tag v-for="(v,k) in currentItem.scoresByDimension || {}" :key="k" size="small" style="margin-right:6px;">{{ dimNameForItem(k, currentItem) }}: {{ v }}</el-tag>
               </div>
               <p><b>主观评价：</b>{{ currentItem.comment || '-' }}</p>
-              <p style="color:#999;">{{ currentItem.createdAt }}</p>
+              <p style="color:#999;">{{ formatTime(currentItem.createdAt) }}</p>
             </el-card>
             <div style="display:flex; gap:8px; margin-top:8px;">
               <el-button :disabled="currentIndex===0" @click="prev">上一题</el-button>
@@ -122,6 +126,20 @@ function dimNameForItem(id, item) {
 function setName(id) {
   const s = questionSets.value.find(x => x.id === id);
   return s ? s.name : id;
+}
+function formatTime(value) {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return value;
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
 }
 
 async function loadAll() {

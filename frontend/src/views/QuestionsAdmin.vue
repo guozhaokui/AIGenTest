@@ -10,7 +10,9 @@
       <el-table :data="items" size="small" style="width:100%;" v-loading="loading">
         <el-table-column prop="id" label="ID" width="260" />
         <el-table-column prop="prompt" label="提示词" />
-        <el-table-column prop="updatedAt" label="更新时间" width="200" />
+        <el-table-column label="更新时间" width="200">
+          <template #default="{ row }">{{ formatTime(row.updatedAt) }}</template>
+        </el-table-column>
         <el-table-column label="操作" width="240">
           <template #default="{ row }">
             <el-button size="small" @click="openEdit(row)">编辑</el-button>
@@ -144,6 +146,21 @@ onMounted(async () => {
   } catch {}
   fetchList();
 });
+
+function formatTime(value) {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return value;
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
+}
 </script>
 
 

@@ -39,7 +39,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="200" />
+        <el-table-column label="创建时间" width="200">
+          <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
+        </el-table-column>
       </el-table>
       <div style="display:flex; justify-content:flex-end; margin-top:12px;">
         <el-pagination
@@ -89,6 +91,20 @@ function onPageChange(p) {
 function onSizeChange(s) {
   pageSize.value = s;
   page.value = 1;
+}
+function formatTime(value) {
+  if (!value) return '-';
+  const d = new Date(value);
+  if (isNaN(d.getTime())) return value;
+  return d.toLocaleString(undefined, {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  });
 }
 async function fetchAll() {
   try {
