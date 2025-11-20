@@ -1,0 +1,39 @@
+[
+  {
+    "id": "290ce9cb-78c8-479a-ac33-5acb7dcc42f5",
+    "runId": "run_20251120020518_zf4b",
+    "questionId": "4d0e6066-c6a4-418c-8eed-8f82d0f9b8d6",
+    "generatedImagePath": "/uploads/eval-images/3a/fe/3afe39af6928d0279d5dd33cce328791.png",
+    "scoresByDimension": {
+      "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": 0,
+      "c8fb6061-e268-45cb-af19-7094e66801fa": 0,
+      "879a2bab-cfa1-49c9-bd5b-b0ee4a049b6f": 0,
+      "a73037d6-9532-4f69-88ce-3376d0fc983a": 0,
+      "7757859e-0835-41d7-9814-514724460210": 0,
+      "f543bd5e-7130-42d5-ad79-4cfcd14f8468": 0,
+      "f55c6293-a0cd-4db1-8189-27f632f056ae": 0,
+      "1a2832be-bd88-408d-ac51-1174f96328a1": 0,
+      "ee401df5-6aae-43d6-9297-ae6575678299": 0,
+      "1b9889aa-37cc-44c6-9ca9-d927be14aaa9": 0,
+      "69edf6b9-3e5e-43fc-8fe8-941985938949": 0,
+      "c0d498b6-77cc-48bc-9b36-a21cfc499168": 0
+    },
+    "comment": "",
+    "createdAt": "2025-11-20T02:06:19.868Z",
+    "questionSnapshot": {
+      "id": "4d0e6066-c6a4-418c-8eed-8f82d0f9b8d6",
+      "prompt": "生成一个2d序列帧动画，用8帧表示一个带着头盔，手拿砍刀的骷髅战士的行走动画",
+      "dimensionIds": [
+        "c0d498b6-77cc-48bc-9b36-a21cfc499168",
+        "7757859e-0835-41d7-9814-514724460210",
+        "1b9889aa-37cc-44c6-9ca9-d927be14aaa9"
+      ],
+      "scoringRule": "",
+      "dimNameMap": {
+        "c0d498b6-77cc-48bc-9b36-a21cfc499168": "跟随性",
+        "7757859e-0835-41d7-9814-514724460210": "人体",
+        "1b9889aa-37cc-44c6-9ca9-d927be14aaa9": "游戏资产"
+      }
+    }
+  }
+]

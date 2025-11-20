@@ -97,6 +97,9 @@ export function getRunItems(runId) {
 export function cloneRun(runId, payload) {
   return api.post(`/runs/${runId}/clone`, payload).then(r => r.data);
 }
+export function deleteRun(runId) {
+  return api.delete(`/runs/${runId}`).then(r => r.data);
+}
 
 // Generate image
 export function generateImage(payload) {

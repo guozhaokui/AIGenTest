@@ -1,0 +1,28 @@
+{
+  "id": "run_20251119101424_8c1e",
+  "modelName": "",
+  "questionSetId": "set_202511190823",
+  "runName": "得到",
+  "runDesc": "",
+  "itemIds": [
+    "49f5d9b9-e59d-4352-846e-8ab9ac991c5d"
+  ],
+  "totalScore": 1,
+  "dimensionScores": {
+    "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": 1,
+    "c8fb6061-e268-45cb-af19-7094e66801fa": 1,
+    "879a2bab-cfa1-49c9-bd5b-b0ee4a049b6f": 1,
+    "a73037d6-9532-4f69-88ce-3376d0fc983a": 1,
+    "7757859e-0835-41d7-9814-514724460210": 1,
+    "f543bd5e-7130-42d5-ad79-4cfcd14f8468": 1,
+    "f55c6293-a0cd-4db1-8189-27f632f056ae": 1,
+    "1a2832be-bd88-408d-ac51-1174f96328a1": 1,
+    "ee401df5-6aae-43d6-9297-ae6575678299": 1,
+    "1b9889aa-37cc-44c6-9ca9-d927be14aaa9": 1,
+    "69edf6b9-3e5e-43fc-8fe8-941985938949": 1,
+    "c0d498b6-77cc-48bc-9b36-a21cfc499168": 1
+  },
+  "startedAt": "2025-11-19T10:14:24.552Z",
+  "endedAt": "2025-11-19T10:15:55.721Z",
+  "overallComment": ""
+}

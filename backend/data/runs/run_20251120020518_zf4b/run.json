@@ -1,0 +1,15 @@
+{
+  "id": "run_20251120020518_zf4b",
+  "modelName": "",
+  "questionSetId": "set_202511190823",
+  "runName": "序列帧",
+  "runDesc": "",
+  "itemIds": [
+    "290ce9cb-78c8-479a-ac33-5acb7dcc42f5"
+  ],
+  "totalScore": 0,
+  "dimensionScores": {},
+  "startedAt": "2025-11-20T02:05:18.508Z",
+  "endedAt": "2025-11-20T02:06:13.980Z",
+  "overallComment": ""
+}

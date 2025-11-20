@@ -1,0 +1,32 @@
+[
+  {
+    "id": "c4326482-e14a-4bfd-ac79-e7f369f20632",
+    "runId": "run_20251119080504_bfnv",
+    "questionId": "bae56a4a-f191-40a0-994c-9f6b21a0ee59",
+    "generatedImagePath": null,
+    "scoresByDimension": {
+      "dim_composition": 1,
+      "dim_lighting": 1,
+      "dim_consistency": 1,
+      "dim_202511181148": 1,
+      "comment": ""
+    },
+    "comment": "",
+    "createdAt": "2025-11-19T08:05:15.158Z"
+  },
+  {
+    "id": "f0c18bc1-cb06-48b4-8fa7-89bd5d6de1cb",
+    "runId": "run_20251119080504_bfnv",
+    "questionId": "9cd78946-2bb7-4687-b31f-45e49ee10893",
+    "generatedImagePath": "/uploads/eval-images/68/a9/68a922468e2cbc76aad9a8500f5fef17.png",
+    "scoresByDimension": {
+      "dim_composition": 4,
+      "dim_lighting": 4,
+      "dim_consistency": 0,
+      "dim_202511181148": 5,
+      "comment": "不错"
+    },
+    "comment": "",
+    "createdAt": "2025-11-19T08:07:24.512Z"
+  }
+]

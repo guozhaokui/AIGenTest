@@ -8,9 +8,23 @@
         <el-card header="批次列表">
           <el-table :data="runs" size="small" @row-click="selectRun" style="width:100%;" v-loading="loading">
             <el-table-column prop="id" label="ID" />
-            <el-table-column prop="runName" label="名称" width="200" />
+            <el-table-column prop="runName" label="名称" width="220" />
+            <el-table-column label="试题集" width="220">
+              <template #default="{ row }">{{ setName(row.questionSetId) }}</template>
+            </el-table-column>
+            <el-table-column label="总分" width="120">
+              <template #default="{ row }">{{ scores[row.id] ?? '-' }}</template>
+            </el-table-column>
+            <el-table-column label="已答题数" width="120">
+              <template #default="{ row }">{{ counts[row.id] ?? '-' }}</template>
+            </el-table-column>
             <el-table-column prop="startedAt" label="开始时间" width="220" />
             <el-table-column prop="endedAt" label="结束时间" width="220" />
+            <el-table-column label="操作" width="140">
+              <template #default="{ row }">
+                <el-button v-if="(counts[row.id] || 0) === 0" size="small" type="danger" @click.stop="removeRun(row)">删除</el-button>
+              </template>
+            </el-table-column>
           </el-table>
         </el-card>
       </el-col>
@@ -65,18 +79,21 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
-import { listRuns, getRun, getRunItems, listQuestions, listDimensions, cloneRun } from '../services/api';
+import { listRuns, getRun, getRunItems, listQuestions, listDimensions, cloneRun, listQuestionSets, deleteRun } from '../services/api';
 import { useRouter } from 'vue-router';
 
 const runs = ref([]);
 const questions = ref([]);
 const dimensions = ref([]);
+const questionSets = ref([]);
 const loading = ref(false);
 const currentRun = ref(null);
 const items = ref([]);
 const currentIndex = ref(0);
 const currentItem = computed(() => items.value[currentIndex.value] || {});
 const progressText = computed(() => items.value.length ? `进度：${currentIndex.value + 1} / ${items.value.length}` : '');
+const counts = ref({}); // runId -> answered count
+const scores = ref({}); // runId -> totalScore
 
 function normalize(p) {
   let url = (p || '').replace(/\\/g, '/');
@@ -102,6 +119,10 @@ function dimNameForItem(id, item) {
   if (map && map[id]) return map[id];
   return dimName(id);
 }
+function setName(id) {
+  const s = questionSets.value.find(x => x.id === id);
+  return s ? s.name : id;
+}
 
 async function loadAll() {
   try {
@@ -109,6 +130,20 @@ async function loadAll() {
     runs.value = await listRuns();
     questions.value = await listQuestions();
     dimensions.value = await listDimensions();
+    questionSets.value = await listQuestionSets();
+    // 异步拉取每个批次的条目与总分
+    for (const r of runs.value) {
+      // 获取 run 元数据（带 totalScore）
+      try {
+        const meta = await getRun(r.id);
+        scores.value[r.id] = meta?.totalScore ?? undefined;
+      } catch {}
+      // 获取 items 计数
+      try {
+        const its = await getRunItems(r.id);
+        counts.value[r.id] = Array.isArray(its) ? its.length : 0;
+      } catch {}
+    }
   } catch (e) {
     ElMessage.error('加载失败');
   } finally {
@@ -150,6 +185,18 @@ async function retry() {
     router.push({ path: '/eval/start', query: { runId: newRun.id } });
   } catch (e) {
     ElMessage.error('重新评估失败');
+  }
+}
+
+async function removeRun(row) {
+  try {
+    await deleteRun(row.id);
+    runs.value = runs.value.filter(r => r.id !== row.id);
+    delete counts.value[row.id];
+    delete scores.value[row.id];
+    ElMessage.success('已删除');
+  } catch (e) {
+    ElMessage.error('删除失败');
   }
 }
 </script>

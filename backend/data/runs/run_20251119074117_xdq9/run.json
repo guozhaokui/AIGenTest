@@ -1,0 +1,20 @@
+{
+  "id": "run_20251119074117_xdq9",
+  "modelName": "",
+  "questionSetId": "set_202511181143",
+  "runName": "测试1",
+  "runDesc": "",
+  "itemIds": [
+    "c6843fe9-0b13-4add-a978-fe2a3a855e5e"
+  ],
+  "totalScore": 1.2,
+  "dimensionScores": {
+    "dim_composition": 1,
+    "dim_lighting": 1,
+    "dim_consistency": 2,
+    "dim_202511181148": 2,
+    "comment": 0
+  },
+  "startedAt": "2025-11-19T07:41:17.841Z",
+  "endedAt": "2025-11-19T07:41:57.856Z"
+}

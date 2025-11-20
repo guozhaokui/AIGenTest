@@ -1,0 +1,33 @@
+{
+  "id": "run_20251119085926_ozzl",
+  "modelName": "",
+  "questionSetId": "set_202511190823",
+  "runName": "第一次测试",
+  "runDesc": "",
+  "itemIds": [
+    "0fc04e48-daa7-4743-bd89-0a68f739f38e",
+    "ee784f20-ef47-47ed-807e-bf545b7b889c",
+    "15691d5d-084b-4559-89f0-aa1df30730d5",
+    "6f5edccb-ff81-446b-ad40-d15652bcbd65",
+    "c2b3c550-6365-4220-97d3-8ceb3c12ae2b",
+    "cdbc0afd-f547-43e6-9729-a5ce9e612a86",
+    "93073bb2-8555-4bfd-8ef9-1ee030459292",
+    "607d46c1-0cbe-4e71-b237-152daacb78a1",
+    "b5e1238e-612b-4e53-b8b4-698ad3b99581",
+    "5d4fdb50-ab0d-4788-8c87-6321a17e27fb",
+    "3cf738ae-cffc-4e2c-a744-95995fc3718d",
+    "4ca82ddd-5862-46be-b75c-d3414576a663",
+    "e88cdbe1-c395-412e-8702-6e5a0609d5b6",
+    "352470f6-9a0f-43fa-b10d-8f49e463e466"
+  ],
+  "totalScore": 1.928,
+  "dimensionScores": {
+    "dim_composition": 1.714,
+    "dim_lighting": 2.071,
+    "dim_consistency": 1.857,
+    "dim_202511181148": 2.071
+  },
+  "startedAt": "2025-11-19T08:59:26.259Z",
+  "endedAt": "2025-11-19T09:13:27.084Z",
+  "overallComment": "试试"
+}

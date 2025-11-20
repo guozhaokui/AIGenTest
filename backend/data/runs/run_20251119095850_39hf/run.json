@@ -1,0 +1,41 @@
+{
+  "id": "run_20251119095850_39hf",
+  "modelName": "",
+  "questionSetId": "set_202511190823",
+  "runName": "第一次测试_retry是",
+  "runDesc": "",
+  "itemIds": [
+    "b4f87e72-2525-4985-87ac-5201b68d3dcb",
+    "5b9ffaad-a735-49ed-8106-29093f1e0d8f",
+    "99cf30ad-19d9-4065-890c-94d45572cbcc",
+    "2b15ae2c-b75f-4a40-a560-1de601ab86d2",
+    "01ad1aaa-29e6-49bb-a970-168649e3b944",
+    "f3daffe0-1ad1-4cfb-9dd1-3b81fb0c473a",
+    "32a071bc-bfe5-43a3-941e-ea1747960b76",
+    "e9ce7601-1395-45cb-9974-ba0c26644f7d",
+    "7f780d00-2cac-4b9c-8712-b08504c5ec46",
+    "9ad15459-758f-4473-ac38-beacf6b43cbe",
+    "7a18b3df-aee5-4c1d-942e-93a632e50226",
+    "62c7d8e9-823d-4a77-8214-f975408d4434",
+    "e634e3c7-1bd4-46e7-b576-3e2f89a6e579",
+    "51b21fb8-a5ba-48c6-bd50-5857431c767a"
+  ],
+  "totalScore": 0,
+  "dimensionScores": {
+    "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": 0,
+    "c8fb6061-e268-45cb-af19-7094e66801fa": 0,
+    "879a2bab-cfa1-49c9-bd5b-b0ee4a049b6f": 0,
+    "a73037d6-9532-4f69-88ce-3376d0fc983a": 0,
+    "7757859e-0835-41d7-9814-514724460210": 0,
+    "f543bd5e-7130-42d5-ad79-4cfcd14f8468": 0,
+    "f55c6293-a0cd-4db1-8189-27f632f056ae": 0,
+    "1a2832be-bd88-408d-ac51-1174f96328a1": 0,
+    "ee401df5-6aae-43d6-9297-ae6575678299": 0,
+    "1b9889aa-37cc-44c6-9ca9-d927be14aaa9": 0,
+    "69edf6b9-3e5e-43fc-8fe8-941985938949": 0,
+    "c0d498b6-77cc-48bc-9b36-a21cfc499168": 0
+  },
+  "startedAt": "2025-11-19T09:58:50.368Z",
+  "endedAt": "2025-11-19T09:59:22.162Z",
+  "overallComment": "试试11"
+}

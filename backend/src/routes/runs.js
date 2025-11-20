@@ -196,6 +196,20 @@ router.get('/:runId/items', async (req, res, next) => {
   }
 });
 
+// 删除某次运行（删除目录）
+router.delete('/:runId', async (req, res, next) => {
+  try {
+    const { runId } = req.params;
+    const dir = path.join(BASE_DIR, runId);
+    // 仅允许删除 BASE_DIR 下的子目录
+    if (!dir.startsWith(BASE_DIR)) return res.status(400).json({ error: 'invalid_path' });
+    await fs.rm(dir, { recursive: true, force: true });
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // 克隆某次运行（重新评估用）
 router.post('/:runId/clone', async (req, res, next) => {
   try {
