@@ -189,5 +189,29 @@
     "exampleIds": [],
     "createdAt": "2025-11-20T02:02:29.253Z",
     "updatedAt": "2025-11-20T02:04:55.596Z"
+  },
+  {
+    "id": "320bfab8-9243-4111-bda2-ca080a3fbfa4",
+    "prompt": "第一题",
+    "dimensionIds": [
+      "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e",
+      "c8fb6061-e268-45cb-af19-7094e66801fa"
+    ],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-20T02:47:48.554Z",
+    "updatedAt": "2025-11-20T02:47:48.554Z"
+  },
+  {
+    "id": "9bd0eb69-5231-40e3-8eb5-9b4d648b5275",
+    "prompt": "第二题",
+    "dimensionIds": [
+      "f55c6293-a0cd-4db1-8189-27f632f056ae",
+      "1a2832be-bd88-408d-ac51-1174f96328a1"
+    ],
+    "scoringRule": "",
+    "exampleIds": [],
+    "createdAt": "2025-11-20T02:48:03.034Z",
+    "updatedAt": "2025-11-20T02:48:03.034Z"
   }
 ]

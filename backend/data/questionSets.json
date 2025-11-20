@@ -52,5 +52,17 @@
     ],
     "createdAt": "2025-11-19T08:23:19.879Z",
     "updatedAt": "2025-11-20T02:05:00.405Z"
+  },
+  {
+    "id": "set_202511200247",
+    "name": "测试得分计算",
+    "description": "",
+    "dimensionIds": [],
+    "questionIds": [
+      "320bfab8-9243-4111-bda2-ca080a3fbfa4",
+      "9bd0eb69-5231-40e3-8eb5-9b4d648b5275"
+    ],
+    "createdAt": "2025-11-20T02:47:35.531Z",
+    "updatedAt": "2025-11-20T02:48:05.781Z"
   }
 ]

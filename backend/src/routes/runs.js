@@ -120,24 +120,54 @@ router.post('/:runId/finish', async (req, res, next) => {
     const runDir = path.join(BASE_DIR, runId);
     const itemsFile = path.join(runDir, 'items.json');
     const runFile = path.join(runDir, 'run.json');
+    const QUESTION_SETS_FILE = path.resolve(__dirname, '../../data/questionSets.json');
+
     const items = await readJson(itemsFile);
-    const dimTotals = {};
-    let count = 0;
+    const meta = await readJson(runFile);
+
+    // 维度累计总分（不做平均）
+    const dimSums = {};
     for (const it of items) {
       const scores = it.scoresByDimension || {};
       for (const [dimId, score] of Object.entries(scores)) {
-        if (!dimTotals[dimId]) dimTotals[dimId] = { sum: 0, n: 0 };
-        dimTotals[dimId].sum += Number(score) || 0;
-        dimTotals[dimId].n += 1;
-        count += 1;
+        if (!dimSums[dimId]) dimSums[dimId] = 0;
+        dimSums[dimId] += Number(score) || 0;
       }
     }
-    const dimensionScores = {};
-    for (const [dimId, { sum, n }] of Object.entries(dimTotals)) {
-      dimensionScores[dimId] = n ? Number((sum / n).toFixed(3)) : 0;
+
+    // 题目总数：优先取试题集的题目数，其次取已记录的条目数
+    let totalQuestions = Array.isArray(items) ? items.length : 0;
+    let dimensionUniverse = Object.keys(dimSums);
+    try {
+      if (meta?.questionSetId) {
+        const sets = await readJson(QUESTION_SETS_FILE);
+        const found = (sets || []).find(s => s.id === meta.questionSetId);
+        if (found) {
+          const qs = Array.isArray(found.questionIds) ? found.questionIds.length : 0;
+          if (qs > 0) totalQuestions = qs;
+          if (Array.isArray(found.dimensionIds) && found.dimensionIds.length) {
+            dimensionUniverse = found.dimensionIds;
+          }
+        }
+      }
+    } catch {
+      // ignore errors, fall back to items/dimSums
     }
-    const totalScore = count ? Number((Object.values(dimensionScores).reduce((a, b) => a + b, 0) / Object.keys(dimensionScores).length).toFixed(3)) : 0;
-    const meta = await readJson(runFile);
+
+    // 维度分 = 维度总分 / 总题目
+    const dimensionScores = {};
+    const denom = totalQuestions > 0 ? totalQuestions : 1; // 防止除0
+    for (const dimId of dimensionUniverse) {
+      const sum = dimSums[dimId] || 0;
+      dimensionScores[dimId] = Number((sum / denom).toFixed(3));
+    }
+
+    // 总分 = 维度分之和 / 维度总数（使用参与本次试题集的维度）
+    const dimCount = dimensionUniverse.length || Object.keys(dimensionScores).length;
+    const totalScore = dimCount
+      ? Number((Object.values(dimensionScores).reduce((a, b) => a + b, 0) / dimCount).toFixed(3))
+      : 0;
+
     meta.dimensionScores = dimensionScores;
     meta.totalScore = totalScore;
     meta.endedAt = new Date().toISOString();
