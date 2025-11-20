@@ -15,6 +15,8 @@
         <el-input v-model="runDesc" placeholder="评估描述（可选）" :disabled="started" style="width:260px;" />
         <el-button type="primary" :disabled="!selectedSetId || started" @click="start">开始评估</el-button>
         <el-button type="success" :disabled="!started || finished" @click="finish">结束本次</el-button>
+        <el-button type="warning" :disabled="!selectedSetId || autoRunning || finished" @click="autoEvaluate">自动评估（生成并保存全部）</el-button>
+        <el-progress v-if="autoRunning" :percentage="Math.round((autoIdx / Math.max(questions.length,1)) * 100)" style="width:240px;" />
       </div>
     </el-card>
 
@@ -44,7 +46,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import EvaluationPanel from '../components/EvaluationPanel.vue';
-import { listDimensions, listQuestions, listQuestionsPaged, listQuestionSets, addRunItem, startRun, finishRun, getRun, getRunItems, listModels } from '../services/api';
+import { listDimensions, listQuestions, listQuestionsPaged, listQuestionSets, addRunItem, startRun, finishRun, getRun, getRunItems, listModels, generateImage } from '../services/api';
 
 const route = useRoute();
 const router = useRouter();
@@ -69,6 +71,8 @@ const progressText = computed(() => {
   return `进度：${currentIndex.value + 1} / ${questions.value.length}`;
 });
 const initialImages = ref({});
+const autoRunning = ref(false);
+const autoIdx = ref(0);
 
 async function init() {
   try {
@@ -152,6 +156,86 @@ async function start() {
     await loadSetQuestions();
   } catch (e) {
     ElMessage.error('开始失败');
+  }
+}
+
+// 默认评分构造：按题目维度，若无则用试题集维度；分值为 0（-2..2 规则下的默认）
+function buildDefaultScores(q, set) {
+  const ids = (Array.isArray(q.dimensionIds) && q.dimensionIds.length)
+    ? q.dimensionIds
+    : (Array.isArray(set.dimensionIds) ? set.dimensionIds : []);
+  const m = {};
+  for (const id of ids) m[id] = 0;
+  return m;
+}
+
+// 自动评估：逐题生成并保存条目，最后结束本次
+async function autoEvaluate() {
+  if (!selectedSetId.value) return ElMessage.warning('请先选择试题集');
+  try {
+    autoRunning.value = true;
+    autoIdx.value = 0;
+
+    // 若题目尚未载入，先载入
+    if (!questions.value.length) {
+      await loadSetQuestions();
+    }
+    if (!questions.value.length) {
+      return ElMessage.warning('试题为空，请在试题集内添加题目');
+    }
+
+    // 若未开始则先创建 run
+    if (!started.value) {
+      const chosen = models.value.find(m => m.id === selectedModelId.value);
+      const run = await startRun({
+        modelName: modelName.value || (chosen ? chosen.name : ''),
+        questionSetId: selectedSetId.value,
+        runName: runName.value || 'AutoRun',
+        runDesc: runDesc.value || 'Auto generated'
+      });
+      runId.value = run.id;
+      started.value = true;
+      finished.value = false;
+    }
+
+    const set = questionSets.value.find(s => s.id === selectedSetId.value) || {};
+    for (let i = 0; i < questions.value.length; i += 1) {
+      const q = questions.value[i];
+      autoIdx.value = i;
+
+      const payload = {
+        prompt: q.prompt,
+        questionId: q.id,
+        imagePaths: Array.isArray(q.imageUrls) ? q.imageUrls.filter(Boolean) : []
+      };
+      if (selectedModelId.value) payload.modelId = selectedModelId.value;
+
+      let imagePath = null;
+      try {
+        const r = await generateImage(payload);
+        imagePath = r?.imagePath || null;
+      } catch (e) {
+        // 不中断，继续下一个
+        // console.error('auto generate failed:', e);
+      }
+
+      const scores = buildDefaultScores(q, set);
+      await addRunItem(runId.value, {
+        questionId: q.id,
+        generatedImagePath: imagePath,
+        scoresByDimension: scores,
+        comment: '[AUTO] 默认得分 0'
+      });
+    }
+
+    await finishRun(runId.value, { overallComment: '[AUTO] 已自动生成并保存全部题目，默认得分 0' });
+    finished.value = true;
+    ElMessage.success('自动评估完成');
+  } catch (e) {
+    ElMessage.error('自动评估失败');
+  } finally {
+    autoRunning.value = false;
+    autoIdx.value = questions.value.length;
   }
 }
 

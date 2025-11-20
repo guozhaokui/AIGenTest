@@ -192,7 +192,7 @@
   },
   {
     "id": "320bfab8-9243-4111-bda2-ca080a3fbfa4",
-    "prompt": "第一题",
+    "prompt": "生成一个带有星空外表的苹果",
     "dimensionIds": [
       "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e",
       "c8fb6061-e268-45cb-af19-7094e66801fa"
@@ -200,11 +200,12 @@
     "scoringRule": "",
     "exampleIds": [],
     "createdAt": "2025-11-20T02:47:48.554Z",
-    "updatedAt": "2025-11-20T02:47:48.554Z"
+    "updatedAt": "2025-11-20T06:59:26.084Z",
+    "imageUrls": []
   },
   {
     "id": "9bd0eb69-5231-40e3-8eb5-9b4d648b5275",
-    "prompt": "第二题",
+    "prompt": "把这个人的口罩去掉，脸美化一下，文字去掉",
     "dimensionIds": [
       "f55c6293-a0cd-4db1-8189-27f632f056ae",
       "1a2832be-bd88-408d-ac51-1174f96328a1"
@@ -212,7 +213,10 @@
     "scoringRule": "",
     "exampleIds": [],
     "createdAt": "2025-11-20T02:48:03.034Z",
-    "updatedAt": "2025-11-20T02:48:03.034Z"
+    "updatedAt": "2025-11-20T07:01:32.159Z",
+    "imageUrls": [
+      "/uploads/examples/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg"
+    ]
   },
   {
     "id": "cb4fb736-02c1-4ac6-a1d4-5668c9e59eae",
@@ -222,10 +226,9 @@
     "exampleIds": [],
     "imageUrls": [
       "/uploads/examples/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg",
-      "/uploads/examples/c0/75/c07555bcb616066191cb4af800205779.jpg",
       "/uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
     ],
     "createdAt": "2025-11-20T03:13:37.112Z",
-    "updatedAt": "2025-11-20T03:52:16.817Z"
+    "updatedAt": "2025-11-20T06:59:41.279Z"
   }
 ]

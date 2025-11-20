@@ -1,0 +1,22 @@
+{
+  "id": "run_20251120070410_km7c",
+  "modelName": "Gemini 2.5 Image",
+  "questionSetId": "set_202511200247",
+  "runName": "测试自动测试",
+  "runDesc": "Auto generated",
+  "itemIds": [
+    "5287b6a9-0b48-463a-aec7-6d05f8670526",
+    "3553894b-da46-4365-84c9-199e07918503",
+    "37e259cb-17f7-4f48-9ba8-77e1967e9580"
+  ],
+  "totalScore": 0,
+  "dimensionScores": {
+    "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": 0,
+    "c8fb6061-e268-45cb-af19-7094e66801fa": 0,
+    "f55c6293-a0cd-4db1-8189-27f632f056ae": 0,
+    "1a2832be-bd88-408d-ac51-1174f96328a1": 0
+  },
+  "startedAt": "2025-11-20T07:04:10.158Z",
+  "endedAt": "2025-11-20T07:06:20.080Z",
+  "overallComment": "[AUTO] 已自动生成并保存全部题目，默认得分 0"
+}
