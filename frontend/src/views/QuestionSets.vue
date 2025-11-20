@@ -21,7 +21,7 @@
       </el-form>
     </el-card>
     <el-card header="试题集列表">
-      <el-table :data="sets" size="small" style="width:100%" v-loading="loading">
+      <el-table :data="pageItems" size="small" style="width:100%" v-loading="loading">
         <el-table-column prop="id" label="ID" width="240" />
         <el-table-column prop="name" label="名称" width="160" />
         <el-table-column prop="description" label="说明" />
@@ -41,18 +41,31 @@
         </el-table-column>
         <el-table-column prop="createdAt" label="创建时间" width="200" />
       </el-table>
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <el-pagination
+          background
+          layout="prev, pager, next, sizes, total"
+          :page-sizes="[10,20,50,100]"
+          :page-size="pageSize"
+          :current-page="page"
+          :total="sets.length"
+          @size-change="onSizeChange"
+          @current-change="onPageChange" />
+      </div>
     </el-card>
   </section>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { ElMessage } from 'element-plus';
 import { listDimensions, listQuestionSets, createQuestionSet } from '../services/api';
 
 const loading = ref(false);
 const dimensions = ref([]);
 const sets = ref([]);
+const page = ref(1);
+const pageSize = ref(10);
 const form = ref({
   name: '',
   description: '',
@@ -65,6 +78,17 @@ function reset() {
 function dimName(id) {
   const d = dimensions.value.find(x => x.id === id);
   return d ? d.name : id;
+}
+const pageItems = computed(() => {
+  const start = (page.value - 1) * pageSize.value;
+  return sets.value.slice(start, start + pageSize.value);
+});
+function onPageChange(p) {
+  page.value = p;
+}
+function onSizeChange(s) {
+  pageSize.value = s;
+  page.value = 1;
 }
 async function fetchAll() {
   try {

@@ -24,7 +24,7 @@
     </el-card>
 
     <el-card header="试题列表" style="margin-bottom:16px;">
-      <el-table :data="questionsInSet" size="small" style="width: 100%;">
+      <el-table :data="pageQuestions" size="small" style="width: 100%;">
         <el-table-column prop="id" label="ID" width="220" />
         <el-table-column prop="prompt" label="提示词" />
         <el-table-column prop="scoringRule" label="评分规则" width="240" />
@@ -35,6 +35,17 @@
           </template>
         </el-table-column>
       </el-table>
+      <div style="display:flex; justify-content:flex-end; margin-top:12px;">
+        <el-pagination
+          background
+          layout="prev, pager, next, sizes, total"
+          :page-sizes="[10,20,50,100]"
+          :page-size="pageSize"
+          :current-page="page"
+          :total="questionsInSet.length"
+          @size-change="onSizeChange"
+          @current-change="onPageChange" />
+      </div>
     </el-card>
 
     <el-card header="新增试题">
@@ -86,7 +97,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { listDimensions, listQuestions, listQuestionSets, updateQuestionSet, createQuestion, updateQuestion } from '../services/api';
+import { listDimensions, listQuestions, listQuestionsPaged, listQuestionSets, updateQuestionSet, createQuestion, updateQuestion } from '../services/api';
 
 const route = useRoute();
 const setId = route.params.id;
@@ -100,17 +111,25 @@ const questionsInSet = computed(() => {
   const ids = new Set(setForm.value.questionIds || []);
   return allQuestions.value.filter(q => ids.has(q.id));
 });
+const page = ref(1);
+const pageSize = ref(10);
+const pageQuestions = computed(() => {
+  const start = (page.value - 1) * pageSize.value;
+  return questionsInSet.value.slice(start, start + pageSize.value);
+});
+function onPageChange(p) { page.value = p; }
+function onSizeChange(s) { pageSize.value = s; page.value = 1; }
 
 async function loadAll() {
   try {
-    const [dims, sets, qs] = await Promise.all([
+    const [dims, sets, qsPaged] = await Promise.all([
       listDimensions(),
       listQuestionSets(),
-      listQuestions()
+      listQuestionsPaged({ page: 1, pageSize: 100000 })
     ]);
     dimensions.value = dims;
     allSets.value = sets;
-    allQuestions.value = qs;
+    allQuestions.value = Array.isArray(qsPaged?.items) ? qsPaged.items : (Array.isArray(qsPaged) ? qsPaged : []);
     const current = sets.find(s => s.id === setId);
     if (!current) {
       ElMessage.error('未找到试题集');
