@@ -76,6 +76,15 @@ router.post('/:runId/items', async (req, res, next) => {
           scoringRule: q.scoringRule || '',
           dimNameMap
         };
+        // 将本次评分里出现但快照中没有的维度名也写入快照，保证回看名称稳定
+        if (scoresByDimension && typeof scoresByDimension === 'object') {
+          for (const extraId of Object.keys(scoresByDimension)) {
+            if (!(extraId in questionSnapshot.dimNameMap)) {
+              const d = allDims.find(x => x.id === extraId);
+              questionSnapshot.dimNameMap[extraId] = d ? d.name : extraId;
+            }
+          }
+        }
       }
     } catch (e) {
       // ignore snapshot errors

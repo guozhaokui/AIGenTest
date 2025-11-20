@@ -17,7 +17,7 @@
           <el-button :loading="genLoading[q.id]" @click="generate(q)">重新生成</el-button>
         </el-space>
       </div>
-      <ScoreInput :dimensions="dimensions" @submit="onSubmit(q.id, $event)" />
+      <ScoreInput :catalog="dimensions" :initial-dimension-ids="q.dimensionIds || []" @submit="onSubmit(q.id, $event)" />
     </QuestionCard>
   </el-card>
  </template>
