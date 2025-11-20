@@ -1,0 +1,13 @@
+{
+  "id": "run_20251120072141_4avj",
+  "modelName": "Gemini 2.5 Image",
+  "questionSetId": "set_202511200247",
+  "runName": "测试自动测试_retry1",
+  "runDesc": "Auto generated",
+  "itemIds": [],
+  "totalScore": null,
+  "dimensionScores": {},
+  "startedAt": "2025-11-20T07:21:41.405Z",
+  "endedAt": null,
+  "overallComment": ""
+}

@@ -188,7 +188,9 @@ async function loadAll() {
       // 获取 items 计数
       try {
         const its = await getRunItems(r.id);
-        counts.value[r.id] = Array.isArray(its) ? its.length : 0;
+        counts.value[r.id] = Array.isArray(its)
+          ? its.filter(it => it && typeof it.generatedImagePath === 'string' && it.generatedImagePath.trim() !== '').length
+          : 0;
       } catch {}
     }
   } catch (e) {

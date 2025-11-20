@@ -102,7 +102,24 @@ router.post('/:runId/items', async (req, res, next) => {
     };
     let items = [];
     try { items = await readJson(itemsFile); } catch {}
-    items.push(item);
+    // 若为“重新评估”从 clone 过来的占位条目，尝试用同一 questionId 的空评分占位进行更新，避免重复
+    let replaced = false;
+    const idx = items.findIndex(it => it && it.questionId === questionId && (!it.scoresByDimension || Object.keys(it.scoresByDimension).length === 0));
+    if (idx !== -1) {
+      // 保留已有的 generatedImagePath（若本次也传入，则以本次为准）
+      const prev = items[idx] || {};
+      const next = {
+        ...prev,
+        ...item,
+        id, // 确保有新 id
+        generatedImagePath: item.generatedImagePath || prev.generatedImagePath || null
+      };
+      items[idx] = next;
+      replaced = true;
+    }
+    if (!replaced) {
+      items.push(item);
+    }
     await writeJson(itemsFile, items);
     // update run meta itemIds
     let meta = await readJson(runFile);
