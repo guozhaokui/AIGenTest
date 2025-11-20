@@ -17,13 +17,16 @@
           <el-button :loading="genLoading[q.id]" @click="generate(q)">重新生成</el-button>
         </el-space>
       </div>
-      <!-- 问题自带图片（放在最下面） -->
+      <!-- 问题自带图片（放在最下面，可预览大图） -->
       <div v-if="(q.imageUrls && q.imageUrls.length)" style="margin:8px 0; display:flex; gap:8px; flex-wrap: wrap;">
-        <img
+        <el-image
           v-for="(u, idx) in q.imageUrls"
           :key="idx"
           :src="normalizeUploadUrl(u)"
-          style="max-width: 180px; border:1px solid #eee; border-radius:4px;" />
+          :preview-src-list="q.imageUrls.map(x => normalizeUploadUrl(x))"
+          :initial-index="idx"
+          fit="cover"
+          style="width:180px; height:120px; border:1px solid #eee; border-radius:4px; overflow:hidden;" />
       </div>
       <ScoreInput :catalog="dimensions" :initial-dimension-ids="q.dimensionIds || []" @submit="onSubmit(q.id, $event)" />
     </QuestionCard>

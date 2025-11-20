@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
 const AdminIndex = () => import('../views/AdminIndex.vue');
-const AdminHome = () => import('../views/AdminHome.vue');
 const Dimensions = () => import('../views/Dimensions.vue');
 const QuestionSets = () => import('../views/QuestionSets.vue');
 const QuestionSetDetail = () => import('../views/QuestionSetDetail.vue');
@@ -16,7 +15,7 @@ const routes = [
     path: '/admin',
     component: AdminIndex,
     children: [
-      { path: '', name: 'AdminHome', component: AdminHome },
+      { path: '', redirect: '/admin/dimensions' },
       { path: 'dimensions', name: 'Dimensions', component: Dimensions },
       { path: 'question-sets', name: 'QuestionSets', component: QuestionSets },
       { path: 'question-sets/:id', name: 'QuestionSetDetail', component: QuestionSetDetail },

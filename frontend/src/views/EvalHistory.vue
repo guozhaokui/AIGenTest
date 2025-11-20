@@ -6,7 +6,14 @@
     <el-row v-if="!currentRun" :gutter="12">
       <el-col :span="24">
         <el-card header="批次列表">
-          <el-table :data="runs" size="small" @row-click="selectRun" style="width:100%;" v-loading="loading">
+          <el-table
+            :data="runs"
+            size="small"
+            @row-click="selectRun"
+            style="width:100%;"
+            v-loading="loading"
+            highlight-current-row
+            :row-class-name="runRowClass">
             <el-table-column prop="id" label="ID" />
             <el-table-column prop="runName" label="名称" width="220" />
             <el-table-column label="试题集" width="220">
@@ -41,6 +48,7 @@
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
             <span style="font-weight:600;">批次详情</span>
             <div style="display:flex; gap:8px;">
+              <el-button size="small" type="danger" @click="removeCurrent">删除评估</el-button>
               <el-button size="small" type="primary" @click="retry">重新评估</el-button>
               <el-button size="small" @click="backToList">返回列表</el-button>
             </div>
@@ -65,9 +73,16 @@
               </div>
               <!-- 问题文本 -->
               <p style="white-space: pre-wrap;">{{ promptByQuestion(currentItem.questionId, currentItem) }}</p>
-              <!-- 题目输入图片（最下面，优先快照，其次当前题库） -->
+              <!-- 题目输入图片（最下面，优先快照，其次当前题库），可预览大图 -->
               <div v-if="imagesForItem(currentItem).length" style="margin:8px 0; display:flex; gap:8px; flex-wrap: wrap;">
-                <img v-for="(u, idx) in imagesForItem(currentItem)" :key="idx" :src="normalize(u)" style="max-width:180px; border:1px solid #eee; border-radius:4px;" />
+                <el-image
+                  v-for="(u, idx) in imagesForItem(currentItem)"
+                  :key="idx"
+                  :src="normalize(u)"
+                  :preview-src-list="imagesForItem(currentItem).map(x => normalize(x))"
+                  :initial-index="idx"
+                  fit="cover"
+                  style="width:180px; height:120px; border:1px solid #eee; border-radius:4px; overflow:hidden;" />
               </div>
               <div style="margin:6px 0;">
                 <el-tag v-for="(v,k) in currentItem.scoresByDimension || {}" :key="k" size="small" style="margin-right:6px;">{{ dimNameForItem(k, currentItem) }}: {{ v }}</el-tag>
@@ -88,7 +103,7 @@
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { listRuns, getRun, getRunItems, listQuestions, listDimensions, cloneRun, listQuestionSets, deleteRun } from '../services/api';
 import { useRouter } from 'vue-router';
 
@@ -97,6 +112,7 @@ const questions = ref([]);
 const dimensions = ref([]);
 const questionSets = ref([]);
 const loading = ref(false);
+const lastSelectedRunId = ref('');
 const currentRun = ref(null);
 const items = ref([]);
 const currentIndex = ref(0);
@@ -183,6 +199,7 @@ async function loadAll() {
 }
 async function selectRun(row) {
   try {
+    lastSelectedRunId.value = row.id;
     currentRun.value = await getRun(row.id);
     items.value = await getRunItems(row.id);
     currentIndex.value = 0;
@@ -225,10 +242,28 @@ async function removeRun(row) {
     runs.value = runs.value.filter(r => r.id !== row.id);
     delete counts.value[row.id];
     delete scores.value[row.id];
+    if (lastSelectedRunId.value === row.id) lastSelectedRunId.value = '';
     ElMessage.success('已删除');
   } catch (e) {
     ElMessage.error('删除失败');
   }
+}
+
+async function removeCurrent() {
+  try {
+    if (!currentRun.value) return;
+    await ElMessageBox.confirm('确定删除该评估？此操作不可恢复。', '提示', { type: 'warning' });
+    await deleteRun(currentRun.value.id);
+    ElMessage.success('已删除');
+    backToList();
+    await loadAll();
+  } catch (e) {
+    // 取消或失败
+  }
+}
+
+function runRowClass({ row }) {
+  return row && row.id === lastSelectedRunId.value ? 'current-row' : '';
 }
 </script>
 
