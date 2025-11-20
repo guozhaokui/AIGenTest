@@ -4,15 +4,18 @@ const path = require('path');
 const fs = require('fs/promises');
 const crypto = require('crypto');
 const express = require('express');
+const multer = require('multer');
 
 const router = express.Router();
 
 const UPLOAD_DIR = path.resolve(__dirname, '../../uploads/eval-images');
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
 
-router.post('/', async (req, res, next) => {
+const upload = multer({ storage: multer.memoryStorage() });
+
+router.post('/', upload.any(), async (req, res, next) => {
   try {
-    const { prompt, modelName, count, numberOfImages } = req.body || {};
+    const { prompt, modelName, count, numberOfImages, imagePath, imagePaths } = req.body || {};
     if (!prompt) return res.status(400).json({ error: 'missing_prompt' });
     if (!GOOGLE_API_KEY) return res.status(500).json({ error: 'missing_api_key', message: 'Set GOOGLE_API_KEY in environment' });
 
@@ -31,11 +34,55 @@ router.post('/', async (req, res, next) => {
       apiKey: maskKey(GOOGLE_API_KEY)
     });
 
+    // 可选：编辑模式输入图片（多张）
+    const inputImages = [];
+    const files = Array.isArray(req.files) ? req.files : [];
+    for (const f of files) {
+      if (!f || !f.buffer || !(f.mimetype || '').startsWith('image/')) continue;
+      inputImages.push({
+        dataBase64: f.buffer.toString('base64'),
+        mimeType: f.mimetype || 'image/png'
+      });
+    }
+    // 支持 imagePath（单个）与 imagePaths（数组或逗号分隔字符串）
+    const pathCandidates = [];
+    if (typeof imagePath === 'string' && imagePath) pathCandidates.push(imagePath);
+    if (Array.isArray(imagePaths)) pathCandidates.push(...imagePaths);
+    else if (typeof imagePaths === 'string' && imagePaths.trim()) {
+      try {
+        const parsed = JSON.parse(imagePaths);
+        if (Array.isArray(parsed)) pathCandidates.push(...parsed);
+      } catch {
+        pathCandidates.push(...imagePaths.split(','));
+      }
+    }
+    for (let p of pathCandidates) {
+      try {
+        if (!p) continue;
+        let rel = String(p).replace(/\\/g, '/');
+        if (rel.startsWith('/')) rel = rel.slice(1);
+        if (!rel.startsWith('uploads/')) rel = `uploads/${rel}`;
+        const abs = path.resolve(path.join(__dirname, '../..', rel));
+        const buf = await fs.readFile(abs);
+        const ext = (abs.split('.').pop() || 'png').toLowerCase();
+        inputImages.push({
+          dataBase64: buf.toString('base64'),
+          mimeType: extToMime(ext)
+        });
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.warn('[generate] read imagePaths item failed:', e?.message || e);
+      }
+    }
+    // eslint-disable-next-line no-console
+    console.log('[generate] input images:', inputImages.length);
+
     try {
       const { dataBase64, mimeType } = await callGoogleGenerateContentSDK({
         apiKey: GOOGLE_API_KEY,
         model: imagesModel,
-        prompt
+        prompt,
+        images: inputImages
       });
       if (!dataBase64) {
         return res.status(500).json({ error: 'no_image_returned' });
@@ -70,11 +117,15 @@ router.post('/', async (req, res, next) => {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.error('[generate] unhandled error:', serializeError(err));
-    next(err);
+    // 返回可读的详细错误，便于前端弹窗与排查
+    return res.status(500).json({
+      error: 'unhandled_error',
+      ...serializeError(err)
+    });
   }
 });
 
-async function callGoogleGenerateContentSDK({ apiKey, model, prompt }) {
+async function callGoogleGenerateContentSDK({ apiKey, model, prompt, images }) {
   // 动态引入，避免未安装时报错
   let GoogleGenAI;
   try {
@@ -84,15 +135,19 @@ async function callGoogleGenerateContentSDK({ apiKey, model, prompt }) {
     throw new Error('sdk_not_available');
   }
   const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateContent({
-    model,
-    contents: [
-      {
-        role: 'user',
-        parts: [{ text: prompt }]
+  const parts = [];
+  const imgs = Array.isArray(images) ? images : [];
+  for (const img of imgs) {
+    if (!img?.dataBase64) continue;
+    parts.push({
+      inlineData: {
+        data: img.dataBase64,
+        mimeType: img.mimeType || 'image/png'
       }
-    ]
-  });
+    });
+  }
+  parts.push({ text: prompt });
+  const response = await ai.models.generateContent({ model, contents: [{ role: 'user', parts }] });
   // 提取 inlineData
   try {
     const candidates = response?.candidates || [];
@@ -137,6 +192,14 @@ function mimeToExt(mime) {
   if (mime === 'image/jpeg') return '.jpg';
   if (mime === 'image/webp') return '.webp';
   return '.png';
+}
+
+function extToMime(ext) {
+  const e = ext.startsWith('.') ? ext.slice(1).toLowerCase() : ext.toLowerCase();
+  if (e === 'png') return 'image/png';
+  if (e === 'jpg' || e === 'jpeg') return 'image/jpeg';
+  if (e === 'webp') return 'image/webp';
+  return 'image/png';
 }
 
 module.exports = router;

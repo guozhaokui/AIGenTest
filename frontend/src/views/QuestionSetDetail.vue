@@ -61,6 +61,21 @@
         <el-form-item label="评分规则">
           <el-input v-model="qForm.scoringRule" />
         </el-form-item>
+        <el-form-item label="题图（最多3张）">
+          <el-upload
+            drag
+            multiple
+            list-type="picture-card"
+            action="/api/examples/upload"
+            :limit="3"
+            :file-list="createFileList"
+            :on-success="onCreateUploadSuccess"
+            :on-remove="onCreateUploadRemove"
+            accept="image/*">
+            <el-icon><Plus /></el-icon>
+            <div class="el-upload__text">拖拽到此处或点击上传</div>
+          </el-upload>
+        </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="createQ">创建并加入集合</el-button>
           <el-button @click="resetQ">重置</el-button>
@@ -84,6 +99,21 @@
         <el-form-item label="评分规则">
           <el-input v-model="editQ.scoringRule" />
         </el-form-item>
+        <el-form-item label="题图（最多3张）">
+          <el-upload
+            drag
+            multiple
+            list-type="picture-card"
+            action="/api/examples/upload"
+            :limit="3"
+            :file-list="editFileList"
+            :on-success="onEditUploadSuccess"
+            :on-remove="onEditUploadRemove"
+            accept="image/*">
+            <el-icon><Plus /></el-icon>
+            <div class="el-upload__text">拖拽到此处或点击上传</div>
+          </el-upload>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editVisible = false">取消</el-button>
@@ -98,6 +128,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { listDimensions, listQuestions, listQuestionsPaged, listQuestionSets, updateQuestionSet, createQuestion, updateQuestion } from '../services/api';
+import { Plus } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const setId = route.params.id;
@@ -156,18 +187,20 @@ async function saveSet() {
   }
 }
 
-const qForm = ref({ prompt: '', dimensionIds: [], scoringRule: '' });
+const qForm = ref({ prompt: '', dimensionIds: [], scoringRule: '', imageUrls: ['', '', ''] });
 function resetQ() {
-  qForm.value = { prompt: '', dimensionIds: [], scoringRule: '' };
+  qForm.value = { prompt: '', dimensionIds: [], scoringRule: '', imageUrls: ['', '', ''] };
 }
 async function createQ() {
   if (!qForm.value.prompt) return ElMessage.warning('请输入提示词');
   try {
+    const imgs = (qForm.value.imageUrls || []).map(x => String(x || '').trim()).filter(Boolean).slice(0, 3);
     const q = await createQuestion({
       prompt: qForm.value.prompt,
       dimensionIds: qForm.value.dimensionIds.length ? qForm.value.dimensionIds : setForm.value.dimensionIds,
       scoringRule: qForm.value.scoringRule,
-      exampleIds: []
+      exampleIds: [],
+      imageUrls: imgs
     });
     allQuestions.value.push(q);
     setForm.value.questionIds = [...(setForm.value.questionIds || []), q.id];
@@ -180,17 +213,21 @@ async function createQ() {
 }
 
 const editVisible = ref(false);
-const editQ = ref({ id: '', prompt: '', dimensionIds: [], scoringRule: '' });
+const editQ = ref({ id: '', prompt: '', dimensionIds: [], scoringRule: '', imageUrls: ['', '', ''] });
 function openEdit(row) {
-  editQ.value = { id: row.id, prompt: row.prompt, dimensionIds: [...(row.dimensionIds || [])], scoringRule: row.scoringRule || '' };
+  const imgs = Array.isArray(row.imageUrls) ? [...row.imageUrls] : [];
+  while (imgs.length < 3) imgs.push('');
+  editQ.value = { id: row.id, prompt: row.prompt, dimensionIds: [...(row.dimensionIds || [])], scoringRule: row.scoringRule || '', imageUrls: imgs };
   editVisible.value = true;
 }
 async function saveQ() {
   try {
+    const imgs = (editQ.value.imageUrls || []).map(x => String(x || '').trim()).filter(Boolean).slice(0, 3);
     const q = await updateQuestion(editQ.value.id, {
       prompt: editQ.value.prompt,
       dimensionIds: editQ.value.dimensionIds,
-      scoringRule: editQ.value.scoringRule
+      scoringRule: editQ.value.scoringRule,
+      imageUrls: imgs
     });
     const idx = allQuestions.value.findIndex(x => x.id === q.id);
     if (idx !== -1) allQuestions.value[idx] = q;
@@ -211,6 +248,44 @@ async function removeFromSet(row) {
 }
 
 onMounted(loadAll);
+
+// 上传/预览辅助
+const createFileList = computed(() => {
+  const urls = (qForm.value.imageUrls || []).map(u => normalizeUploadUrl(u)).filter(Boolean);
+  return urls.map((u, i) => ({ name: `img_${i + 1}`, url: u }));
+});
+function onCreateUploadSuccess(res) {
+  const url = normalizeUploadUrl(res?.path || '');
+  const others = (qForm.value.imageUrls || []).map(u => normalizeUploadUrl(u)).filter(Boolean);
+  const merged = Array.from(new Set([...others, url])).slice(0, 3);
+  qForm.value.imageUrls = merged;
+}
+function onCreateUploadRemove(_file, fileList) {
+  const urls = (fileList || []).map(f => normalizeUploadUrl(f.url || ''));
+  qForm.value.imageUrls = urls.slice(0, 3);
+}
+const editFileList = computed(() => {
+  const urls = (editQ.value.imageUrls || []).map(u => normalizeUploadUrl(u)).filter(Boolean);
+  return urls.map((u, i) => ({ name: `img_${i + 1}`, url: u }));
+});
+function onEditUploadSuccess(res) {
+  const url = normalizeUploadUrl(res?.path || '');
+  const others = (editQ.value.imageUrls || []).map(u => normalizeUploadUrl(u)).filter(Boolean);
+  const merged = Array.from(new Set([...others, url])).slice(0, 3);
+  editQ.value.imageUrls = merged;
+}
+function onEditUploadRemove(_file, fileList) {
+  const urls = (fileList || []).map(f => normalizeUploadUrl(f.url || ''));
+  editQ.value.imageUrls = urls.slice(0, 3);
+}
+function normalizeUploadUrl(p) {
+  if (!p) return '';
+  let url = String(p).replace(/\\/g, '/');
+  if (!url.startsWith('/')) url = '/' + url;
+  url = url.replace(/^\/backend\/uploads\//, '/uploads/');
+  url = url.replace(/^\/?uploads\//, '/uploads/');
+  return url;
+}
 </script>
 
 

@@ -213,5 +213,19 @@
     "exampleIds": [],
     "createdAt": "2025-11-20T02:48:03.034Z",
     "updatedAt": "2025-11-20T02:48:03.034Z"
+  },
+  {
+    "id": "cb4fb736-02c1-4ac6-a1d4-5668c9e59eae",
+    "prompt": "把第一个角色放到第三张图片中，坐着",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "imageUrls": [
+      "/uploads/examples/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg",
+      "/uploads/examples/c0/75/c07555bcb616066191cb4af800205779.jpg",
+      "/uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+    ],
+    "createdAt": "2025-11-20T03:13:37.112Z",
+    "updatedAt": "2025-11-20T03:52:16.817Z"
   }
 ]

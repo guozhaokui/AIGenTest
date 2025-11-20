@@ -1,0 +1,23 @@
+[
+  {
+    "id": "d9fbae4c-2f69-4bbc-99b5-0c92d42d44d9",
+    "runId": "run_20251120040440_4z61",
+    "questionId": "cb4fb736-02c1-4ac6-a1d4-5668c9e59eae",
+    "generatedImagePath": "/uploads/eval-images/ee/67/ee67381d1051c1f9396f4713df974d21.png",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-20T04:05:23.636Z",
+    "questionSnapshot": {
+      "id": "cb4fb736-02c1-4ac6-a1d4-5668c9e59eae",
+      "prompt": "把第一个角色放到第三张图片中，坐着",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": [
+        "/uploads/examples/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg",
+        "/uploads/examples/c0/75/c07555bcb616066191cb4af800205779.jpg",
+        "/uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+      ]
+    }
+  }
+]

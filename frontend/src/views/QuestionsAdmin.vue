@@ -50,6 +50,21 @@
             <el-option v-for="d in dimensions" :key="d.id" :label="d.name" :value="d.id" />
           </el-select>
         </el-form-item>
+        <el-form-item label="题图（最多3张）">
+          <el-upload
+            drag
+            multiple
+            list-type="picture-card"
+            action="/api/examples/upload"
+            :limit="3"
+            :file-list="editFileList"
+            :on-success="onEditUploadSuccess"
+            :on-remove="onEditUploadRemove"
+            accept="image/*">
+            <el-icon><Plus /></el-icon>
+            <div class="el-upload__text">拖拽到此处或点击上传</div>
+          </el-upload>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editVisible=false">取消</el-button>
@@ -60,9 +75,10 @@
  </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { listQuestionsPaged, updateQuestion, deleteQuestion, cloneQuestion, listDimensions } from '../services/api';
+import { Plus } from '@element-plus/icons-vue';
 
 const loading = ref(false);
 const items = ref([]);
@@ -73,7 +89,7 @@ const keyword = ref('');
 
 const dimensions = ref([]);
 const editVisible = ref(false);
-const edit = ref({ id: '', prompt: '', scoringRule: '', dimensionIds: [] });
+const edit = ref({ id: '', prompt: '', scoringRule: '', dimensionIds: [], imageUrls: ['', '', ''] });
 
 async function fetchList() {
   try {
@@ -103,15 +119,19 @@ function resetAndFetch() {
 }
 
 function openEdit(row) {
-  edit.value = { id: row.id, prompt: row.prompt, scoringRule: row.scoringRule || '', dimensionIds: [...(row.dimensionIds || [])] };
+  const imgs = Array.isArray(row.imageUrls) ? [...row.imageUrls] : [];
+  while (imgs.length < 3) imgs.push('');
+  edit.value = { id: row.id, prompt: row.prompt, scoringRule: row.scoringRule || '', dimensionIds: [...(row.dimensionIds || [])], imageUrls: imgs };
   editVisible.value = true;
 }
 async function saveEdit() {
   try {
+    const imgs = (edit.value.imageUrls || []).map(x => String(x || '').trim()).filter(Boolean).slice(0, 3);
     await updateQuestion(edit.value.id, {
       prompt: edit.value.prompt,
       scoringRule: edit.value.scoringRule,
-      dimensionIds: edit.value.dimensionIds
+      dimensionIds: edit.value.dimensionIds,
+      imageUrls: imgs
     });
     ElMessage.success('已保存');
     editVisible.value = false;
@@ -160,6 +180,29 @@ function formatTime(value) {
     second: '2-digit',
     hour12: false
   });
+}
+
+const editFileList = computed(() => {
+  const urls = (edit.value.imageUrls || []).map(u => normalizeUploadUrl(u)).filter(Boolean);
+  return urls.map((u, i) => ({ name: `img_${i + 1}`, url: u }));
+});
+function onEditUploadSuccess(res, _file, fileList) {
+  const url = normalizeUploadUrl(res?.path || '');
+  const others = (edit.value.imageUrls || []).map(u => normalizeUploadUrl(u)).filter(Boolean);
+  const merged = Array.from(new Set([...others, url])).slice(0, 3);
+  edit.value.imageUrls = merged;
+}
+function onEditUploadRemove(_file, fileList) {
+  const urls = (fileList || []).map(f => normalizeUploadUrl(f.url || ''));
+  edit.value.imageUrls = urls.slice(0, 3);
+}
+function normalizeUploadUrl(p) {
+  if (!p) return '';
+  let url = String(p).replace(/\\/g, '/');
+  if (!url.startsWith('/')) url = '/' + url;
+  url = url.replace(/^\/backend\/uploads\//, '/uploads/');
+  url = url.replace(/^\/?uploads\//, '/uploads/');
+  return url;
 }
 </script>
 

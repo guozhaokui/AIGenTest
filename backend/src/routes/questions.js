@@ -31,16 +31,18 @@ router.get('/', async (req, res, next) => {
 
 router.post('/', async (req, res, next) => {
   try {
-    const { prompt, dimensionIds, scoringRule, exampleIds } = req.body || {};
+    const { prompt, dimensionIds, scoringRule, exampleIds, imageUrls } = req.body || {};
     if (!prompt) return res.status(400).json({ error: 'missing_prompt' });
     const now = new Date().toISOString();
     const id = randomUUID();
+    const images = Array.isArray(imageUrls) ? imageUrls.map(x => String(x)).filter(Boolean).slice(0, 3) : [];
     const record = {
       id,
       prompt,
       dimensionIds: Array.isArray(dimensionIds) ? dimensionIds : [],
       scoringRule: scoringRule || '',
       exampleIds: Array.isArray(exampleIds) ? exampleIds : [],
+      imageUrls: images,
       createdAt: now,
       updatedAt: now
     };
@@ -59,12 +61,18 @@ router.patch('/:id', async (req, res, next) => {
     const list = await readJson(DATA_FILE);
     const idx = list.findIndex(x => x.id === id);
     if (idx === -1) return res.status(404).json({ error: 'not_found' });
-    const now = new Date().toISOString();
+  const now = new Date().toISOString();
     const current = list[idx];
+  let images = undefined;
+  if (req.body && 'imageUrls' in req.body) {
+    const raw = req.body.imageUrls;
+    images = Array.isArray(raw) ? raw.map(x => String(x)).filter(Boolean).slice(0, 3) : [];
+  }
     const nextObj = {
       ...current,
       ...req.body,
-      updatedAt: now
+    ...(images !== undefined ? { imageUrls: images } : {}),
+    updatedAt: now
     };
     list[idx] = nextObj;
     await writeJson(DATA_FILE, list);
@@ -99,6 +107,7 @@ router.post('/:id/clone', async (req, res, next) => {
     const newQ = {
       ...src,
       id: randomUUID(),
+    imageUrls: Array.isArray(src.imageUrls) ? src.imageUrls.slice(0, 3) : [],
       createdAt: now,
       updatedAt: now
     };

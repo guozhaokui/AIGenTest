@@ -1,0 +1,18 @@
+{
+  "id": "run_20251120035945_3wrc",
+  "modelName": "",
+  "questionSetId": "set_202511200247",
+  "runName": "额",
+  "runDesc": "",
+  "itemIds": [
+    "9768d245-984c-424f-b1f7-a9b56bbe10ba"
+  ],
+  "totalScore": -0.167,
+  "dimensionScores": {
+    "a73037d6-9532-4f69-88ce-3376d0fc983a": -0.667,
+    "7757859e-0835-41d7-9814-514724460210": 0.333
+  },
+  "startedAt": "2025-11-20T03:59:45.714Z",
+  "endedAt": "2025-11-20T04:01:03.396Z",
+  "overallComment": ""
+}

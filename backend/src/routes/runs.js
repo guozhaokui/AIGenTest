@@ -74,7 +74,8 @@ router.post('/:runId/items', async (req, res, next) => {
           prompt: q.prompt,
           dimensionIds: dimIds,
           scoringRule: q.scoringRule || '',
-          dimNameMap
+          dimNameMap,
+          imageUrls: Array.isArray(q.imageUrls) ? q.imageUrls.filter(Boolean).slice(0, 3) : []
         };
         // 将本次评分里出现但快照中没有的维度名也写入快照，保证回看名称稳定
         if (scoresByDimension && typeof scoresByDimension === 'object') {

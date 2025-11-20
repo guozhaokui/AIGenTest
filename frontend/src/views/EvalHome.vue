@@ -113,6 +113,7 @@ async function loadSetQuestions() {
       id: q.id,
       title: q.title ?? '试题',
       prompt: q.prompt,
+      imageUrls: Array.isArray(q.imageUrls) ? q.imageUrls : [],
       dimensionIds: Array.isArray(q.dimensionIds) ? q.dimensionIds : [],
       dimensionNames: (q.dimensionIds || []).map(id => {
         const d = dimensions.value.find(x => x.id === id);

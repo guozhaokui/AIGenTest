@@ -59,10 +59,16 @@
           <div v-if="items.length">
             <el-alert :title="progressText" type="info" :closable="false" style="margin-bottom:8px;" />
             <el-card :header="'题目 ' + currentItem.questionId">
+              <!-- 生成图片（最上面） -->
               <div v-if="currentItem.generatedImagePath" style="margin-bottom:8px;">
                 <img :src="normalize(currentItem.generatedImagePath)" style="max-width:100%; border:1px solid #eee; border-radius:4px;" />
               </div>
+              <!-- 问题文本 -->
               <p style="white-space: pre-wrap;">{{ promptByQuestion(currentItem.questionId, currentItem) }}</p>
+              <!-- 题目输入图片（最下面，优先快照，其次当前题库） -->
+              <div v-if="imagesForItem(currentItem).length" style="margin:8px 0; display:flex; gap:8px; flex-wrap: wrap;">
+                <img v-for="(u, idx) in imagesForItem(currentItem)" :key="idx" :src="normalize(u)" style="max-width:180px; border:1px solid #eee; border-radius:4px;" />
+              </div>
               <div style="margin:6px 0;">
                 <el-tag v-for="(v,k) in currentItem.scoresByDimension || {}" :key="k" size="small" style="margin-right:6px;">{{ dimNameForItem(k, currentItem) }}: {{ v }}</el-tag>
               </div>
@@ -140,6 +146,13 @@ function formatTime(value) {
     second: '2-digit',
     hour12: false
   });
+}
+
+function imagesForItem(item) {
+  const snapImgs = item?.questionSnapshot?.imageUrls;
+  if (Array.isArray(snapImgs) && snapImgs.length) return snapImgs;
+  const q = questions.value.find(x => x.id === item?.questionId);
+  return Array.isArray(q?.imageUrls) ? q.imageUrls : [];
 }
 
 async function loadAll() {
