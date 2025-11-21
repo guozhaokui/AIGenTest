@@ -223,7 +223,7 @@
   },
   {
     "id": "cb4fb736-02c1-4ac6-a1d4-5668c9e59eae",
-    "prompt": "把第一个角色放到第三张图片中，坐着",
+    "prompt": "把第一个角色放到第二张图片中，坐在左边的椅子上，要比例合适，姿态自然",
     "dimensionIds": [],
     "scoringRule": "",
     "exampleIds": [],
@@ -232,7 +232,7 @@
       "/uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
     ],
     "createdAt": "2025-11-20T03:13:37.112Z",
-    "updatedAt": "2025-11-20T06:59:41.279Z"
+    "updatedAt": "2025-11-21T04:05:50.011Z"
   },
   {
     "id": "1e926d6a-c928-40ca-ae2a-5d7e5675f453",

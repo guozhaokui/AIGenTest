@@ -13,9 +13,10 @@
         <el-table-column label="更新时间" width="200">
           <template #default="{ row }">{{ formatTime(row.updatedAt) }}</template>
         </el-table-column>
-        <el-table-column label="操作" width="240">
+        <el-table-column label="操作" width="320">
           <template #default="{ row }">
             <el-button size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button size="small" @click="openAddToSet(row)">加入试题集</el-button>
             <el-button size="small" @click="cloneRow(row)">复制</el-button>
             <el-button size="small" type="danger" @click="removeRow(row)">删除</el-button>
           </template>
@@ -71,13 +72,29 @@
         <el-button type="primary" @click="saveEdit">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="addToSetVisible" title="添加到试题集" width="500px">
+      <div style="margin-bottom:16px;">请选择要加入的试题集：</div>
+      <el-select v-model="targetSetId" placeholder="选择试题集" style="width:100%" filterable>
+        <el-option v-for="s in questionSets" :key="s.id" :label="s.name" :value="s.id">
+          <span style="float: left">{{ s.name }}</span>
+          <span style="float: right; color: #8492a6; font-size: 13px">
+            {{ (s.questionIds || []).length }} 题
+          </span>
+        </el-option>
+      </el-select>
+      <template #footer>
+        <el-button @click="addToSetVisible=false">取消</el-button>
+        <el-button type="primary" @click="confirmAddToSet" :disabled="!targetSetId">确定</el-button>
+      </template>
+    </el-dialog>
   </section>
  </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { listQuestionsPaged, updateQuestion, deleteQuestion, cloneQuestion, listDimensions } from '../services/api';
+import { listQuestionsPaged, updateQuestion, deleteQuestion, cloneQuestion, listDimensions, listQuestionSets, updateQuestionSet } from '../services/api';
 import { Plus } from '@element-plus/icons-vue';
 
 const loading = ref(false);
@@ -90,6 +107,11 @@ const keyword = ref('');
 const dimensions = ref([]);
 const editVisible = ref(false);
 const edit = ref({ id: '', prompt: '', scoringRule: '', dimensionIds: [], imageUrls: ['', '', ''] });
+
+const addToSetVisible = ref(false);
+const questionSets = ref([]);
+const targetSetId = ref('');
+const currentAddToSetQuestionId = ref('');
 
 async function fetchList() {
   try {
@@ -157,6 +179,38 @@ async function cloneRow(row) {
     fetchList();
   } catch (e) {
     ElMessage.error('复制失败');
+  }
+}
+
+async function openAddToSet(row) {
+  try {
+    currentAddToSetQuestionId.value = row.id;
+    targetSetId.value = '';
+    questionSets.value = await listQuestionSets();
+    addToSetVisible.value = true;
+  } catch (e) {
+    ElMessage.error('无法获取试题集列表');
+  }
+}
+
+async function confirmAddToSet() {
+  try {
+    if (!targetSetId.value || !currentAddToSetQuestionId.value) return;
+    const setObj = questionSets.value.find(s => s.id === targetSetId.value);
+    if (!setObj) return;
+
+    const currentIds = Array.isArray(setObj.questionIds) ? setObj.questionIds : [];
+    if (currentIds.includes(currentAddToSetQuestionId.value)) {
+      ElMessage.warning('该试题已存在于选中的试题集中');
+      return;
+    }
+
+    const newIds = [...currentIds, currentAddToSetQuestionId.value];
+    await updateQuestionSet(targetSetId.value, { questionIds: newIds });
+    ElMessage.success('已添加到试题集');
+    addToSetVisible.value = false;
+  } catch (e) {
+    ElMessage.error('添加失败');
   }
 }
 
