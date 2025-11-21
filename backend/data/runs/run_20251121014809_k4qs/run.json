@@ -1,0 +1,38 @@
+{
+  "id": "run_20251121014809_k4qs",
+  "modelName": "Gemini 3 Image",
+  "questionSetId": "set_202511190823",
+  "runName": "测试香蕉2",
+  "runDesc": "",
+  "itemIds": [
+    "1a6b772c-5170-448f-9536-e401077a5e68",
+    "4c378914-bf21-4d25-b64a-f506c7cebf39",
+    "0d3f274b-f452-425e-90cb-8fecdf2a90a3",
+    "d3ca4900-5c5e-4324-90bc-f58dcdb41a23",
+    "ea7f2065-5a90-4afd-9302-ec87485819dc",
+    "b396059d-f8c6-4a09-9749-247b50d9d54b",
+    "1b73347d-7fe1-479c-af2b-c298858034d3",
+    "2aed9f2c-e30c-43a7-bc38-157ffc93ae0c",
+    "12e905fc-1941-4d8e-a948-a4f425f40eec",
+    "417262d5-146f-4cf5-9021-c28c1740d786",
+    "c5b916fe-57ae-41fd-9834-ab159af01fde",
+    "d4502894-4e03-4e5e-a559-30443d9b77e2",
+    "fa518357-88df-480b-b3f5-b052921a982a",
+    "00c8ab55-71ed-471f-adc2-c8beff594edc",
+    "15a9b2c2-2dd0-4c26-aca7-05190072bbf0",
+    "55f3b07a-34f0-44ae-b0bd-59dc3265f38e"
+  ],
+  "totalScore": 0,
+  "dimensionScores": {
+    "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": 0,
+    "f55c6293-a0cd-4db1-8189-27f632f056ae": 0,
+    "ee401df5-6aae-43d6-9297-ae6575678299": 0,
+    "a73037d6-9532-4f69-88ce-3376d0fc983a": 0,
+    "c0d498b6-77cc-48bc-9b36-a21cfc499168": 0,
+    "7757859e-0835-41d7-9814-514724460210": 0,
+    "1b9889aa-37cc-44c6-9ca9-d927be14aaa9": 0
+  },
+  "startedAt": "2025-11-21T01:48:09.416Z",
+  "endedAt": "2025-11-21T01:58:32.372Z",
+  "overallComment": ""
+}

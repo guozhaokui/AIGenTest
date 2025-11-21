@@ -1,0 +1,301 @@
+[
+  {
+    "id": "1a6b772c-5170-448f-9536-e401077a5e68",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "784aa1a4-285b-4c38-be1f-1ffc9eaa4cee",
+    "generatedImagePath": "/uploads/eval-images/bb/6c/bb6cfa16b23364c97612912abe98cfdf.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:48:43.846Z",
+    "questionSnapshot": {
+      "id": "784aa1a4-285b-4c38-be1f-1ffc9eaa4cee",
+      "prompt": "战场上的关羽，骑在马上，正在冲锋，背向镜头，看着前方的城楼，城楼上写着\"邺城\"，背景是无数的杂兵。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "4c378914-bf21-4d25-b64a-f506c7cebf39",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "18d30bf1-8a77-4146-9013-2aa12e5cf429",
+    "generatedImagePath": "/uploads/eval-images/1f/3f/1f3f68bf0615594bc8e715db2275bf44.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:49:16.045Z",
+    "questionSnapshot": {
+      "id": "18d30bf1-8a77-4146-9013-2aa12e5cf429",
+      "prompt": "写实风格。左边一颗银杏树，右边一颗水杉树。背景为纯蓝色",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "0d3f274b-f452-425e-90cb-8fecdf2a90a3",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "71178993-d79a-4cfd-9373-cf341c7f0897",
+    "generatedImagePath": "/uploads/eval-images/f2/4b/f24b00b1d89038c9ddaf7879d45bb5c0.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:49:53.748Z",
+    "questionSnapshot": {
+      "id": "71178993-d79a-4cfd-9373-cf341c7f0897",
+      "prompt": "生成一个卡通风格的游戏图标，背景为透明，内容是一个盾牌，盾牌由互相遮挡的展开的翅膀组成，纯线条，无颜色，具有一定复杂华丽感。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "d3ca4900-5c5e-4324-90bc-f58dcdb41a23",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "57221b23-c7c2-4d47-8d50-e0cb56fa7bd9",
+    "generatedImagePath": "/uploads/eval-images/ac/15/ac15d276d4a7f2d741ff1e3812a4bb99.jpg",
+    "scoresByDimension": {},
+    "comment": "哈哈，火焰图",
+    "createdAt": "2025-11-21T01:50:56.436Z",
+    "questionSnapshot": {
+      "id": "57221b23-c7c2-4d47-8d50-e0cb56fa7bd9",
+      "prompt": "生成一个Diablo 1 风格的火焰图。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "ea7f2065-5a90-4afd-9302-ec87485819dc",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "4e373e12-9eb4-4f9c-8785-2e50066aa812",
+    "generatedImagePath": "/uploads/eval-images/9f/5d/9f5d6f2ecff8f81da0ea04a5cab4438d.jpg",
+    "scoresByDimension": {},
+    "comment": "卧槽 除了颜色不太对",
+    "createdAt": "2025-11-21T01:51:54.357Z",
+    "questionSnapshot": {
+      "id": "4e373e12-9eb4-4f9c-8785-2e50066aa812",
+      "prompt": "一个写实风格的洛天依的假发，不需要其他元素，只有假发。背景透明。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "b396059d-f8c6-4a09-9749-247b50d9d54b",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "47b34efe-be29-4939-8dd3-0493a863b8b9",
+    "generatedImagePath": "/uploads/eval-images/32/90/3290b5ff4719a45f241f87d962a458af.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:52:33.727Z",
+    "questionSnapshot": {
+      "id": "47b34efe-be29-4939-8dd3-0493a863b8b9",
+      "prompt": "一个粗糙度为0.5的干净光滑无锈的金属球，旁边是一个完全光滑的金属球，再旁边是一段红砖墙，主要展示材质特点，背景为空",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "1b73347d-7fe1-479c-af2b-c298858034d3",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "72e20cb5-ae48-427f-aacd-a0710a0f187c",
+    "generatedImagePath": "/uploads/eval-images/36/81/3681e9b5c60d9e8ee6724b1b0b7d711b.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:53:01.299Z",
+    "questionSnapshot": {
+      "id": "72e20cb5-ae48-427f-aacd-a0710a0f187c",
+      "prompt": "给\"人类深空先遣队\",设计一个icon，白底，简洁抽象",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "2aed9f2c-e30c-43a7-bc38-157ffc93ae0c",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "02d571d3-938d-4533-91ba-ab76862cbee9",
+    "generatedImagePath": "/uploads/eval-images/3b/af/3baffdfcf430e8502c5d6711483c0c68.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:53:39.340Z",
+    "questionSnapshot": {
+      "id": "02d571d3-938d-4533-91ba-ab76862cbee9",
+      "prompt": "生成一个宫崎骏风格的全景环境图，天上有浓密的云彩，地面是麦地，要有准确的变形，适合放到天空球上。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "12e905fc-1941-4d8e-a948-a4f425f40eec",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "45987e36-c4ca-4401-8ba1-de9fb93532d1",
+    "generatedImagePath": "/uploads/eval-images/05/6a/056adceea554328c13b6f08c75f36f85.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:54:27.845Z",
+    "questionSnapshot": {
+      "id": "45987e36-c4ca-4401-8ba1-de9fb93532d1",
+      "prompt": "生成一个标准的，符合历史的秦朝士兵站立图，无背景。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "417262d5-146f-4cf5-9021-c28c1740d786",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "55e6fd63-d088-4aae-a52b-04e759e499cc",
+    "generatedImagePath": "/uploads/eval-images/c6/50/c6503dc7f2bc0d7760a1f991851e4aa4.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:54:54.795Z",
+    "questionSnapshot": {
+      "id": "55e6fd63-d088-4aae-a52b-04e759e499cc",
+      "prompt": "生成一个用于UI的图标元素，表示开始游戏，上面的文字是“开始”， 材质是玉石，背景透明。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "c5b916fe-57ae-41fd-9834-ab159af01fde",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "d6f09af0-d801-4afd-b1df-4ef3804f5b4c",
+    "generatedImagePath": "/uploads/eval-images/75/49/7549aa0ad6ed0afb625a86aad65d93d0.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:55:20.099Z",
+    "questionSnapshot": {
+      "id": "d6f09af0-d801-4afd-b1df-4ef3804f5b4c",
+      "prompt": "在漆黑的房间中有一张桌子，桌子上摆了四个白色的方块，方块中间有一个蜡烛，照亮部分场景，偏俯视的视角，UE渲染效果。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "d4502894-4e03-4e5e-a559-30443d9b77e2",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "a62e60ad-1eb7-48b4-874b-eba52ea180fc",
+    "generatedImagePath": "/uploads/eval-images/1f/a4/1fa4474e168f81b8e0938d0b2727c4a7.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:55:47.500Z",
+    "questionSnapshot": {
+      "id": "a62e60ad-1eb7-48b4-874b-eba52ea180fc",
+      "prompt": "游戏设计用，一个白发少女，绿瞳，高马尾，左腿为赛博义肢，右大腿有兰花纹身。并列两个，左边一个为泳装，右边的是一个着日式和服风格的短裙，白色，红边。注意是相同的角色相同的动作。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "fa518357-88df-480b-b3f5-b052921a982a",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "eb1c7a11-2415-4a6a-963d-1d2aac46caa3",
+    "generatedImagePath": "/uploads/eval-images/12/52/1252ba82d95823cf38e0363e98b9e378.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:56:21.411Z",
+    "questionSnapshot": {
+      "id": "eb1c7a11-2415-4a6a-963d-1d2aac46caa3",
+      "prompt": "游戏用，一把旧的中式宝剑，刀鞘覆皮革，有复杂的铜制包边纹饰，并且刻金色小篆:\"人民创造历史\"",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "00c8ab55-71ed-471f-adc2-c8beff594edc",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "cd122d0a-1c7b-47a9-913f-326cada61b34",
+    "generatedImagePath": "/uploads/eval-images/15/f7/15f75a730fdee494977aadb8bbbe73bd.jpg",
+    "scoresByDimension": {
+      "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": 0,
+      "f55c6293-a0cd-4db1-8189-27f632f056ae": 0,
+      "ee401df5-6aae-43d6-9297-ae6575678299": 0,
+      "a73037d6-9532-4f69-88ce-3376d0fc983a": 0
+    },
+    "comment": "",
+    "createdAt": "2025-11-21T01:56:48.556Z",
+    "questionSnapshot": {
+      "id": "cd122d0a-1c7b-47a9-913f-326cada61b34",
+      "prompt": "一个卡通少年角色，右手拎着一个黄鼠狼，由于被熏而捂鼻并表情夸张",
+      "dimensionIds": [
+        "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e",
+        "f55c6293-a0cd-4db1-8189-27f632f056ae",
+        "ee401df5-6aae-43d6-9297-ae6575678299",
+        "a73037d6-9532-4f69-88ce-3376d0fc983a"
+      ],
+      "scoringRule": "",
+      "dimNameMap": {
+        "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": "构图",
+        "f55c6293-a0cd-4db1-8189-27f632f056ae": "美学",
+        "ee401df5-6aae-43d6-9297-ae6575678299": "新奇度",
+        "a73037d6-9532-4f69-88ce-3376d0fc983a": "世界知识"
+      },
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "15a9b2c2-2dd0-4c26-aca7-05190072bbf0",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "50e8e24d-a5bb-4c85-9646-c92926bfec7d",
+    "generatedImagePath": "/uploads/eval-images/c2/20/c2205d0d301af26d55f848867bf91b6c.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T01:57:18.955Z",
+    "questionSnapshot": {
+      "id": "50e8e24d-a5bb-4c85-9646-c92926bfec7d",
+      "prompt": "A game design illustration featuring a white-haired girl with green eyes, a high ponytail, a cybernetic prosthetic left leg, and an orchid tattoo on her right thigh. There are two illustrations side by side, with the left one depicting a nude model and the right one showing a character wearing a short dress in a Japanese kimono style, white with red trim. Note that the same character is performing the same action in both illustrations.",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  },
+  {
+    "id": "55f3b07a-34f0-44ae-b0bd-59dc3265f38e",
+    "runId": "run_20251121014809_k4qs",
+    "questionId": "4d0e6066-c6a4-418c-8eed-8f82d0f9b8d6",
+    "generatedImagePath": "/uploads/eval-images/37/2c/372c7b5217ed102c5616338d4d99a2c0.jpg",
+    "scoresByDimension": {
+      "c0d498b6-77cc-48bc-9b36-a21cfc499168": 0,
+      "7757859e-0835-41d7-9814-514724460210": 0,
+      "1b9889aa-37cc-44c6-9ca9-d927be14aaa9": 0
+    },
+    "comment": "",
+    "createdAt": "2025-11-21T01:58:29.595Z",
+    "questionSnapshot": {
+      "id": "4d0e6066-c6a4-418c-8eed-8f82d0f9b8d6",
+      "prompt": "生成一个2d序列帧动画，用8帧表示一个带着头盔，手拿砍刀的骷髅战士的行走动画",
+      "dimensionIds": [
+        "c0d498b6-77cc-48bc-9b36-a21cfc499168",
+        "7757859e-0835-41d7-9814-514724460210",
+        "1b9889aa-37cc-44c6-9ca9-d927be14aaa9"
+      ],
+      "scoringRule": "",
+      "dimNameMap": {
+        "c0d498b6-77cc-48bc-9b36-a21cfc499168": "跟随性",
+        "7757859e-0835-41d7-9814-514724460210": "人体",
+        "1b9889aa-37cc-44c6-9ca9-d927be14aaa9": "游戏资产"
+      },
+      "imageUrls": []
+    }
+  }
+]

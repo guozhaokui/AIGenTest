@@ -1,0 +1,19 @@
+[
+  {
+    "id": "06508aed-a142-4e2c-a830-fb17bd552781",
+    "runId": "run_20251121031757_x34d",
+    "questionId": "1e926d6a-c928-40ca-ae2a-5d7e5675f453",
+    "generatedImagePath": "/uploads/eval-images/84/e7/84e7b66f599b355e9f1129996a653779.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T03:20:37.250Z",
+    "questionSnapshot": {
+      "id": "1e926d6a-c928-40ca-ae2a-5d7e5675f453",
+      "prompt": "一个游戏UI使用的大图集，里面包含若干常用按钮和图标，动森风格。背景透明。最开始的三个图标是\"胜利\"，\"失败\",\"OK\"",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  }
+]

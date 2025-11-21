@@ -6,6 +6,13 @@
     "options": {
       "model": "gemini-2.5-flash-image"
     }
-  }
-]
+  },
+  {
+    "id": "google_gemini_image2",
+    "name": "Gemini 3 Image",
+    "driver": "google",
+    "options": {
+      "model": "gemini-3-pro-image-preview"
+    }
+  }]
 

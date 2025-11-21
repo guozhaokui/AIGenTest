@@ -1,0 +1,19 @@
+[
+  {
+    "id": "af8e8483-b2c3-46bd-97c9-9ca73cf2f3d0",
+    "runId": "run_20251121031004_bjh7",
+    "questionId": "1e926d6a-c928-40ca-ae2a-5d7e5675f453",
+    "generatedImagePath": "/uploads/eval-images/6c/08/6c080c90581daadf1b60ed510713e51a.jpg",
+    "scoresByDimension": {},
+    "comment": "",
+    "createdAt": "2025-11-21T03:11:59.138Z",
+    "questionSnapshot": {
+      "id": "1e926d6a-c928-40ca-ae2a-5d7e5675f453",
+      "prompt": "一个游戏UI使用的大图集，里面包含若干常用按钮和图标，动森风格。",
+      "dimensionIds": [],
+      "scoringRule": "",
+      "dimNameMap": {},
+      "imageUrls": []
+    }
+  }
+]

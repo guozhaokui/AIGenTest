@@ -1,0 +1,22 @@
+{
+  "id": "run_20251121015923_dwcj",
+  "modelName": "Gemini 3 Image",
+  "questionSetId": "set_202511200247",
+  "runName": "香蕉2",
+  "runDesc": "",
+  "itemIds": [
+    "1b533601-b0a4-4ae8-b874-d757be4173c6",
+    "f784d215-d3a5-4a30-9e46-ce32f3cad3be",
+    "5de6f94b-a841-497a-b802-2bfd5e2b1b35"
+  ],
+  "totalScore": 0,
+  "dimensionScores": {
+    "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": 0,
+    "c8fb6061-e268-45cb-af19-7094e66801fa": 0,
+    "f55c6293-a0cd-4db1-8189-27f632f056ae": 0,
+    "1a2832be-bd88-408d-ac51-1174f96328a1": 0
+  },
+  "startedAt": "2025-11-21T01:59:23.924Z",
+  "endedAt": "2025-11-21T02:01:10.284Z",
+  "overallComment": ""
+}

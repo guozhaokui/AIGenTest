@@ -1,0 +1,15 @@
+{
+  "id": "run_20251121031004_bjh7",
+  "modelName": "Gemini 3 Image",
+  "questionSetId": "set_202511190823",
+  "runName": "图标",
+  "runDesc": "",
+  "itemIds": [
+    "af8e8483-b2c3-46bd-97c9-9ca73cf2f3d0"
+  ],
+  "totalScore": 0,
+  "dimensionScores": {},
+  "startedAt": "2025-11-21T03:10:04.125Z",
+  "endedAt": "2025-11-21T03:12:01.515Z",
+  "overallComment": ""
+}
