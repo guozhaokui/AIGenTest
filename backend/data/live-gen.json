@@ -18,5 +18,35 @@
     "modelName": "",
     "createdAt": "2025-11-22T02:27:51.936Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "09704be5-1068-421f-b644-acdfbe7059ec",
+    "prompt": "一张详细的对比图，展示中国凤凰与西方凤凰的区别，描述文字为手写中文，画面也是是手绘风格，有简单的色彩，纸张看起来就像老旧的魔法卷轴那样泛黄且有破损",
+    "imagePath": "/uploads/eval-images/be/06/be06604c6a43d94295f1ab57dfb48a11.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-22T02:47:55.934Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "aa1ebafd-ad09-4858-a6f0-5f2b8e07f85d",
+    "prompt": "设计一个layabox的logo，layabox是一个基于html5的三维引擎，具有轻量，快速，全平台的特点，layabox认为程序员能改变世界。要求logo尽量包含以下元素：box，猿猴的脸，程序员。要求大气和谐，极简，抽象，亲和",
+    "imagePath": "/uploads/eval-images/2d/ff/2dffac97404642c4f9c876638c85812f.png",
+    "imageUrls": [],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-22T02:55:56.948Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "025bd886-1529-4364-9b82-3ca9e0c1450c",
+    "prompt": "设计一个layabox的logo，layabox是一个基于html5的三维引擎，具有轻量，快速，全平台的特点，layabox认为程序员能改变世界。要求logo尽量包含以下元素：box，猿猴的脸，程序员。要求大气和谐，极简，抽象，亲和",
+    "imagePath": "/uploads/eval-images/11/bd/11bd52f6ab6b2ee909787ed754c97885.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-22T02:59:09.075Z",
+    "dimensionScores": {}
   }
 ]

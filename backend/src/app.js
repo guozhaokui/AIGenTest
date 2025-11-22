@@ -55,6 +55,20 @@ app.use('/api/live-gen', liveGen);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('[Global Error]', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(err.status || 500).json({
+    error: 'internal_server_error',
+    message: err.message || 'Unknown error',
+    stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
+    code: err.code
+  });
+});
+
 module.exports = app;
 
 
