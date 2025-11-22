@@ -8,6 +8,9 @@ const QuestionsAdmin = () => import('../views/QuestionsAdmin.vue');
 const EvalIndex = () => import('../views/EvalIndex.vue');
 const EvalHome = () => import('../views/EvalHome.vue'); // start
 const EvalHistory = () => import('../views/EvalHistory.vue');
+const LiveGenIndex = () => import('../views/LiveGen/index.vue');
+const LiveGenHome = () => import('../views/LiveGen/LiveGenHome.vue');
+const LiveGenHistory = () => import('../views/LiveGen/LiveGenHistory.vue');
 
 const routes = [
   { path: '/', redirect: '/admin' },
@@ -29,6 +32,15 @@ const routes = [
       { path: '', redirect: '/eval/start' },
       { path: 'start', name: 'EvalStart', component: EvalHome },
       { path: 'history', name: 'EvalHistory', component: EvalHistory }
+    ]
+  },
+  {
+    path: '/live',
+    component: LiveGenIndex,
+    children: [
+      { path: '', redirect: '/live/generate' },
+      { path: 'generate', name: 'LiveGenHome', component: LiveGenHome },
+      { path: 'history', name: 'LiveGenHistory', component: LiveGenHistory }
     ]
   }
 ];

@@ -1,0 +1,22 @@
+[
+  {
+    "id": "17487832-989f-43c8-b926-88043fbce902",
+    "prompt": "显示一幅照片，内容符合“揽裙脱丝履，举身赴清池”描绘的场景和气氛，用两幅图描述过程，并在角色旁边显示角色名称",
+    "imagePath": "/uploads/eval-images/ba/2a/ba2a4dd3e331368b0bd6267cf8b8f411.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-22T02:23:34.233Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "9c49e00d-265d-43ef-94f3-a17c54706b2f",
+    "prompt": "一幅黑白照片，layabox老板谢成鸿由于加班太累仰躺在办公椅上睡着了",
+    "imagePath": "/uploads/eval-images/df/7f/df7f04e52728d628ee9d39a81ee41de8.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-22T02:27:51.936Z",
+    "dimensionScores": {}
+  }
+]
