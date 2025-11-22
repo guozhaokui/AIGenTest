@@ -72,6 +72,10 @@ router.post('/', upload.any(), async (req, res, next) => {
         pathCandidates.push(...imagePaths.split(','));
       }
     }
+    
+    // eslint-disable-next-line no-console
+    if (pathCandidates.length > 0) console.log('[generate] pathCandidates:', pathCandidates);
+
     for (let p of pathCandidates) {
       try {
         if (!p) continue;
@@ -92,8 +96,19 @@ router.post('/', upload.any(), async (req, res, next) => {
         // 本地 uploads 路径
         let rel = raw.replace(/\\/g, '/');
         if (rel.startsWith('/')) rel = rel.slice(1);
-        if (!rel.startsWith('uploads/')) rel = `uploads/${rel}`;
+        
+        // 智能提取 uploads/ 部分，兼容 backend/uploads/ 或其他前缀
+        const upIdx = rel.indexOf('uploads/');
+        if (upIdx >= 0) {
+          rel = rel.slice(upIdx);
+        } else {
+          rel = `uploads/${rel}`;
+        }
+
         const abs = path.resolve(path.join(__dirname, '../..', rel));
+        // eslint-disable-next-line no-console
+        console.log(`[generate] reading local image: raw="${raw}" rel="${rel}" abs="${abs}"`);
+
         const buf = await fs.readFile(abs);
         const ext = (abs.split('.').pop() || 'png').toLowerCase();
         inputImages.push({
@@ -102,7 +117,7 @@ router.post('/', upload.any(), async (req, res, next) => {
         });
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.warn('[generate] read imagePaths item failed:', e?.message || e);
+        console.warn('[generate] read imagePaths item failed:', p, e?.message || e);
       }
     }
     // eslint-disable-next-line no-console

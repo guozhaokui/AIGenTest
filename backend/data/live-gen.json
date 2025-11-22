@@ -48,5 +48,15 @@
     "modelName": "",
     "createdAt": "2025-11-22T02:59:09.075Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "3a97a5d8-1bbd-4408-bd9a-a1ba0252529f",
+    "prompt": "把这个照片的各个组成元素分解开，排列到一张图片上，要求分解成基本不可再拆分的元素",
+    "imagePath": "/uploads/eval-images/f2/76/f2762a998d3d0e0e63553b5b9114094e.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-22T03:09:38.154Z",
+    "dimensionScores": {}
   }
 ]

@@ -31,12 +31,13 @@
 
           <el-form-item label="参考图">
             <el-upload
+              ref="uploadRef"
               drag
               multiple
               :limit="3"
               list-type="picture-card"
               action="/api/examples/upload"
-              :file-list="fileList"
+              v-model:file-list="fileList"
               :on-success="onUploadSuccess"
               :on-remove="onRemove"
               accept="image/*"
@@ -192,10 +193,20 @@ async function handleGenerate() {
         return f.url; // 可能是回显的，或者是其他情况
     }).filter(Boolean);
     
+    // 确保路径格式正确（移除开头可能多余的 /）
+    const cleanPaths = paths.map(p => {
+      // 如果是回显的 url (如 /uploads/examples/...), 需要转回相对路径或保持原样供后端处理
+      // 后端 generate.js 会尝试加上 uploads/ 前缀，所以这里如果已经是 /uploads 开头，可以去掉开头的 /
+      let s = String(p);
+      if (s.startsWith('/')) s = s.slice(1);
+      console.log('cleanPaths', s);
+      return s;
+    });
+
     const payload = {
       modelId: form.value.modelId,
       prompt: form.value.prompt,
-      imagePaths: paths
+      imagePaths: cleanPaths
     };
     
     const res = await generateImage(payload);
