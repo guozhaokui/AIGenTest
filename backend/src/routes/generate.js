@@ -8,7 +8,8 @@ const multer = require('multer');
 
 const router = express.Router();
 
-const UPLOAD_DIR = path.resolve(__dirname, '../../uploads/eval-images');
+// 修改这一行：将 'uploads/eval-images' 改为 'imagedb'
+const UPLOAD_DIR = path.resolve(__dirname, '../../imagedb');
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
 const MODELS_FILE = path.resolve(__dirname, '../../data/models.json');
 const { readJson } = require('../utils/jsonStore');
@@ -153,9 +154,10 @@ router.post('/', upload.any(), async (req, res, next) => {
       const filename = `${hash}${ext}`;
       const abs = path.join(dir, filename);
       await fs.writeFile(abs, buf);
-      // 统一返回以 /uploads 开头的可访问路径
-      const relFromProject = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/'); // e.g. 'uploads/eval-images/...'
-      const publicPath = relFromProject.startsWith('uploads/') ? `/${relFromProject}` : `/uploads/${relFromProject}`;
+      // 在 try 块的末尾，修改公共路径的生成逻辑
+      const relFromProject = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/'); // e.g. 'imagedb/...'
+      // 修改这一行：将 'uploads/' 改为 'imagedb/'
+      const publicPath = relFromProject.startsWith('imagedb/') ? `/${relFromProject}` : `/imagedb/${relFromProject}`;
       // eslint-disable-next-line no-console
       console.log('[generate] success: saved 1 image (generateContent)');
       return res.json({ imagePath: publicPath, imagePaths: [publicPath] });

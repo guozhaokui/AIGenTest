@@ -3,7 +3,7 @@
     "id": "1b533601-b0a4-4ae8-b874-d757be4173c6",
     "runId": "run_20251121015923_dwcj",
     "questionId": "320bfab8-9243-4111-bda2-ca080a3fbfa4",
-    "generatedImagePath": "/uploads/eval-images/f7/42/f742137fcb493104fc6334cc9f31c77a.jpg",
+    "generatedImagePath": "/imagedb/f7/42/f742137fcb493104fc6334cc9f31c77a.jpg",
     "scoresByDimension": {
       "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": 0,
       "c8fb6061-e268-45cb-af19-7094e66801fa": 0
@@ -29,7 +29,7 @@
     "id": "f784d215-d3a5-4a30-9e46-ce32f3cad3be",
     "runId": "run_20251121015923_dwcj",
     "questionId": "9bd0eb69-5231-40e3-8eb5-9b4d648b5275",
-    "generatedImagePath": "/uploads/eval-images/65/6c/656c501ed04361e35a3f5bcba6a50487.jpg",
+    "generatedImagePath": "/imagedb/65/6c/656c501ed04361e35a3f5bcba6a50487.jpg",
     "scoresByDimension": {
       "f55c6293-a0cd-4db1-8189-27f632f056ae": 0,
       "1a2832be-bd88-408d-ac51-1174f96328a1": 0
@@ -57,7 +57,7 @@
     "id": "5de6f94b-a841-497a-b802-2bfd5e2b1b35",
     "runId": "run_20251121015923_dwcj",
     "questionId": "cb4fb736-02c1-4ac6-a1d4-5668c9e59eae",
-    "generatedImagePath": "/uploads/eval-images/cb/02/cb02acd5675610b552fa4c53d06f6aae.jpg",
+    "generatedImagePath": "/imagedb/cb/02/cb02acd5675610b552fa4c53d06f6aae.jpg",
     "scoresByDimension": {},
     "comment": "",
     "createdAt": "2025-11-21T02:01:07.820Z",

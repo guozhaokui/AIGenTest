@@ -1,0 +1,28 @@
+[
+  {
+    "id": "0f917e92-f43a-4302-ba1f-6b190c69c99a",
+    "runId": "run_20251126101832_svgt",
+    "questionId": "320bfab8-9243-4111-bda2-ca080a3fbfa4",
+    "generatedImagePath": "/imagedb/17/35/173555c595473faa7b7566b0cadf2ab1.png",
+    "scoresByDimension": {
+      "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": 0,
+      "c8fb6061-e268-45cb-af19-7094e66801fa": 0
+    },
+    "comment": "",
+    "createdAt": "2025-11-26T10:19:15.244Z",
+    "questionSnapshot": {
+      "id": "320bfab8-9243-4111-bda2-ca080a3fbfa4",
+      "prompt": "生成一个带有星空外表的苹果",
+      "dimensionIds": [
+        "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e",
+        "c8fb6061-e268-45cb-af19-7094e66801fa"
+      ],
+      "scoringRule": "",
+      "dimNameMap": {
+        "c0d5e3ea-482c-4153-b53f-db7e1a8e3a9e": "构图",
+        "c8fb6061-e268-45cb-af19-7094e66801fa": "光影"
+      },
+      "imageUrls": []
+    }
+  }
+]

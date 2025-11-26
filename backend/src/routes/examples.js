@@ -8,7 +8,8 @@ const crypto = require('crypto');
 
 const router = express.Router();
 
-const UPLOAD_DIR = path.resolve(__dirname, '../../uploads/examples');
+// 修改这一行：将 'uploads/examples' 改为 'imagedb'
+const UPLOAD_DIR = path.resolve(__dirname, '../../imagedb');
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -25,8 +26,10 @@ router.post('/upload', upload.single('file'), async (req, res, next) => {
     const filename = `${hash}${ext}`;
     const abs = path.join(dir, filename);
     await fs.writeFile(abs, file.buffer);
-    const rel = path.relative(process.cwd(), abs).replace(/\\/g, '/');
-    res.json({ path: rel });
+    // 修改这一行：返回以 /imagedb 开头的路径
+    const rel = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/');
+    const publicPath = rel.startsWith('imagedb/') ? `/${rel}` : `/imagedb/${rel}`;
+    res.json({ path: publicPath });
   } catch (err) {
     next(err);
   }
