@@ -15,8 +15,8 @@ Thumbs.db
 genImgGoogle.py
 
 # uploads (keep folder with .gitkeep)
-backend/uploads/**
-!backend/uploads/.gitkeep
+backend/imagedb/**
+!backend/imagedb/.gitkeep
 backend/exports/**
 !backend/exports/.gitkeep
 
