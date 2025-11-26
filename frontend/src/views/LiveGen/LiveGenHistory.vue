@@ -12,7 +12,7 @@
       </el-input>
     </div>
 
-    <el-table :data="items" v-loading="loading" style="width: 100%">
+    <el-table :data="items" v-loading="loading" style="width: 100%" :row-class-name="tableRowClassName">
       <el-table-column label="图片" width="120">
         <template #default="{ row }">
           <el-image 
@@ -70,12 +70,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { Search } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { listDimensions } from '../../services/api';
 
 const router = useRouter();
+const route = useRoute();
 const items = ref([]);
 const loading = ref(false);
 const keyword = ref('');
@@ -84,9 +85,17 @@ const pageSize = ref(10);
 const total = ref(0);
 const dimensions = ref([]);
 const dimMap = ref({});
+const highlightId = ref('');
 
 onMounted(async () => {
   try {
+    if (route.query.page) {
+      page.value = parseInt(route.query.page);
+    }
+    if (route.query.highlight) {
+      highlightId.value = route.query.highlight;
+    }
+
     const dims = await listDimensions();
     dimensions.value = dims;
     dims.forEach(d => { dimMap.value[d.id] = d.name; });
@@ -95,6 +104,13 @@ onMounted(async () => {
     console.error(e);
   }
 });
+
+function tableRowClassName({ row }) {
+  if (row.id === highlightId.value) {
+    return 'highlight-row';
+  }
+  return '';
+}
 
 function formatTime(t) {
   if (!t) return '';
@@ -155,9 +171,11 @@ function handleReEdit(row) {
   }));
   
   router.push({
-    name: 'LiveGenHome',
+    path: '/live', // Ensure this path is correct for LiveGenHome
     state: {
-      reEditData: data
+      reEditData: data,
+      fromPage: page.value,
+      fromId: row.id
     }
   });
 }
@@ -194,6 +212,9 @@ function handleReEdit(row) {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+:deep(.highlight-row) {
+  background-color: #f0f9eb;
 }
 </style>
 

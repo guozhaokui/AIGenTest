@@ -2,7 +2,9 @@
   <div class="live-gen-container">
     <div class="header">
       <h2>实时生成</h2>
-      <el-button type="primary" link @click="$router.push('/live/history')">查看历史记录</el-button>
+      <el-button type="primary" link @click="handleBack">
+        {{ returnState ? '返回' : '查看历史记录' }}
+      </el-button>
     </div>
 
     <div class="content">
@@ -111,6 +113,7 @@ const dimensions = ref([]);
 const loading = ref(false);
 const fileList = ref([]);
 const result = ref(null);
+const returnState = ref(null);
 
 const form = ref({
   modelId: '',
@@ -151,10 +154,31 @@ onMounted(async () => {
         }));
       }
     }
+
+    if (state && state.fromPage) {
+      returnState.value = {
+        page: state.fromPage,
+        highlightId: state.fromId
+      };
+    }
   } catch (e) {
     ElMessage.error('初始化数据失败');
   }
 });
+
+function handleBack() {
+  if (returnState.value) {
+    router.push({
+      path: '/live/history',
+      query: {
+        page: returnState.value.page,
+        highlight: returnState.value.highlightId
+      }
+    });
+  } else {
+    router.push('/live/history');
+  }
+}
 
 function normalizeUrl(p) {
   if (!p) return '';
