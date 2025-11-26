@@ -243,5 +243,127 @@
     "imageUrls": [],
     "createdAt": "2025-11-21T03:09:46.965Z",
     "updatedAt": "2025-11-21T03:17:46.732Z"
+  },
+  {
+    "id": "14bf8bc8-505a-47f7-9d76-7d1d2fa65418",
+    "prompt": "贴图",
+    "dimensionIds": [],
+    "scoringRule": "平铺贴图，有无光照，材质控制，法线贴图，照片去光照，照片转法线",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-24T10:40:13.710Z",
+    "updatedAt": "2025-11-24T10:46:28.087Z"
+  },
+  {
+    "id": "eb7dcb8c-ae25-4510-a363-3ef346678620",
+    "prompt": "场景",
+    "dimensionIds": [],
+    "scoringRule": "复杂场景跟随性，扩展场景，局部修改，天气修改，光照修改",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-24T10:40:18.390Z",
+    "updatedAt": "2025-11-24T10:47:59.870Z"
+  },
+  {
+    "id": "565a56f2-3133-49c6-a267-baf6b32fb990",
+    "prompt": "天空盒",
+    "dimensionIds": [],
+    "scoringRule": "鱼眼天空盒，全景天空盒，左右拼接",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-24T10:40:23.113Z",
+    "updatedAt": "2025-11-24T10:48:25.638Z"
+  },
+  {
+    "id": "0087b544-948a-4253-b606-03e5b8dd04d6",
+    "prompt": "序列帧",
+    "dimensionIds": [],
+    "scoringRule": "文本生成，骨骼生成，参考生成，换装，加武器",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-24T10:40:29.551Z",
+    "updatedAt": "2025-11-24T10:48:52.718Z"
+  },
+  {
+    "id": "5db38521-2761-4a36-bae4-dfad26e01aee",
+    "prompt": "UI",
+    "dimensionIds": [],
+    "scoringRule": "文本生成，图集生成，说明生成（草稿+说明）",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-24T10:40:34.581Z",
+    "updatedAt": "2025-11-24T10:49:17.646Z"
+  },
+  {
+    "id": "9d4c3b25-c94d-4193-a204-e1e8e99dde87",
+    "prompt": "修改ui风格",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-24T10:40:45.438Z",
+    "updatedAt": "2025-11-24T10:40:45.438Z"
+  },
+  {
+    "id": "98c9b1e3-fb59-4de8-b153-e28766d87493",
+    "prompt": "换皮，图片风格修改",
+    "dimensionIds": [],
+    "scoringRule": "卡通换写实，写实换卡通，按照一个图片的风格修改另一个图片",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-24T10:40:56.439Z",
+    "updatedAt": "2025-11-24T10:50:25.037Z"
+  },
+  {
+    "id": "5f4945a3-4ce9-4fcb-837d-c758ed7b1144",
+    "prompt": "线稿生图，说明书生图",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-24T10:41:49.961Z",
+    "updatedAt": "2025-11-24T10:41:49.961Z"
+  },
+  {
+    "id": "fe263ed0-b5eb-4e67-aaf4-eb0bff2c207c",
+    "prompt": "图标，icon",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-24T10:42:21.639Z",
+    "updatedAt": "2025-11-24T10:42:21.639Z"
+  },
+  {
+    "id": "f69d557f-22ce-4d36-95ce-5887325c2ace",
+    "prompt": "在第一张图片的下面生成一张地图，要求与第一张图能完美衔接，正好可以扩展第一张图。不包含第一张图的内容，分辨率与第一张图一样。",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "imageUrls": [
+      "/uploads/examples/3c/b3/3cb3121ef6ec4a0bea4802f9a0246578.jpg"
+    ],
+    "createdAt": "2025-11-24T11:08:06.838Z",
+    "updatedAt": "2025-11-24T11:08:06.838Z"
+  },
+  {
+    "id": "e9827d47-8a81-4617-97c2-a5816cef9289",
+    "prompt": "拆分场景为多层，拆分角色为部件，用于spine",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-25T03:48:28.057Z",
+    "updatedAt": "2025-11-25T03:48:28.057Z"
+  },
+  {
+    "id": "0c474268-8a3c-4076-99e7-5171ec2f8719",
+    "prompt": "与人的不对齐的地方，即用户说一个东西的时候，ai无法理解",
+    "dimensionIds": [],
+    "scoringRule": "",
+    "exampleIds": [],
+    "imageUrls": [],
+    "createdAt": "2025-11-25T03:49:20.824Z",
+    "updatedAt": "2025-11-25T03:49:20.824Z"
   }
 ]

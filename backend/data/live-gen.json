@@ -58,5 +58,837 @@
     "modelName": "",
     "createdAt": "2025-11-22T03:09:38.154Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "1e058c15-f2ce-44ea-826b-a8b8a4fa0fb7",
+    "prompt": "一张书法作品，内容是 “竹杖芒鞋轻胜马”的前一句",
+    "imagePath": "/uploads/eval-images/75/9f/759fb58e19dfbfcc02a7ecb4dac598ac.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-22T03:36:13.057Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "bbdd1dc7-c125-4a3f-b617-33ec04246ab5",
+    "prompt": "一张书法作品，内容是 “竹杖芒鞋轻胜马”的前一句",
+    "imagePath": "/uploads/eval-images/d9/1b/d91bcda9eee90fe3cf4b960869c310e9.png",
+    "imageUrls": [],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-22T03:39:18.081Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "8460d7cf-fc48-4d61-83b0-26aeddd0f359",
+    "prompt": "生成一张图片，内容是纳西妲和茜特拉莉的立绘",
+    "imagePath": "/uploads/eval-images/9e/bb/9ebbe43780642e79c69c3cf098bb20fb.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-22T04:11:12.123Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "7f7a7056-2d96-4f97-8080-cbffc122f997",
+    "prompt": "生成一张图片，内容是死之执政若娜瓦坐在台阶上",
+    "imagePath": "/uploads/eval-images/92/8b/928bdd4b1aee0ccfdbd73d9116ba6a40.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-22T04:30:13.149Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "9dc353f7-279d-40e7-bc9d-6b351f0a0aff",
+    "prompt": "生成一张2d动作序列帧，具体动作参考第一张图片，把角色换成原神的雷电将军，注意严格动作一致，尤其要区分左手手和左右腿。背景透明",
+    "imagePath": "/uploads/eval-images/f3/01/f301fc230260a7b94fc81e8f398d642b.jpg",
+    "imageUrls": [
+      "uploads/examples/07/47/074704fbd8c40c16bd96588f04ee4145.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-24T02:59:14.179Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "cd329d72-9e04-44e7-aa8d-a6b5c5575a59",
+    "prompt": "第二张图是根据第一张生成的，但是有的武器在右手了，统一改成在左手。其他地方不要改",
+    "imagePath": "/uploads/eval-images/70/f0/70f0d497c0b76ea944e0ba0f18a32334.jpg",
+    "imageUrls": [
+      "uploads/examples/07/47/074704fbd8c40c16bd96588f04ee4145.png",
+      "uploads/examples/f3/01/f301fc230260a7b94fc81e8f398d642b.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-24T03:27:08.354Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "03dc50fe-8826-4a7d-81e7-dc010e844769",
+    "prompt": "修改一下，第三行里面的角色右手不要拿刀，要左手拿，与其他的一致",
+    "imagePath": "/uploads/eval-images/37/93/37935db54ba69f981544df0d78de790c.png",
+    "imageUrls": [
+      "uploads/examples/f3/01/f301fc230260a7b94fc81e8f398d642b.jpg"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-24T03:29:18.770Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "8ca561d9-ae19-429a-9d03-7c57e18f2fb6",
+    "prompt": "生成一张2d动作序列帧，具体动作参考第一张图片，把角色换成第二张图片，注意严格动作一致，尤其要区分左手手和左右腿。背景透明",
+    "imagePath": "/uploads/eval-images/54/db/54db65511090816921c041d222f8544f.jpg",
+    "imageUrls": [
+      "uploads/examples/07/47/074704fbd8c40c16bd96588f04ee4145.png",
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-24T03:32:36.250Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "23359dac-bc08-4148-9cc2-7f79c0400631",
+    "prompt": "生成一张写实风格的2d动作序列帧，具体动作参考第一张图片，把角色换成第二张图片，注意严格动作一致，尤其要区分左手手和左右腿。背景透明",
+    "imagePath": "/uploads/eval-images/29/a9/29a9a743e9df50c3c0a6919d24c00c30.jpg",
+    "imageUrls": [
+      "uploads/examples/07/47/074704fbd8c40c16bd96588f04ee4145.png",
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-24T03:33:48.909Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "eaab04b8-67bd-40f1-ba2b-e1f3439ea945",
+    "prompt": "根据图片上面标出的问题来修改图片，其他地方不要修改。",
+    "imagePath": "/uploads/eval-images/65/af/65af96b1549a9a3af5b8a30eb0f83811.png",
+    "imageUrls": [
+      "uploads/examples/ce/1b/ce1bf2712a59fc32b639573cfd544aa1.jpg"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-24T03:37:48.933Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "89021a2c-a03c-4cd9-adf0-0d6fff9891f4",
+    "prompt": "根据图片上面标出的问题来修改图片，其他地方不要修改。",
+    "imagePath": "/uploads/eval-images/b4/de/b4de1d817c49b1e20a5d848a6b2f9448.png",
+    "imageUrls": [
+      "uploads/examples/98/23/982362c7f12074a8453c7a6143a69a9e.jpg"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-24T03:40:49.479Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "615573b7-11e5-4da2-b124-8e10f116a071",
+    "prompt": "设计一个SLG用的地图，左边是一个海，海中有个城堡在小岛上，只有一个吊桥连接外面的陆地。地图下方是沙漠地形，上方是雪山地形，俯视视角。",
+    "imagePath": "/uploads/eval-images/37/b0/37b034050d2fb8af88a38abec2f167ce.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-24T03:49:27.990Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "a3ba7d67-67b4-46ce-b96b-b7ca5a644963",
+    "prompt": "设计一个SLG用的地图，左边是一个海，海中有个城堡在小岛上，只有一个吊桥连接外面的陆地。地图下方是沙漠地形，上方是雪山地形，俯视视角。要有合理的路来联通各个部分",
+    "imagePath": "/uploads/eval-images/3c/b3/3cb3121ef6ec4a0bea4802f9a0246578.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-24T03:50:55.513Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "96beb61a-ec81-4fe9-b7c9-9dee0d46b3bb",
+    "prompt": "在第一张图片的下面生成一张地图，要求与第一张图能完美衔接，正好可以扩展第一张图",
+    "imagePath": "/uploads/eval-images/7c/99/7c99877ad70386f38f159661267b8953.jpg",
+    "imageUrls": [
+      "uploads/examples/3c/b3/3cb3121ef6ec4a0bea4802f9a0246578.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-24T10:57:33.249Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "70b34c8e-6ed0-4813-800f-2ef83edbe4bf",
+    "prompt": "填充这个地图的空白部分，修改中间红框标出来的接缝",
+    "imagePath": "/uploads/eval-images/ba/95/ba951f3c9fcb3af99aa9f7e9d8479d90.jpg",
+    "imageUrls": [
+      "uploads/examples/15/74/1574d7f63755d55115b74b2dbc9fc002.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-24T11:10:04.876Z",
+    "dimensionScores": {
+      "comment": "接缝没有修理好"
+    }
+  },
+  {
+    "id": "2e3f25d9-36b1-4a03-89ae-b4dffac6650e",
+    "prompt": "生成一个256x256的草地贴图，希望四方连续，重复排列无接缝",
+    "imagePath": "/uploads/eval-images/3d/ee/3dee6ae25c926914e0703f6972b7c41a.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T03:57:08.709Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "1620433c-49eb-46e0-9b32-e18cec7eeb85",
+    "prompt": "生成一个256x256的地面贴图，希望四方连续，重复排列无接缝。主要是覆盖积雪的土地，有的地方漏出枯枝和石块",
+    "imagePath": "/uploads/eval-images/77/02/7702504268221a88e97b95108670c955.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T04:11:17.745Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "8cca57e9-e753-472f-b07a-9213d41e6512",
+    "prompt": "生成一个256x256的地面贴图，希望四方连续，重复排列无接缝。主要大大小小的鹅卵石，使用PBR流程，所以要把光照效果去掉，只保留原始颜色",
+    "imagePath": "/uploads/eval-images/43/dd/43dddae9d51573250a68c6db16576d5a.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T04:14:35.475Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "d853bb5f-4d93-4519-af5c-846286162278",
+    "prompt": "第一张图片是第二张图片的贴图，参考第二张图片，修改第一张贴图，把上衣部分换成金属胸甲，其他部分不要改变，注意区分贴图的不同部分",
+    "imagePath": "/uploads/eval-images/e5/60/e56060a4ab33164e08d1db63b90fb7a7.jpg",
+    "imageUrls": [
+      "uploads/examples/97/83/97834d6fef7589d1bb7b3bc95105c278.png",
+      "uploads/examples/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T04:31:26.046Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "856dec38-0591-4730-b4a5-81a8e93afcfa",
+    "prompt": "第一张图片是第二张图片的贴图，参考第二张图片，修改第一张贴图，把脸上的涂色去掉",
+    "imagePath": "/uploads/eval-images/14/2f/142faa9e96959c4514f38f425531dacc.jpg",
+    "imageUrls": [
+      "uploads/examples/97/83/97834d6fef7589d1bb7b3bc95105c278.png",
+      "uploads/examples/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T04:35:34.833Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "d43d85fa-5a53-48a1-9c7d-ab8379b49853",
+    "prompt": "根据这张图片生成一个精确的可以恢复三维信息的深度图",
+    "imagePath": "/uploads/eval-images/57/ec/57ecf014f6582da8d27accf065e664e8.jpg",
+    "imageUrls": [
+      "uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T05:47:35.793Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "f01c5410-ca3b-44c4-9d69-3aa4eb24f5fd",
+    "prompt": "修改一下这张图片的视角，镜头在当前 位置下移1米，其他不变",
+    "imagePath": "/uploads/eval-images/a8/d2/a8d2f9f7347a04827531a5f5ffa229b8.jpg",
+    "imageUrls": [
+      "uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T05:50:43.379Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "3c0a38c7-63ee-486a-8ccf-0873fac714ff",
+    "prompt": "修改一下这张图片的视角，镜头在当前 位置下移1米，其他不变",
+    "imagePath": "/uploads/eval-images/5c/73/5c73b6a0b409ef5fa0284f1d4cc1c725.jpg",
+    "imageUrls": [
+      "uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T05:54:15.646Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "5b936a41-29b0-4b4d-bf75-942b09bc3bc9",
+    "prompt": "把这张低分辨率图片高清化",
+    "imagePath": "/uploads/eval-images/7c/b8/7cb875081eaaab2a8c37f5b18906cf18.jpg",
+    "imageUrls": [
+      "uploads/examples/f8/da/f8da37e2c5aa8d8ee0667966bfc63328.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T05:58:17.436Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "65c1d74b-c5ae-49dc-8331-3118f41726b0",
+    "prompt": "修改这张图片的镜头视角，改成侧面观察正在奔跑的lara",
+    "imagePath": "/uploads/eval-images/89/94/8994fbbd1943c814089d877fac2930ec.jpg",
+    "imageUrls": [
+      "uploads/examples/7c/b8/7cb875081eaaab2a8c37f5b18906cf18.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:00:33.975Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "ccb743ea-4e99-44d2-bd75-a7d8cd9773cc",
+    "prompt": "分离出这个画面中的角色图片，然后切分成头，上半身，下半身，左右胳膊左右腿都分成三部分，用来做spine动画，关节部分都要扩充一些以免穿帮",
+    "imagePath": "/uploads/eval-images/11/12/1112d13c97d6ce237a6d9342bfff5ef1.jpg",
+    "imageUrls": [
+      "uploads/examples/89/94/8994fbbd1943c814089d877fac2930ec.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:03:47.757Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "89c0eac5-8d20-4d15-9a88-da2df9cc79d7",
+    "prompt": "分离出这个画面中的角色图片，然后切分成头，上半身，下半身，左右胳膊分成上臂前臂手三部分，左右腿都分成大腿小腿脚三部分，用来做spine动画，关节部分都要扩充一些以免穿帮。分离的图片重新排版整理一下，放到大图集中",
+    "imagePath": "/uploads/eval-images/ab/5f/ab5fcc82f8b0ff34a1ebfab8965acfd9.jpg",
+    "imageUrls": [
+      "uploads/examples/89/94/8994fbbd1943c814089d877fac2930ec.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:05:57.712Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "b7c38980-ed44-48fb-a3da-71ae52c2659d",
+    "prompt": "第一张图片是第二张效果的贴图，根据这张贴图生成正确的法线贴图，表现贴图中的细节，像素位置与这张贴图完全匹配。",
+    "imagePath": "/uploads/eval-images/b4/54/b454f8f362b5ca543e5b1ef6575a7f60.jpg",
+    "imageUrls": [
+      "uploads/examples/e5/60/e56060a4ab33164e08d1db63b90fb7a7.jpg",
+      "uploads/examples/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:09:59.645Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "c5c06351-dd6e-4fbc-96a9-f4fcdf400a52",
+    "prompt": "第一张图片是第二张效果的贴图，处理这张贴图，把光照效果和细节阴影去掉，因为我要pbr和法线贴图来计算明暗",
+    "imagePath": "/uploads/eval-images/31/a4/31a40f89bd4b7d0f3d7723800eb60c84.jpg",
+    "imageUrls": [
+      "uploads/examples/e5/60/e56060a4ab33164e08d1db63b90fb7a7.jpg",
+      "uploads/examples/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:15:48.329Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "595d335a-038b-4708-9897-9f53dbeea744",
+    "prompt": "第一张图片是第二张效果的贴图，处理这张贴图，根据材质来生成用于PBR流程的金属度贴图",
+    "imagePath": "/uploads/eval-images/10/99/10994ed35375d4dca967c9fe46d1a5df.jpg",
+    "imageUrls": [
+      "uploads/examples/e5/60/e56060a4ab33164e08d1db63b90fb7a7.jpg",
+      "uploads/examples/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:20:53.080Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "55241882-5608-4495-a94f-b265544c0ac9",
+    "prompt": "第一张图片是第二张效果的贴图，处理这张贴图，根据材质来生成用于PBR流程的光滑度贴图",
+    "imagePath": "/uploads/eval-images/d5/a4/d5a4be1b71c302f0aad675afb3d6c2b7.jpg",
+    "imageUrls": [
+      "uploads/examples/e5/60/e56060a4ab33164e08d1db63b90fb7a7.jpg",
+      "uploads/examples/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:22:32.650Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "9a5a029b-123a-463d-883b-bfa5720f2375",
+    "prompt": "第一张图片是第二张效果的贴图，处理这张贴图，根据材质来生成用于PBR流程的光滑度贴图",
+    "imagePath": "/uploads/eval-images/ec/ab/ecab8dc3df2e90ec94d21c566d812a10.jpg",
+    "imageUrls": [
+      "uploads/examples/e5/60/e56060a4ab33164e08d1db63b90fb7a7.jpg",
+      "uploads/examples/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:23:42.050Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "5f5743c2-f2ce-460e-aaaa-f37c7a6f6d59",
+    "prompt": "生成一张panorama天空图片，变形类似第一张图。要求左右拼接无缝连续。贴到球上以后，上下自然不变形。内容是阴雨来临前的大草原",
+    "imagePath": "/uploads/eval-images/67/38/6738a942f13bc5863481a9503c64c434.jpg",
+    "imageUrls": [
+      "uploads/examples/18/34/1834ef8913bd55b866c58651bd058801.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:37:50.615Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "74f9a67a-017a-4a61-9627-a3fdaa0f3e2e",
+    "prompt": "一张纳西妲的立绘，根据第一张的骨骼图生成动作",
+    "imagePath": "/uploads/eval-images/32/62/3262546dd4c94dc17549363a087ad8cd.jpg",
+    "imageUrls": [
+      "uploads/examples/37/c2/37c2aa006b3dd0a3ddccd387a9f7abae.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:45:36.946Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "fc104918-3d7b-438d-b866-39c625f7372f",
+    "prompt": "根据图片说明生成ui元素，一个开始游戏的圆形按钮，一个开始游戏的方形按钮。这个是草图，需要美化，符合这个意思即可，不要保留说明文字。背景为纯白",
+    "imagePath": "/uploads/eval-images/47/05/47056e78510411d663dc6e3caef40aff.png",
+    "imageUrls": [
+      "uploads/examples/dd/f7/ddf75d81a15624a010b7fe9031c3f8a3.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T06:55:57.545Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "22c68f69-ce3f-4cfc-933e-4d0ed231f66c",
+    "prompt": "修改这个ui图片的材质，变成手绘风格，开始按钮材质改成手绘木质",
+    "imagePath": "/uploads/eval-images/2d/67/2d6769f2e51d0abd53b296d5a8fa488e.png",
+    "imageUrls": [
+      "uploads/examples/47/05/47056e78510411d663dc6e3caef40aff.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:02:28.127Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "524a7c27-66fb-4ede-8200-67630ec478a3",
+    "prompt": "修改这个ui图片的材质，变成手绘扁平风格，开始按钮材质改成木头，边缘有缺口",
+    "imagePath": "/uploads/eval-images/53/9f/539f9edb32500ad6baaf0fa993d288e8.png",
+    "imageUrls": [
+      "uploads/examples/47/05/47056e78510411d663dc6e3caef40aff.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:03:22.964Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "f3be00be-5efe-415b-85d8-05bcce13eb04",
+    "prompt": "修改这个ui图片的材质，变成手绘扁平风格，开始按钮材质改成木头，边缘有缺口。文字内陷有立体感。去掉图片边缘的阴影。",
+    "imagePath": "/uploads/eval-images/bf/1f/bf1f63bb4b6898d82a9273876dd9cc51.png",
+    "imageUrls": [
+      "uploads/examples/47/05/47056e78510411d663dc6e3caef40aff.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:04:50.713Z",
+    "dimensionScores": {
+      "comment": "阴影没有去掉"
+    }
+  },
+  {
+    "id": "0927d0a1-b9da-456d-a08e-bb67ec14696f",
+    "prompt": "把每个角色的动作转成openpose的骨骼的形式。",
+    "imagePath": "/uploads/eval-images/1f/38/1f38b146d8c8f06bc054852b48a763b4.png",
+    "imageUrls": [
+      "uploads/examples/72/fd/72fd1d810cf39dded95b2958bc0afe48.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:07:12.855Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "34ba4d85-a143-486c-b90c-6afeac7bc27b",
+    "prompt": "提取每个动作转成openpose的骨骼。",
+    "imagePath": "/uploads/eval-images/4d/dd/4dddd8de8518ce78d9497903a758818c.png",
+    "imageUrls": [
+      "uploads/examples/72/fd/72fd1d810cf39dded95b2958bc0afe48.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:11:36.625Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "65160c35-e3f0-49c6-81f5-30c4c396b692",
+    "prompt": "把这张图片去掉背景和文字，改成写实风格",
+    "imagePath": "/uploads/eval-images/f9/54/f95463df47fa785d0510c5ad4ff70457.png",
+    "imageUrls": [
+      "uploads/examples/72/fd/72fd1d810cf39dded95b2958bc0afe48.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:13:10.203Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "4064a956-5c2e-4f96-a188-9bf6ff22ad75",
+    "prompt": "根据这个草图生成一组空中楼阁的图片，建筑为漂浮在云层之中的中式建筑，繁复华丽，上下都有很多层，有一种压迫感",
+    "imagePath": "/uploads/eval-images/2c/cc/2ccc9a450fd6fa35b7405841fd88b0d9.jpg",
+    "imageUrls": [
+      "uploads/examples/72/ed/72ed1fb46fc4119fc60d92df6ff7685c.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:29:59.073Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "8455985f-7160-4eea-939e-e4fdecbfbf43",
+    "prompt": "根据这个草图的视角生成一组空中楼阁的图片，建筑为漂浮在云层之中的中式建筑，繁复华丽，整体为金色和红色，上下都有很多层，有一种压迫感",
+    "imagePath": "/uploads/eval-images/ba/71/ba7169928a4427db7c5188cfd5ff8ca1.jpg",
+    "imageUrls": [
+      "uploads/examples/55/c9/55c9f45f692fb76cb7faacf422fccd11.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:32:17.436Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "9661b9ec-3645-4294-98aa-f8125ced7bf7",
+    "prompt": "把这张图片改成铅笔线条画，去掉背景，",
+    "imagePath": "/uploads/eval-images/64/08/6408f730d1e0ff5d9333b0bd891318a8.png",
+    "imageUrls": [
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:34:13.922Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2b825770-9031-4fa6-8661-666d0e707280",
+    "prompt": "把这张图片改成铅笔线条画，去掉背景，类似速写，不要细节，可以用来填色。",
+    "imagePath": "/uploads/eval-images/78/6a/786ab887c0ef89b267d1afc7da3e0cd2.png",
+    "imageUrls": [
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:35:19.843Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "e003ae0e-a163-451c-b5d3-1ba46e69861f",
+    "prompt": "把这张图片改成矢量线条画，去掉背景，可以用来填色。",
+    "imagePath": "/uploads/eval-images/a4/0d/a40d498b8b289e94fae51519c6cd4981.png",
+    "imageUrls": [
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:37:47.698Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "d386eaac-6ec5-497d-bbf5-3afe3d8e244b",
+    "prompt": "去掉这张图片手中的物品，伸展手臂呈游戏中需要的T pose",
+    "imagePath": "/uploads/eval-images/6e/5f/6e5f9db43e172672fa701c90bb8f0fae.png",
+    "imageUrls": [
+      "uploads/examples/a4/0d/a40d498b8b289e94fae51519c6cd4981.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:39:30.324Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "d1288dbf-5333-4414-9b26-9df8096873b3",
+    "prompt": "去掉这张图片手中的物品,去掉衣服纹理，伸展手臂呈游戏中需要的T pose，要能看到手",
+    "imagePath": "/uploads/eval-images/70/03/7003db2be8df8da68ebb73e813cd1e6e.png",
+    "imageUrls": [
+      "uploads/examples/a4/0d/a40d498b8b289e94fae51519c6cd4981.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:40:31.441Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "9168ee2c-2a58-4898-9299-570e07899e1f",
+    "prompt": "给这张图片上色，",
+    "imagePath": "/uploads/eval-images/bf/e4/bfe48816a54f96ef770e3f3efb84b662.png",
+    "imageUrls": [
+      "uploads/examples/70/03/7003db2be8df8da68ebb73e813cd1e6e.png"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:41:56.218Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "faf2fdb0-c167-4144-8cfd-fedc80dcdb66",
+    "prompt": "给这张图片上色，",
+    "imagePath": "/uploads/eval-images/99/20/9920b8b1a6c611b4cfc0b33a039f8e47.jpg",
+    "imageUrls": [
+      "uploads/examples/70/03/7003db2be8df8da68ebb73e813cd1e6e.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:43:51.381Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "20381b61-f98d-46c6-b364-ebc104085c43",
+    "prompt": "把这张图片改成矢量线条画，去掉背景，可以用来填色。",
+    "imagePath": "/uploads/eval-images/e5/cd/e5cd96174eac95287ab08c09cf148097.jpg",
+    "imageUrls": [
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:44:36.751Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "e0af3fca-a9ad-47ac-96ee-f6acbd03db1c",
+    "prompt": "把这张图片改成4头身卡通风格，去掉背景",
+    "imagePath": "/uploads/eval-images/86/72/8672cd91599c5a0fde2ec627fbda8d3f.jpg",
+    "imageUrls": [
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:46:33.998Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2dd0aff0-919b-4adf-84b8-83fd9d53552f",
+    "prompt": "把这张图片改成二头身Q版风格，去掉背景",
+    "imagePath": "/uploads/eval-images/13/4d/134de70b1368c52756faeb6dc6f96559.jpg",
+    "imageUrls": [
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:48:00.143Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "08a60ce9-a5c8-4e3b-acaf-5c4e1113c715",
+    "prompt": "把这张图片改成二头身卡通风格，去掉背景",
+    "imagePath": "/uploads/eval-images/52/ae/52aec41f12f63213c60d364889bef113.jpg",
+    "imageUrls": [
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:49:11.791Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "4ad68728-9c8c-4531-8276-d103f16824bd",
+    "prompt": "把这张图片改成Two-head proportion chibi style，去掉背景",
+    "imagePath": "/uploads/eval-images/31/20/3120dcb666b15246de23a376112d98b9.jpg",
+    "imageUrls": [
+      "uploads/examples/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:52:46.443Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "52baf76a-6338-47a6-9650-8919c95d0c2b",
+    "prompt": "生成一张斜45度游戏地图，内容是一个唐朝首都长安街景图，要求建筑符合历史，道路联通合理",
+    "imagePath": "/uploads/eval-images/28/83/2883a9eed197a9e18a6de219816814f2.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T07:59:32.680Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "a4def269-3802-49dd-9d50-bfef9115db86",
+    "prompt": "这是一张斜45度游戏地图，把他的地面，建筑等元素分解开重新排列，放到一张图集中",
+    "imagePath": "/uploads/eval-images/b3/e8/b3e86ceb6f67dd57a3afd710b6881aca.jpg",
+    "imageUrls": [
+      "uploads/examples/28/83/2883a9eed197a9e18a6de219816814f2.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:02:00.201Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2aaa5692-7396-4e14-add6-46bf5378ddc1",
+    "prompt": "这是一张斜45度游戏地图，根据这张图片生成一张绿色的道路图，要求与这张图完全吻合。",
+    "imagePath": "/uploads/eval-images/7d/75/7d756922858ae61c8db415054601d5b2.jpg",
+    "imageUrls": [
+      "uploads/examples/28/83/2883a9eed197a9e18a6de219816814f2.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:03:41.050Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "09eb77cf-5dba-40d8-882c-9419e30a4cd8",
+    "prompt": "这是一张斜45度游戏地图，根据这张图片生成一张绿色的道路图，只要能行走的地方，被遮挡的地面和墙壁不要，要求与这张图完全吻合。",
+    "imagePath": "/uploads/eval-images/1c/a3/1ca309f89f5198467eb144eb023ca10f.jpg",
+    "imageUrls": [
+      "uploads/examples/28/83/2883a9eed197a9e18a6de219816814f2.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:05:13.913Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "62c156b5-75ee-42bd-9c62-b1742162a592",
+    "prompt": "生成一个游戏特效图标，表示让对方眩晕，128x128分辨率",
+    "imagePath": "/uploads/eval-images/36/6f/366fdfb4c405f616335aab0f926a749a.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:13:14.541Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "197e4a5c-20ad-42e3-9c50-3ab069136635",
+    "prompt": "生成一个游戏特效图标，表示让对方眩晕，抽象简单，不用文字，128x128分辨率",
+    "imagePath": "/uploads/eval-images/63/6a/636aac4a8549d9fbc1f665ee2df24fa7.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:15:11.085Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "ee5eb6c9-c164-4b94-882c-c1c857076afc",
+    "prompt": "把这张图片变成像素风格",
+    "imagePath": "/uploads/eval-images/b9/f4/b9f47f1018d0c88c0d3e8c084777d90e.jpg",
+    "imageUrls": [
+      "uploads/examples/38/c6/38c60e82bda3d96edffb9088c712aab2.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:18:12.715Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "817bb891-5c67-42e0-ab5f-1ffaaeea280e",
+    "prompt": "把这张图片变成真人照片",
+    "imagePath": "/uploads/eval-images/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg",
+    "imageUrls": [
+      "uploads/examples/38/c6/38c60e82bda3d96edffb9088c712aab2.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:19:56.934Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "13fc875f-1600-48b2-a6e0-a25c3153055f",
+    "prompt": "生成一个跳跃按钮的图标，要简洁风格",
+    "imagePath": "/uploads/eval-images/28/ba/28ba237544354743c0821696b1cbad88.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:22:24.894Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "71533fe1-609e-49bf-8621-411f04019fd6",
+    "prompt": "生成一个跳跃按钮的图标，圆形边框，黑白配色，要简洁无文字",
+    "imagePath": "/uploads/eval-images/31/32/313239aeeb55dbd60cba20cffac104d3.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:23:29.351Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "a6faad1e-2874-4cd7-92ca-b71cba8d8cdb",
+    "prompt": "把这张图片变成flash的手绘风格",
+    "imagePath": "/uploads/eval-images/8b/64/8b640ba553cdc814f6c2d8ea3ff87bf3.jpg",
+    "imageUrls": [
+      "uploads/examples/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T08:28:36.589Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "8c038e90-abe2-4320-8949-3d42412cc201",
+    "prompt": "把这张图片变成印象派风格",
+    "imagePath": "/uploads/eval-images/5a/cf/5acff2bc1fb31b7e4ced2f030dc40807.jpg",
+    "imageUrls": [
+      "uploads/examples/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-25T09:31:56.763Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "756998a9-e31a-40e8-a14b-213b65f9929f",
+    "prompt": "搜索原神若纳瓦的设计，绘制一张若纳瓦与伊斯塔露坐在吧台聊天的场景",
+    "imagePath": "/uploads/eval-images/7c/8a/7c8a7f236b903e7171a1e10f98e9e70a.jpg",
+    "imageUrls": [
+      "uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-26T02:42:55.456Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "31b10cc9-92d4-4c9f-afd3-0b0a77b499c6",
+    "prompt": "搜索原神若纳瓦的设计，绘制一张若纳瓦与伊斯塔露坐在吧台聊天的场景",
+    "imagePath": "/uploads/eval-images/51/a8/51a8453a50182d51d58d824d2d75eedd.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-26T02:43:41.387Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "f8ce2a7b-66c8-4981-8fe5-13448032fdd0",
+    "prompt": "搜索原神死之执政若娜瓦的设计，绘制一张若娜瓦与伊斯塔露坐在吧台聊天的场景",
+    "imagePath": "/uploads/eval-images/32/c0/32c082448a2d997cd1642721c8188e4d.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-26T02:45:06.283Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "7d699b92-8690-415d-a8cc-9a4e4fb1f019",
+    "prompt": "搜索原神ronova设计，绘制一张ronova与伊斯塔露坐在吧台聊天的场景",
+    "imagePath": "/uploads/eval-images/76/d4/76d44507765b1628afbcaa6a2b194c17.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-26T02:48:49.554Z",
+    "dimensionScores": {}
   }
 ]

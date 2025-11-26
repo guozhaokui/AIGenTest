@@ -6,6 +6,12 @@
     </div>
 
     <div class="content">
+      <el-image-viewer 
+        v-if="showViewer" 
+        :url-list="previewUrlList" 
+        @close="closeViewer" 
+        :z-index="9999"
+      />
       <el-card class="input-card">
         <template #header>
           <div class="card-header">
@@ -40,6 +46,7 @@
               v-model:file-list="fileList"
               :on-success="onUploadSuccess"
               :on-remove="onRemove"
+              :on-preview="handlePreview"
               accept="image/*"
             >
               <el-icon><Plus /></el-icon>
@@ -164,6 +171,10 @@ function onUploadSuccess(res) {
   form.value.imageUrls.push(path);
 }
 
+// 增加一个 el-image-viewer 的引用状态
+const showViewer = ref(false);
+const previewUrlList = ref([]);
+
 function onRemove(file) {
   // file.response 是上传成功后的响应
   // 或者 file.url 是预览地址
@@ -173,6 +184,15 @@ function onRemove(file) {
   // 注意 el-upload 的 file-list 是双向绑定的，但 remove 事件触发时 fileList 可能还未更新
   // 这里我们依赖 el-upload 自动维护 fileList，我们手动同步一下
   // 但更好的方式是 upload 组件维护 fileList, 我们在提交时再提取
+}
+
+function handlePreview(file) {
+  previewUrlList.value = [file.url];
+  showViewer.value = true;
+}
+
+function closeViewer() {
+  showViewer.value = false;
 }
 
 async function handleGenerate() {
