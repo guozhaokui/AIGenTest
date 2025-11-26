@@ -94,16 +94,20 @@ router.post('/', upload.any(), async (req, res, next) => {
           });
           continue;
         }
-        // 本地 uploads 路径
+        // 本地图片路径（支持 imagedb/ 和旧的 uploads/）
         let rel = raw.replace(/\\/g, '/');
         if (rel.startsWith('/')) rel = rel.slice(1);
         
-        // 智能提取 uploads/ 部分，兼容 backend/uploads/ 或其他前缀
+        // 智能提取 imagedb/ 或 uploads/ 部分，兼容新旧路径
+        const imgDbIdx = rel.indexOf('imagedb/');
         const upIdx = rel.indexOf('uploads/');
-        if (upIdx >= 0) {
+        if (imgDbIdx >= 0) {
+          rel = rel.slice(imgDbIdx);
+        } else if (upIdx >= 0) {
           rel = rel.slice(upIdx);
         } else {
-          rel = `uploads/${rel}`;
+          // 默认尝试 imagedb 目录
+          rel = `imagedb/${rel}`;
         }
 
         const abs = path.resolve(path.join(__dirname, '../..', rel));
