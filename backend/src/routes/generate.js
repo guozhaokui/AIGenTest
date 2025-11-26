@@ -132,7 +132,13 @@ router.post('/', upload.any(), async (req, res, next) => {
           apiKey: GOOGLE_API_KEY,
           model: selected.options?.model || 'gemini-2.5-flash-image',
           prompt,
-          images: inputImages
+          images: inputImages,
+          config:{
+            imageConfig:{
+                personGeneration:"allow_all"
+            }
+          }
+          
         });
         dataBase64 = out?.dataBase64;
         mimeType = out?.mimeType;

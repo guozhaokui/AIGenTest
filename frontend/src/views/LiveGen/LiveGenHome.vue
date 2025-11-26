@@ -42,7 +42,7 @@
               ref="uploadRef"
               drag
               multiple
-              :limit="3"
+              :limit="14"
               list-type="picture-card"
               action="/api/examples/upload"
               v-model:file-list="fileList"
@@ -53,7 +53,7 @@
             >
               <el-icon><Plus /></el-icon>
             </el-upload>
-            <div style="font-size: 12px; color: #666; margin-top: 4px;">最多上传 3 张参考图</div>
+            <div style="font-size: 12px; color: #666; margin-top: 4px;">最多上传 14 张参考图</div>
           </el-form-item>
 
           <el-form-item>

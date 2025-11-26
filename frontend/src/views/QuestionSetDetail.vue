@@ -61,13 +61,13 @@
         <el-form-item label="评分规则">
           <el-input v-model="qForm.scoringRule" />
         </el-form-item>
-        <el-form-item label="题图（最多3张）">
+        <el-form-item label="题图（最多14张）">
           <el-upload
             drag
             multiple
             list-type="picture-card"
             action="/api/examples/upload"
-            :limit="3"
+            :limit="14"
             :file-list="createFileList"
             :on-success="onCreateUploadSuccess"
             :on-remove="onCreateUploadRemove"
@@ -99,13 +99,13 @@
         <el-form-item label="评分规则">
           <el-input v-model="editQ.scoringRule" />
         </el-form-item>
-        <el-form-item label="题图（最多3张）">
+        <el-form-item label="题图（最多14张）">
           <el-upload
             drag
             multiple
             list-type="picture-card"
             action="/api/examples/upload"
-            :limit="3"
+            :limit="14"
             :file-list="editFileList"
             :on-success="onEditUploadSuccess"
             :on-remove="onEditUploadRemove"
