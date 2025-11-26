@@ -890,5 +890,53 @@
     "modelName": "",
     "createdAt": "2025-11-26T02:48:49.554Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "4fa327b8-9de4-4f8f-8837-7ff058cf596a",
+    "prompt": "根据这张图片生成一个精确的可以恢复三维信息的深度图",
+    "imagePath": "/uploads/eval-images/b4/94/b494da0eb2e86a8aa8bcaf4076bbcf29.jpg",
+    "imageUrls": [
+      "uploads/examples/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-26T04:07:49.970Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "60426235-958e-4e6c-a724-332e31f81b02",
+    "prompt": "根据这张图片生成一个精确的可以恢复三维信息的深度图。要求近处为黑远处为白",
+    "imagePath": "/uploads/eval-images/76/ee/76eeb5209569ad1dd70708ed5b762aa6.jpg",
+    "imageUrls": [
+      "uploads/examples/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-26T06:51:55.855Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "9341dda5-5e7d-4fdf-bd60-7d1bc8c7f53a",
+    "prompt": "根据这张图片生成一个精确的可以恢复三维信息的深度图。要求近处为黑远处为白，尽量精确，以便能三维重建",
+    "imagePath": "/uploads/eval-images/57/08/5708ecfeb13cfd95c464dcb0f3028fa3.jpg",
+    "imageUrls": [
+      "uploads/examples/28/83/2883a9eed197a9e18a6de219816814f2.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-26T06:54:08.816Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "66997df9-0223-433a-b21d-b24bde1f06cd",
+    "prompt": "这个人物设计感觉死板难看，你把不好的地方指出来，并且设计一个更好看的在旁边",
+    "imagePath": "/uploads/eval-images/46/30/4630e61ca3ed7cd3c72f4a80f3fe011c.jpg",
+    "imageUrls": [
+      "uploads/examples/bd/ab/bdab9c53d190735e0ab3191eb88b5794.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "createdAt": "2025-11-26T08:21:13.939Z",
+    "dimensionScores": {}
   }
 ]
