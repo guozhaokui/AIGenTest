@@ -8,7 +8,6 @@ const crypto = require('crypto');
 
 const router = express.Router();
 
-// 修改这一行：将 'uploads/examples' 改为 'imagedb'
 const UPLOAD_DIR = path.resolve(__dirname, '../../imagedb');
 const storage = multer.memoryStorage();
 const upload = multer({ storage });

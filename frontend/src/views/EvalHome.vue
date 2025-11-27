@@ -95,8 +95,8 @@ async function init() {
         if (it.questionId && it.generatedImagePath) {
           let url = (it.generatedImagePath || '').replace(/\\\\/g, '/').replace(/\\/g, '/');
           if (!url.startsWith('/')) url = '/' + url;
-          if (!url.startsWith('/uploads/')) {
-            url = url.replace(/^\/backend\/uploads\//, '/uploads/').replace(/^\/uploads\//, '/uploads/');
+          if (!url.startsWith('/imagedb/')) {
+            url = url.replace(/^\/backend\/imagedb\//, '/imagedb/').replace(/^\/imagedb\//, '/imagedb/');
           }
           map[it.questionId] = url;
         }

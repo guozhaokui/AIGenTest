@@ -2,7 +2,7 @@
 
 const MIME_WHITELIST = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10MB
-const DEFAULT_UPLOAD_DIR = 'backend/uploads';
+const DEFAULT_UPLOAD_DIR = 'backend/imagedb';
 
 module.exports = {
   MIME_WHITELIST,

@@ -41,7 +41,7 @@
         "1a2832be-bd88-408d-ac51-1174f96328a1": "NSFW"
       },
       "imageUrls": [
-        "/uploads/examples/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg"
+        "/imagedb/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg"
       ]
     }
   },
@@ -59,8 +59,8 @@
       "scoringRule": "",
       "dimNameMap": {},
       "imageUrls": [
-        "/uploads/examples/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg",
-        "/uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+        "/imagedb/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg",
+        "/imagedb/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
       ]
     }
   }

@@ -8,7 +8,6 @@ const multer = require('multer');
 
 const router = express.Router();
 
-// 修改这一行：将 'uploads/eval-images' 改为 'imagedb'
 const UPLOAD_DIR = path.resolve(__dirname, '../../imagedb');
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
 const MODELS_FILE = path.resolve(__dirname, '../../data/models.json');
@@ -94,17 +93,14 @@ router.post('/', upload.any(), async (req, res, next) => {
           });
           continue;
         }
-        // 本地图片路径（支持 imagedb/ 和旧的 uploads/）
+        // 本地图片路径（支持 imagedb/ ）
         let rel = raw.replace(/\\/g, '/');
         if (rel.startsWith('/')) rel = rel.slice(1);
         
-        // 智能提取 imagedb/ 或 uploads/ 部分，兼容新旧路径
+        // 智能提取 imagedb/ 部分，兼容新旧路径
         const imgDbIdx = rel.indexOf('imagedb/');
-        const upIdx = rel.indexOf('uploads/');
         if (imgDbIdx >= 0) {
           rel = rel.slice(imgDbIdx);
-        } else if (upIdx >= 0) {
-          rel = rel.slice(upIdx);
         } else {
           // 默认尝试 imagedb 目录
           rel = `imagedb/${rel}`;
@@ -166,7 +162,6 @@ router.post('/', upload.any(), async (req, res, next) => {
       await fs.writeFile(abs, buf);
       // 在 try 块的末尾，修改公共路径的生成逻辑
       const relFromProject = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/'); // e.g. 'imagedb/...'
-      // 修改这一行：将 'uploads/' 改为 'imagedb/'
       const publicPath = relFromProject.startsWith('imagedb/') ? `/${relFromProject}` : `/imagedb/${relFromProject}`;
       // eslint-disable-next-line no-console
       console.log('[generate] success: saved 1 image (generateContent)');

@@ -1030,5 +1030,17 @@
     "modelName": "",
     "createdAt": "2025-11-26T14:35:47.995Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "4f8468de-98a5-46f9-b715-dd7ab6723d4a",
+    "prompt": "这个人物设计感觉死板难看，你把不好的地方指出来，并且设计一个更好看的在旁边",
+    "imagePath": "/imagedb/50/f3/50f323d29de19b547cf06508df8b78e8.png",
+    "imageUrls": [
+      "imagedb/bd/ab/bdab9c53d190735e0ab3191eb88b5794.jpg"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-26T14:50:09.209Z",
+    "dimensionScores": {}
   }
 ]

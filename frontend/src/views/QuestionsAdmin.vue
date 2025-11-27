@@ -254,8 +254,8 @@ function normalizeUploadUrl(p) {
   if (!p) return '';
   let url = String(p).replace(/\\/g, '/');
   if (!url.startsWith('/')) url = '/' + url;
-  url = url.replace(/^\/backend\/uploads\//, '/uploads/');
-  url = url.replace(/^\/?uploads\//, '/uploads/');
+  url = url.replace(/^\/backend\/imagedb\//, '/imagedb/');
+  url = url.replace(/^\/?imagedb\//, '/imagedb/');
   return url;
 }
 </script>

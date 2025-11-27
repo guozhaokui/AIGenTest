@@ -218,7 +218,7 @@
     "createdAt": "2025-11-20T02:48:03.034Z",
     "updatedAt": "2025-11-20T07:01:32.159Z",
     "imageUrls": [
-      "/uploads/examples/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg"
+      "/imagedb/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg"
     ]
   },
   {
@@ -228,8 +228,8 @@
     "scoringRule": "",
     "exampleIds": [],
     "imageUrls": [
-      "/uploads/examples/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg",
-      "/uploads/examples/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+      "/imagedb/c9/3d/c93dfbbec0c665b65935f297233303c8.jpg",
+      "/imagedb/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
     ],
     "createdAt": "2025-11-20T03:13:37.112Z",
     "updatedAt": "2025-11-21T04:05:50.011Z"
@@ -341,7 +341,7 @@
     "scoringRule": "",
     "exampleIds": [],
     "imageUrls": [
-      "/uploads/examples/3c/b3/3cb3121ef6ec4a0bea4802f9a0246578.jpg"
+      "/imagedb/3c/b3/3cb3121ef6ec4a0bea4802f9a0246578.jpg"
     ],
     "createdAt": "2025-11-24T11:08:06.838Z",
     "updatedAt": "2025-11-24T11:08:06.838Z"

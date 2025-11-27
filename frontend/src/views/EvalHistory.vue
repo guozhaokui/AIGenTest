@@ -124,9 +124,9 @@ const scores = ref({}); // runId -> totalScore
 function normalize(p) {
   let url = (p || '').replace(/\\/g, '/');
   if (!url.startsWith('/')) url = '/' + url;
-  if (!url.startsWith('/uploads/')) {
-    url = url.replace(/^\/backend\/uploads\//, '/uploads/');
-    url = url.replace(/^\/uploads\//, '/uploads/');
+  if (!url.startsWith('/imagedb/')) {
+    url = url.replace(/^\/backend\/imagedb\//, '/imagedb/');
+    url = url.replace(/^\/imagedb\//, '/imagedb/');
   }
   return url;
 }

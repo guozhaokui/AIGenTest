@@ -5,7 +5,7 @@
 ```
 PORT=3000
 MONGO_URL=mongodb://localhost:27017/ai_image_eval
-UPLOAD_DIR=backend/uploads
+UPLOAD_DIR=imagedb
 GOOGLE_API_KEY=你的Google生成式AI密钥
 GOOGLE_API_BASE=https://generativelanguage.googleapis.com
 ```
