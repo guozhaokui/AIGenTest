@@ -39,9 +39,9 @@
 
           <!-- 动态参数配置区域 -->
           <div v-if="currentModel && currentModel.parameters && currentModel.parameters.length" style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 18px;">
-            <el-row :gutter="20">
-              <el-col :span="12" v-for="param in currentModel.parameters" :key="param.name">
-                <el-form-item :label="param.label || param.name" label-width="100px" style="margin-bottom: 12px;">
+            <el-row :gutter="10">
+              <el-col :span="8" v-for="param in currentModel.parameters" :key="param.name">
+                <el-form-item :label="param.label || param.name" label-width="110px" style="margin-bottom: 12px;">
                   <template v-if="param.type === 'number'">
                     <el-input-number 
                       v-model="dynamicParams[param.name]" 
@@ -49,16 +49,16 @@
                       :max="param.max" 
                       :step="param.step"
                       controls-position="right"
-                      style="width: 100%;" 
+                      style="width: 140px;" 
                     />
                   </template>
                   <template v-else-if="param.type === 'select'">
-                    <el-select v-model="dynamicParams[param.name]" placeholder="请选择" style="width: 100%;">
+                    <el-select v-model="dynamicParams[param.name]" placeholder="请选择" style="width: 140px;">
                       <el-option v-for="opt in param.options" :key="opt.value" :label="opt.label" :value="opt.value" />
                     </el-select>
                   </template>
                   <template v-else>
-                    <el-input v-model="dynamicParams[param.name]" :placeholder="param.description" />
+                    <el-input v-model="dynamicParams[param.name]" :placeholder="param.description" style="width: 140px;" />
                   </template>
                   
                   <div v-if="param.description" style="font-size: 12px; color: #999; line-height: 1.2; margin-top: 4px;">
@@ -205,6 +205,18 @@ onMounted(async () => {
           response: { path: url } // 提交用原始路径
         }));
       }
+      // 回显动态参数
+      if (data.params && typeof data.params === 'object') {
+        // 需要在 nextTick 或者稍后执行，因为 modelId 变化会触发 watch 重置 dynamicParams
+        // 或者我们可以直接在这里赋值，但 watch 可能会覆盖
+        // 更好的方式是：等 watch 执行完后再覆盖
+        // 由于 watch 是同步触发（如果 modelId 变了），但 watch 内部可能有异步？
+        // 这里 watch 是同步的。
+        // 所以：设置 modelId -> watch 触发 -> 重置 dynamicParams -> 我们再覆盖 params
+        setTimeout(() => {
+           dynamicParams.value = { ...dynamicParams.value, ...data.params };
+        }, 100);
+      }
     }
 
     if (state && state.fromPage) {
@@ -319,6 +331,7 @@ async function handleGenerate() {
       prompt: form.value.prompt,
       imageUrls: paths,
       modelId: form.value.modelId,
+      params: { ...dynamicParams.value },
       timestamp: new Date().toISOString()
     };
     

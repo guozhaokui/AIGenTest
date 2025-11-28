@@ -17,14 +17,7 @@
       "useProxy": true
     }
   },
-  {
-    "id": "aliyun_wanx_v1",
-    "name": "Tongyi Wanxiang (Wanx)",
-    "driver": "dashscope",
-    "options": {
-      "model": "wanx-v1"
-    }
-  },
+
   {
     "id": "z_image_local",
     "name": "Z-Image (Local)",

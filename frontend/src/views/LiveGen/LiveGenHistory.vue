@@ -31,6 +31,20 @@
            <div class="prompt-text">{{ row.prompt }}</div>
            <div class="meta-info">
              <el-tag size="small" v-if="row.modelName">{{ row.modelName }}</el-tag>
+             <el-popover
+                v-if="row.params && Object.keys(row.params).length"
+                placement="top"
+                title="生成参数"
+                :width="200"
+                trigger="hover"
+              >
+                <template #reference>
+                  <el-tag size="small" type="info" effect="plain" style="cursor: pointer;">Params</el-tag>
+                </template>
+                <div v-for="(val, key) in row.params" :key="key" style="font-size: 12px; margin-bottom: 4px;">
+                  <span style="color: #666;">{{ key }}:</span> {{ val }}
+                </div>
+              </el-popover>
              <span class="time">{{ formatTime(row.createdAt) }}</span>
            </div>
         </template>
@@ -50,7 +64,17 @@
       <el-table-column label="操作" width="220">
         <template #default="{ row }">
           <el-button size="small" @click="handleReEdit(row)">编辑</el-button>
-          <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+          <el-dropdown trigger="click" style="margin-left: 12px;" @command="(cmd) => handleCommand(cmd, row)">
+             <el-button size="small" type="danger">
+               删除<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+             </el-button>
+             <template #dropdown>
+               <el-dropdown-menu>
+                 <el-dropdown-item command="delete">删除记录</el-dropdown-item>
+                 <el-dropdown-item command="fullDelete" divided style="color: #f56c6c;">完全删除 (含图片)</el-dropdown-item>
+               </el-dropdown-menu>
+             </template>
+          </el-dropdown>
         </template>
       </el-table-column>
     </el-table>
@@ -71,7 +95,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Search } from '@element-plus/icons-vue';
+import { Search, ArrowDown } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { listDimensions } from '../../services/api';
 
@@ -150,10 +174,28 @@ function onPageChange(p) {
   fetchList();
 }
 
-async function handleDelete(row) {
+async function handleCommand(cmd, row) {
+  if (cmd === 'delete') {
+      handleDelete(row, false);
+  } else if (cmd === 'fullDelete') {
+      handleDelete(row, true);
+  }
+}
+
+async function handleDelete(row, fullDelete = false) {
   try {
-    await ElMessageBox.confirm('确定删除该记录？', '提示', { type: 'warning' });
-    await fetch(`/api/live-gen/${row.id}`, { method: 'DELETE' });
+    const msg = fullDelete 
+       ? '确定完全删除该记录？生成的图片文件也将被物理删除，无法恢复！'
+       : '确定删除该记录？（图片文件将保留）';
+       
+    await ElMessageBox.confirm(msg, '警告', { 
+        type: 'warning', 
+        confirmButtonText: fullDelete ? '完全删除' : '删除',
+        confirmButtonClass: fullDelete ? 'el-button--danger' : ''
+    });
+    
+    const url = fullDelete ? `/api/live-gen/${row.id}?fullDelete=true` : `/api/live-gen/${row.id}`;
+    await fetch(url, { method: 'DELETE' });
     ElMessage.success('已删除');
     fetchList();
   } catch (e) {
@@ -167,7 +209,8 @@ function handleReEdit(row) {
   const data = JSON.parse(JSON.stringify({
     prompt: row.prompt,
     modelId: row.modelId,
-    imageUrls: row.imageUrls || []
+    imageUrls: row.imageUrls || [],
+    params: row.params || {}
   }));
   
   router.push({
@@ -198,6 +241,7 @@ function handleReEdit(row) {
   margin-bottom: 4px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

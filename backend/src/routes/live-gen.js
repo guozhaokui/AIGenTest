@@ -55,7 +55,7 @@ router.post('/', async (req, res, next) => {
     await ensureDataFile();
     const items = await readJson(DATA_FILE);
     
-    const { prompt, imagePath, imageUrls, modelId, modelName } = req.body;
+    const { prompt, imagePath, imageUrls, modelId, modelName, params } = req.body;
     const now = new Date().toISOString();
     
     const newItem = {
@@ -65,6 +65,7 @@ router.post('/', async (req, res, next) => {
       imageUrls: Array.isArray(imageUrls) ? imageUrls : [], // reference images
       modelId: modelId || '',
       modelName: modelName || '',
+      params: params || {}, // Store generation parameters (e.g. width, height, steps)
       createdAt: now,
       dimensionScores: {} // Stores score per dimension ID
     };
@@ -105,12 +106,40 @@ router.patch('/:id/score', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
   try {
     const { id } = req.params;
+    const { fullDelete } = req.query; // Check if full delete (including files) is requested
+    
     let items = await readJson(DATA_FILE);
     const initLen = items.length;
+    
+    const targetItem = items.find(x => x.id === id);
+    
     items = items.filter(x => x.id !== id);
     
     if (items.length !== initLen) {
       await writeJson(DATA_FILE, items);
+      
+      // Handle file deletion if requested
+      if (fullDelete === 'true' && targetItem && targetItem.imagePath) {
+          try {
+              const fs = require('fs/promises');
+              // imagePath e.g. "/imagedb/xx/yy.png"
+              // Need to map to absolute path
+              // The path structure assumes imagedb is at project root (../../imagedb) relative to this file
+              let relPath = targetItem.imagePath;
+              if (relPath.startsWith('/')) relPath = relPath.slice(1);
+              if (relPath.startsWith('imagedb/')) relPath = relPath.replace('imagedb/', '');
+              
+              const absPath = path.resolve(__dirname, '../../imagedb', relPath);
+              
+              // Check if file exists before deleting
+              await fs.unlink(absPath);
+              // eslint-disable-next-line no-console
+              console.log(`[live-gen] deleted file: ${absPath}`);
+          } catch (e) {
+              // eslint-disable-next-line no-console
+              console.warn(`[live-gen] failed to delete file for ${id}:`, e.message);
+          }
+      }
     }
     res.json({ ok: true });
   } catch (err) {
