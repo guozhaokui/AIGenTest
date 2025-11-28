@@ -37,6 +37,38 @@
             />
           </el-form-item>
 
+          <!-- 动态参数配置区域 -->
+          <div v-if="currentModel && currentModel.parameters && currentModel.parameters.length" style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 18px;">
+            <el-row :gutter="20">
+              <el-col :span="12" v-for="param in currentModel.parameters" :key="param.name">
+                <el-form-item :label="param.label || param.name" label-width="100px" style="margin-bottom: 12px;">
+                  <template v-if="param.type === 'number'">
+                    <el-input-number 
+                      v-model="dynamicParams[param.name]" 
+                      :min="param.min" 
+                      :max="param.max" 
+                      :step="param.step"
+                      controls-position="right"
+                      style="width: 100%;" 
+                    />
+                  </template>
+                  <template v-else-if="param.type === 'select'">
+                    <el-select v-model="dynamicParams[param.name]" placeholder="请选择" style="width: 100%;">
+                      <el-option v-for="opt in param.options" :key="opt.value" :label="opt.label" :value="opt.value" />
+                    </el-select>
+                  </template>
+                  <template v-else>
+                    <el-input v-model="dynamicParams[param.name]" :placeholder="param.description" />
+                  </template>
+                  
+                  <div v-if="param.description" style="font-size: 12px; color: #999; line-height: 1.2; margin-top: 4px;">
+                    {{ param.description }}
+                  </div>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </div>
+
           <el-form-item label="参考图">
             <el-upload
               ref="uploadRef"
@@ -100,8 +132,8 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { Plus } from '@element-plus/icons-vue';
+import { ref, onMounted, computed, watch } from 'vue';
+import { Plus, InfoFilled } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { listModels, generateImage, listDimensions, createQuestion, submitEvaluation } from '../../services/api';
 import ScoreInput from '../../components/ScoreInput.vue';
@@ -119,6 +151,26 @@ const form = ref({
   modelId: '',
   prompt: '',
   imageUrls: []
+});
+
+const dynamicParams = ref({});
+
+const currentModel = computed(() => {
+  return models.value.find(m => m.id === form.value.modelId);
+});
+
+// 监听模型切换，初始化动态参数
+watch(() => form.value.modelId, (newVal) => {
+  const model = models.value.find(m => m.id === newVal);
+  if (model && Array.isArray(model.parameters)) {
+    const params = {};
+    model.parameters.forEach(p => {
+      params[p.name] = p.default !== undefined ? p.default : '';
+    });
+    dynamicParams.value = params;
+  } else {
+    dynamicParams.value = {};
+  }
 });
 
 // 复用 Question 结构来保存 Live Gen 记录，方便统一管理
@@ -250,7 +302,8 @@ async function handleGenerate() {
     const payload = {
       modelId: form.value.modelId,
       prompt: form.value.prompt,
-      imagePaths: cleanPaths
+      imagePaths: cleanPaths,
+      ...dynamicParams.value
     };
     
     const res = await generateImage(payload);

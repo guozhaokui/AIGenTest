@@ -1042,5 +1042,35 @@
     "modelName": "",
     "createdAt": "2025-11-26T14:50:09.209Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "4b50aeda-a728-4340-8a85-f167297c7443",
+    "prompt": "一个美女",
+    "imagePath": "/imagedb/fd/e3/fde31f57a5e7b7f4fa5b4b89e6f12944.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "createdAt": "2025-11-28T10:26:43.119Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "bd480f9f-4ab1-4b42-aa0b-b01ff1f6773b",
+    "prompt": "一个美女",
+    "imagePath": "/imagedb/a3/fb/a3fbde3593ebfec09f4ab3f943401b2e.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "createdAt": "2025-11-28T10:33:03.222Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "3f03f4bd-171c-4791-8417-216a14ad411e",
+    "prompt": "一个美女",
+    "imagePath": "/imagedb/e3/63/e3634126d24f52c5cd27258b8641cb97.png",
+    "imageUrls": [],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "createdAt": "2025-11-28T10:33:30.362Z",
+    "dimensionScores": {}
   }
 ]

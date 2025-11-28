@@ -12,7 +12,17 @@ const UPLOAD_DIR = path.resolve(__dirname, '../../imagedb');
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
 const MODELS_FILE = path.resolve(__dirname, '../../data/models.json');
 const { readJson } = require('../utils/jsonStore');
-const googleDriver = require('../services/modelDrivers/google');
+
+function getDriver(driverName) {
+  try {
+    const safeName = String(driverName).replace(/[^a-z0-9_-]/gi, '');
+    return require(`../services/modelDrivers/${safeName}`);
+  } catch (e) {
+    // eslint-disable-next-line no-console
+    console.warn(`[generate] driver load failed for "${driverName}":`, e.message);
+    return null;
+  }
+}
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -127,26 +137,32 @@ router.post('/', upload.any(), async (req, res, next) => {
     try {
       let dataBase64 = null;
       let mimeType = null;
-      if (selected.driver === 'google') {
-        const out = await googleDriver.generate({
-          apiKey: GOOGLE_API_KEY,
-          model: selected.options?.model || 'gemini-2.5-flash-image',
-          prompt,
-          images: inputImages,
-          config:{
-            imageConfig:{
-                personGeneration:"allow_all"
-            }
-          }
-          
-        });
-        dataBase64 = out?.dataBase64;
-        mimeType = out?.mimeType;
-      } else {
+
+      const driver = getDriver(selected.driver);
+      if (!driver) {
         const err = new Error(`unsupported_driver: ${selected.driver}`);
         err.code = 'UNSUPPORTED_DRIVER';
         throw err;
       }
+
+      // 简单的 API Key 映射策略，也可放到 driver 内部处理
+      let apiKey = process.env.API_KEY;
+      if (selected.driver === 'google') {
+        apiKey = process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY || process.env.GEMINI_API_KEY;
+      } else if (selected.driver === 'dashscope' || selected.driver === 'qwen') {
+        apiKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY;
+      }
+
+      const out = await driver.generate({
+        apiKey,
+        model: selected.options?.model,
+        prompt,
+        images: inputImages,
+        config: { ...(selected.options || {}), ...(req.body || {}) }
+      });
+
+      dataBase64 = out?.dataBase64;
+      mimeType = out?.mimeType;
       if (!dataBase64) {
         return res.status(500).json({ error: 'no_image_returned' });
       }
