@@ -55,7 +55,7 @@ router.post('/', async (req, res, next) => {
     await ensureDataFile();
     const items = await readJson(DATA_FILE);
     
-    const { prompt, imagePath, imageUrls, modelId, modelName, params } = req.body;
+    const { prompt, imagePath, imageUrls, modelId, modelName, params, duration } = req.body;
     const now = new Date().toISOString();
     
     const newItem = {
@@ -65,7 +65,8 @@ router.post('/', async (req, res, next) => {
       imageUrls: Array.isArray(imageUrls) ? imageUrls : [], // reference images
       modelId: modelId || '',
       modelName: modelName || '',
-      params: params || {}, // Store generation parameters (e.g. width, height, steps)
+      params: params || {}, // Store generation parameters
+      duration: duration || 0, // Store generation duration in ms
       createdAt: now,
       dimensionScores: {} // Stores score per dimension ID
     };

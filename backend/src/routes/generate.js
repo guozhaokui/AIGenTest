@@ -153,6 +153,7 @@ router.post('/', upload.any(), async (req, res, next) => {
         apiKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY;
       }
 
+      const startT = Date.now();
       const out = await driver.generate({
         apiKey,
         model: selected.options?.model,
@@ -160,6 +161,7 @@ router.post('/', upload.any(), async (req, res, next) => {
         images: inputImages,
         config: { ...(selected.options || {}), ...(req.body || {}) }
       });
+      const duration = Date.now() - startT;
 
       dataBase64 = out?.dataBase64;
       mimeType = out?.mimeType;
@@ -180,8 +182,8 @@ router.post('/', upload.any(), async (req, res, next) => {
       const relFromProject = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/'); // e.g. 'imagedb/...'
       const publicPath = relFromProject.startsWith('imagedb/') ? `/${relFromProject}` : `/imagedb/${relFromProject}`;
       // eslint-disable-next-line no-console
-      console.log('[generate] success: saved 1 image (generateContent)');
-      return res.json({ imagePath: publicPath, imagePaths: [publicPath] });
+      console.log(`[generate] success: saved 1 image (generateContent), duration=${duration}ms`);
+      return res.json({ imagePath: publicPath, imagePaths: [publicPath], duration });
     } catch (sdkErr) {
       // eslint-disable-next-line no-console
       console.error('[generate] generateContent error:', serializeError(sdkErr));

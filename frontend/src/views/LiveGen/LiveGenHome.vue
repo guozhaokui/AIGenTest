@@ -332,6 +332,7 @@ async function handleGenerate() {
       imageUrls: paths,
       modelId: form.value.modelId,
       params: { ...dynamicParams.value },
+      duration: res.duration || 0, // Store generation time
       timestamp: new Date().toISOString()
     };
     

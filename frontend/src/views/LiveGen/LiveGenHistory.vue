@@ -45,6 +45,7 @@
                   <span style="color: #666;">{{ key }}:</span> {{ val }}
                 </div>
               </el-popover>
+             <el-tag size="small" type="success" v-if="row.duration">{{ row.duration }}ms</el-tag>
              <span class="time">{{ formatTime(row.createdAt) }}</span>
            </div>
         </template>

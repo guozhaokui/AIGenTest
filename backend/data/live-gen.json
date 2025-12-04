@@ -1421,5 +1421,23 @@
     },
     "createdAt": "2025-12-01T13:12:16.470Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "3c5820aa-2d4b-45d0-830f-75df002807aa",
+    "prompt": "妮露",
+    "imagePath": "/imagedb/57/b2/57b2071a05f31b9d7e2885704ce88f9f.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5428,
+    "createdAt": "2025-12-04T03:32:24.056Z",
+    "dimensionScores": {}
   }
 ]
