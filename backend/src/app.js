@@ -32,6 +32,10 @@ app.use(morgan('dev'));
 // 静态文件（如需直接访问上传的图片）
 // 新路径
 app.use('/imagedb', express.static(path.resolve(__dirname, '..', 'imagedb')));
+// 新增：开启模型文件的静态服务
+app.use('/modeldb', express.static(path.resolve(__dirname, '..', 'modeldb')));
+// 新增：开启音频文件的静态服务
+app.use('/sounddb', express.static(path.resolve(__dirname, '..', 'sounddb')));
 
 // API
 const dimensions = require('./routes/dimensions');

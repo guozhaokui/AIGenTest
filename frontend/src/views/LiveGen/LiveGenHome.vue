@@ -105,14 +105,32 @@
           </template>
           
           <div class="image-wrapper">
-            <el-image 
-              :src="normalizeUrl(result.imagePath)" 
-              :preview-src-list="[normalizeUrl(result.imagePath)]"
-              fit="contain"
-              style="max-width: 100%; max-height: 500px;"
-              :preview-teleported="true"
-              :z-index="9999"
-            />
+            <!-- 图片预览 -->
+            <template v-if="isImage(result.imagePath)">
+                <el-image 
+                  :src="normalizeUrl(result.imagePath)" 
+                  :preview-src-list="[normalizeUrl(result.imagePath)]"
+                  fit="contain"
+                  style="max-width: 100%; max-height: 500px;"
+                  :preview-teleported="true"
+                  :z-index="9999"
+                />
+            </template>
+            
+            <!-- 3D模型预览 -->
+            <template v-else-if="isModel(result.imagePath)">
+                <ModelViewer :src="normalizeUrl(result.imagePath)" />
+            </template>
+
+            <!-- 音频播放 -->
+            <template v-else-if="isSound(result.imagePath)">
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%;">
+                    <div style="font-size: 60px; color: #909399;">🎵</div>
+                    <audio controls :src="normalizeUrl(result.imagePath)" style="width: 80%; max-width: 500px;"></audio>
+                </div>
+            </template>
+            
+            <div v-else style="color: #999;">暂不支持该格式预览: {{ result.imagePath }}</div>
           </div>
           
           <!-- 评分组件 -->
@@ -137,6 +155,7 @@ import { Plus, InfoFilled } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { listModels, generateImage, listDimensions, createQuestion, submitEvaluation } from '../../services/api';
 import ScoreInput from '../../components/ScoreInput.vue';
+import ModelViewer from '../../components/ModelViewer.vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
@@ -248,8 +267,8 @@ function normalizeUrl(p) {
   if (!p) return '';
   let url = String(p).replace(/\\/g, '/');
   if (!url.startsWith('/')) url = '/' + url;
-  url = url.replace(/^\/backend\/imagedb\//, '/imagedb/');
-  url = url.replace(/^\/?imagedb\//, '/imagedb/');
+  // 移除旧的特定替换逻辑，保留通用替换
+  url = url.replace(/^\/backend\//, '/');
   return url;
 }
 
@@ -380,6 +399,18 @@ async function saveToHistory(data) {
     }
 }
 
+function isImage(path) {
+  if (!path) return false;
+  return /\.(png|jpg|jpeg|webp|gif)$/i.test(path);
+}
+function isModel(path) {
+  if (!path) return false;
+  return /\.(glb|gltf|fbx|obj)$/i.test(path);
+}
+function isSound(path) {
+  if (!path) return false;
+  return /\.(mp3|wav|ogg|flac)$/i.test(path);
+}
 </script>
 
 <style scoped>

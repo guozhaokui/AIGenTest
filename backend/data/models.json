@@ -19,6 +19,37 @@
   },
 
   {
+    "id": "doubao_seedream_4_5",
+    "name": "Doubao Seedream 4.5",
+    "driver": "doubao",
+    "options": {
+      "model": "doubao-seedream-4-5-251128",
+      "size": "2K"
+    },
+    "parameters": [
+      {
+        "name": "size",
+        "label": "Size",
+        "type": "select",
+        "default": "2K",
+        "options": [
+          { "label": "2K (3104x1312 etc)", "value": "2K" },
+          { "label": "4K", "value": "4K" }
+        ]
+      },
+      {
+        "name": "watermark",
+        "label": "Watermark",
+        "type": "select",
+        "default": "false",
+        "options": [
+          { "label": "No", "value": "false" },
+          { "label": "Yes", "value": "true" }
+        ]
+      }
+    ]
+  },
+  {
     "id": "z_image_local",
     "name": "Z-Image (Local)",
     "driver": "z_image",

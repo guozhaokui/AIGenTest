@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Model Viewer</title>
+    <style>
+        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #333; }
+    </style>
+    <!-- 引入 LayaAir 3.x 引擎库 -->
+    <script src="https://cdn.jsdelivr.net/npm/layaair/laya.core.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/layaair/laya.d3.min.js"></script>
+</head>
+<body>
+    <script>
+        const { Laya, Stage, Browser, Scene3D, Camera, DirectionLight, Vector3, Handler } = Laya;
+
+        // 1. 初始化引擎
+        Laya.init(Browser.clientWidth, Browser.clientHeight);
+        Laya.stage.scaleMode = "full";
+        Laya.stage.screenMode = "none";
+        Laya.stage.bgColor = "#333333";
+
+        // 2. 创建3D场景
+        const scene = new Scene3D();
+        Laya.stage.addChild(scene);
+
+        // 3. 添加摄像机
+        const camera = new Camera(0, 0.1, 100);
+        scene.addChild(camera);
+        camera.transform.translate(new Vector3(0, 1, 3));
+        camera.transform.lookAt(new Vector3(0, 0, 0), new Vector3(0, 1, 0));
+        camera.clearColor = new Vector3(0.2, 0.2, 0.2);
+        
+        // 添加鼠标控制 (需引入 laya.d3.js)
+        camera.addComponent(Laya.CameraMoveScript);
+
+        // 4. 添加灯光
+        const light = new DirectionLight();
+        scene.addChild(light);
+        light.color = new Vector3(1, 1, 1);
+        light.transform.rotate(new Vector3(-30, 0, 0));
+
+        // 5. 获取 URL 参数中的模型路径
+        const urlParams = new URLSearchParams(window.location.search);
+        const modelUrl = urlParams.get('url');
+
+        if (modelUrl) {
+            // 加载模型
+            Laya.loader.load(modelUrl, Handler.create(this, (res) => {
+                if (!res) {
+                    console.error("加载失败:", modelUrl);
+                    return;
+                }
+                // 如果是 Sprite3D (通常是 .lh, .ls) 或直接是资源
+                const model = res instanceof Laya.Sprite3D ? res : Laya.Loader.getRes(modelUrl);
+                
+                if (model) {
+                    scene.addChild(model);
+                    // 简单的自动旋转脚本
+                    model.addComponent(AutoRotateScript);
+                    console.log("模型加载成功");
+                }
+            }));
+        }
+
+        class AutoRotateScript extends Laya.Script3D {
+            onUpdate() {
+                this.owner.transform.rotate(new Vector3(0, 0.5, 0), false, false);
+            }
+        }
+    </script>
+</body>
+</html>

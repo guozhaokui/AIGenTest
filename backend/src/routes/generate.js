@@ -9,6 +9,10 @@ const multer = require('multer');
 const router = express.Router();
 
 const UPLOAD_DIR = path.resolve(__dirname, '../../imagedb');
+// 新增：模型存储目录
+const MODEL_DIR = path.resolve(__dirname, '../../modeldb');
+// 新增：音频存储目录
+const SOUND_DIR = path.resolve(__dirname, '../../sounddb');
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
 const MODELS_FILE = path.resolve(__dirname, '../../data/models.json');
 const { readJson } = require('../utils/jsonStore');
@@ -151,6 +155,8 @@ router.post('/', upload.any(), async (req, res, next) => {
         apiKey = process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY || process.env.GEMINI_API_KEY;
       } else if (selected.driver === 'dashscope' || selected.driver === 'qwen') {
         apiKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY;
+      } else if (selected.driver === 'doubao') {
+        apiKey = process.env.ARK_API_KEY;
       }
 
       const startT = Date.now();
@@ -173,16 +179,29 @@ router.post('/', upload.any(), async (req, res, next) => {
       const sub1 = hash.slice(0, 2);
       const sub2 = hash.slice(2, 4);
       const ext = mimeToExt(mimeType);
-      const dir = path.join(UPLOAD_DIR, sub1, sub2);
+      
+      // 判断是存入 imagedb, modeldb 还是 sounddb
+      const isModel = ['.glb', '.gltf', '.fbx', '.obj'].includes(ext);
+      const isSound = ['.mp3', '.wav', '.ogg', '.flac'].includes(ext);
+      
+      let baseDir = UPLOAD_DIR;
+      if (isModel) baseDir = MODEL_DIR;
+      if (isSound) baseDir = SOUND_DIR;
+
+      const dir = path.join(baseDir, sub1, sub2);
+      
       await fs.mkdir(dir, { recursive: true });
       const filename = `${hash}${ext}`;
       const abs = path.join(dir, filename);
       await fs.writeFile(abs, buf);
-      // 在 try 块的末尾，修改公共路径的生成逻辑
-      const relFromProject = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/'); // e.g. 'imagedb/...'
-      const publicPath = relFromProject.startsWith('imagedb/') ? `/${relFromProject}` : `/imagedb/${relFromProject}`;
+      
+      // 修改公共路径生成逻辑，使其通用化
+      const relFromProject = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/'); 
+      // relFromProject 例如: 'imagedb/xx.png', 'modeldb/xx.glb', 'sounddb/xx.mp3'
+      const publicPath = `/${relFromProject}`;
+      
       // eslint-disable-next-line no-console
-      console.log(`[generate] success: saved 1 image (generateContent), duration=${duration}ms`);
+      console.log(`[generate] success: saved 1 file, duration=${duration}ms, path=${publicPath}`);
       return res.json({ imagePath: publicPath, imagePaths: [publicPath], duration });
     } catch (sdkErr) {
       // eslint-disable-next-line no-console
@@ -233,7 +252,15 @@ function mimeToExt(mime) {
   if (mime === 'image/png') return '.png';
   if (mime === 'image/jpeg') return '.jpg';
   if (mime === 'image/webp') return '.webp';
-  return '.png';
+  // 新增：3D 模型 MIME 支持
+  if (mime === 'model/gltf-binary') return '.glb';
+  if (mime === 'model/gltf+json') return '.gltf';
+  if (mime === 'application/octet-stream') return '.glb'; 
+  // 新增：音频 MIME 支持
+  if (mime === 'audio/mpeg') return '.mp3';
+  if (mime === 'audio/wav' || mime === 'audio/x-wav') return '.wav';
+  if (mime === 'audio/ogg') return '.ogg';
+  return '.png'; // 默认回退
 }
 
 function extToMime(ext) {
