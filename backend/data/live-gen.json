@@ -1213,5 +1213,213 @@
     },
     "createdAt": "2025-11-28T11:00:07.472Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "b7f9a738-1a87-4b19-b945-7f045a96f5ab",
+    "prompt": "雪花的放大照片",
+    "imagePath": "/imagedb/3c/fc/3cfc625787d121b722553ad9809dcc34.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "createdAt": "2025-12-01T02:14:02.041Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "d6f8e7f6-8686-4015-a901-f847de9b94db",
+    "prompt": "画一张经典的三极管放大电路",
+    "imagePath": "/imagedb/35/96/3596dcf7431e39bc6fda5e5bef45e5a7.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "createdAt": "2025-12-01T02:32:30.082Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "5129a209-afab-4151-9210-58da0458513b",
+    "prompt": "画一张经典的三极管放大电路",
+    "imagePath": "/imagedb/7f/a8/7fa88405030e65ad2df526f6fa3bcdac.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "createdAt": "2025-12-01T02:32:54.222Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "df7109b0-f7f2-4ebf-a172-94cef0b0c4b1",
+    "prompt": "一只哈士奇，鼻子凑到镜头前面，夸张的变形，铅笔草稿风格",
+    "imagePath": "/imagedb/49/e3/49e396771b5d86ac994ac8df989d7439.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "createdAt": "2025-12-01T02:38:24.396Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "0dddd2a2-f4f9-4f28-89d4-9424e216b5e7",
+    "prompt": "nano banana",
+    "imagePath": "/imagedb/66/ca/66ca817b019bdb2a93259ddd930b42d6.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "createdAt": "2025-12-01T08:35:48.831Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "836a1658-c794-4eb5-9beb-740e7c0f1d0e",
+    "prompt": "一条蛇，身体弯曲成Q形",
+    "imagePath": "/imagedb/8b/d8/8bd8421a2e970acd666aa017a9692bad.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "createdAt": "2025-12-01T12:57:13.738Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "d90d24fb-2ca8-4dc3-aee7-1517ff47fc59",
+    "prompt": "一条蛇，身体弯曲成h形",
+    "imagePath": "/imagedb/e1/00/e100240f2765a751571b874d14a33421.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "createdAt": "2025-12-01T12:57:31.188Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "3f1517a7-e691-4079-be33-1fa09c382730",
+    "prompt": "一个女人，下半身为蛇",
+    "imagePath": "/imagedb/f9/b3/f9b3cad28fbf028800191ab58bba2ffd.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "createdAt": "2025-12-01T12:58:17.864Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "589b2012-ee5e-4fc3-b721-acf552f8a8f0",
+    "prompt": "ethereal, dreamy, soft focus, art by Greg Rutkowski and Artgerm, (a serene snake woman emerging from a lotus pond:1.3), 面容纯洁宁静，水滴从她的湿发和脸颊滑落。上半身仅由湿润的长发和藤蔓巧妙遮挡，下半身是洁白无瑕、带有珍珠光泽的蛇身，半隐在盛开的莲花与清澈的水中。清晨的逆光，光线穿过水雾形成丁达尔效应，水面波光粼粼。整体色调柔和，粉蓝与浅金。唯美、空灵、神圣。\n负面提示词：\nscary, fierce, monster, dark, scales, armor, scales, dramatic, intense shadow, blood, weapon, modern\n\n",
+    "imagePath": "/imagedb/30/e1/30e12c3194c4482fe4c4b83f8836a4b5.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "createdAt": "2025-12-01T13:00:53.646Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "ef4e37de-0e8a-4cf4-9240-ff57d9af018d",
+    "prompt": "ethereal, dreamy, soft focus, art by Greg Rutkowski and Artgerm, (a serene snake woman emerging from a lotus pond:1.3), 面容纯洁宁静，水滴从她的湿发和脸颊滑落。上半身仅由湿润的长发和藤蔓巧妙遮挡，下半身是洁白无瑕、带有珍珠光泽的蛇身，半隐在盛开的莲花与清澈的水中。清晨的逆光，光线穿过水雾形成丁达尔效应，水面波光粼粼。整体色调柔和，粉蓝与浅金。唯美、空灵、神圣。\n负面提示词：\nscary, fierce, monster, dark, scales, armor, scales, dramatic, intense shadow, blood, weapon, modern\n\n",
+    "imagePath": "/imagedb/1c/ac/1cac406a1ea0d99d2ce5b9d577b5f427.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "createdAt": "2025-12-01T13:01:51.148Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "db40ad58-5f91-4f35-8420-1ea08d1cecbc",
+    "prompt": "ultra-detailed, 8k, fantasy art, (an enchanting lamia sorceress:1.4), 妖艳的面容，尖耳朵，瞳孔是危险的竖瞳，赤红色长发如火焰般飘散。上半身穿着由金色丝线与透明薄纱制成的华丽而暴露的服饰，下半身是暗紫色带有黑色环状花纹的蛇身。她慵懒地蜷缩在堆满丝绸靠垫和金币的洞穴王座之上，手中把玩着一颗发光的魔法水晶。周围点缀着发光蘑菇与奇异宝石。戏剧性的侧光，强调身体曲线和鳞片的质感。\n负面提示词：\nfriendly, cute, safe, (innocent expression), disney style, simple background, clothes, pants, shoes, bad proportions, messy, grainy\n\n",
+    "imagePath": "/imagedb/1d/bf/1dbff92b7011aa1a1b8d68d5be03798f.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "createdAt": "2025-12-01T13:02:52.823Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "92077cac-5b2e-4a12-986b-0e76f2d2435e",
+    "prompt": "ultra-detailed, 8k, fantasy art, (an enchanting lamia sorceress:1.4), 妖艳的面容，尖耳朵，瞳孔是危险的竖瞳，赤红色长发如火焰般飘散。上半身穿着由金色丝线与透明薄纱制成的华丽而暴露的服饰，下半身是暗紫色带有黑色环状花纹的蛇身。她慵懒地蜷缩在堆满丝绸靠垫和金币的洞穴王座之上，手中把玩着一颗发光的魔法水晶。周围点缀着发光蘑菇与奇异宝石。戏剧性的侧光，强调身体曲线和鳞片的质感。\n负面提示词：\nfriendly, cute, safe, (innocent expression), disney style, simple background, clothes, pants, shoes, bad proportions, messy, grainy\n\n",
+    "imagePath": "/imagedb/b9/63/b9633fa94d4f94f1aa3c5689b83fa747.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "createdAt": "2025-12-01T13:03:29.563Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "c6a2c2ae-f39e-455f-9c7b-e3434c5836ff",
+    "prompt": "一、核心场景：烈日下的残酷舞台\n在广袤黄沙与文明世界交界的最后一片石砾广场上，矗立着一座粗糙的原木拍卖台。台子被烈日晒得发白，木纹开裂，与后方无垠的、热浪扭曲的金色沙漠形成残酷的对比。空气干燥灼热，弥漫着尘土、汗水与铁锈的气息。拍卖台周围散落着空置的生锈铁笼、散开的麻绳，以及被踩踏得凌乱的沙土。\n\n二、舞台焦点：被展示的商品\n在拍卖台中央，奴隶主——一个身形粗壮、穿着沾满尘土的皮质围裙、脸颊有疤的男人——正用力攥着一名女性奴隶手腕上的铁链。他另一只手像展示牲畜般，划过她的肩线，向台下稀落的顾客夸耀。\n\n被展示的女奴：她几乎全裸，仅有一片肮脏的破布勉强围在腰间。深色的长发被汗水黏在脸颊与瘦削的脊背上。她高昂着头，眼神空洞地望向远方的沙丘，仿佛灵魂已从这具受辱的躯壳中抽离。烈日在她年轻的皮肤上投下鲜明的高光，也照亮了那些新旧交叠的鞭痕与枷锁在脚踝磨出的红印。她的身体因缺水而显得格外纤细，肋骨隐约可见，但站姿却有一种被痛苦淬炼出的、奇异而脆弱的笔直。\n\n三、台下众生：无声的恐惧与贪婪\n\n蜷缩的女奴们：在拍卖台一侧的阴影里，另外几名女奴隶蜷缩在一起。她们共用一条长长的铁链拴住脖子，像受惊的羊群般彼此依偎。有人把脸深深埋进膝盖，有人紧紧搂着同伴颤抖的肩膀，还有一个格外年轻的女孩，睁着惊恐无比的大眼睛，死死盯着台上同伴的脚踝，仿佛看到了自己即刻的未来。她们的脚边放着几个缺口的陶碗，里面空无一物。\n\n潜在的顾客们：台下散落着几名顾客。有裹着头巾、眼神精明似在评估货物的沙漠商人；有穿着不合身旧礼服、拄着手杖的边陲小镇住民；还有一两个面露猥琐好奇、交头接耳的男人。他们的影子短短地拖在滚烫的地面上，与奴隶们蜷缩的影子形成沉默的对峙。\n\n四、光影与终极氛围\n正午的太阳如同冰冷的审判者高悬中天，投下几乎垂直的、短促而浓黑的阴影。木台边缘的阴影锋利如刀，将光明与黑暗截然分开——台上是暴露无遗的残酷展示，台下是浓缩的恐惧与冷漠。\n\n热浪让远处的景物微微波动，但此地的空气却仿佛凝固，只有奴隶主粗嘎的叫卖声、铁链偶然的碰撞声，以及沙漠永无止息的风的低吼在回荡。这是一幅被烈日定格的残酷静帧，充满了尘土的金黄、木头的灰白、皮肤的深褐与铁器的冰冷黝黑，每一处细节都在诉说着剥削、绝望以及在绝境中残存的一丝不屈尊严。",
+    "imagePath": "/imagedb/0e/7d/0e7d4e14aa85dce0bae939da1c45a209.png",
+    "imageUrls": [],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "params": {},
+    "createdAt": "2025-12-01T13:10:54.701Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "75ac2b5b-4fd1-44b3-aa41-680fedf419d3",
+    "prompt": "一、核心场景：烈日下的残酷舞台\n在广袤黄沙与文明世界交界的最后一片石砾广场上，矗立着一座粗糙的原木拍卖台。台子被烈日晒得发白，木纹开裂，与后方无垠的、热浪扭曲的金色沙漠形成残酷的对比。空气干燥灼热，弥漫着尘土、汗水与铁锈的气息。拍卖台周围散落着空置的生锈铁笼、散开的麻绳，以及被踩踏得凌乱的沙土。\n\n二、舞台焦点：被展示的商品\n在拍卖台中央，奴隶主——一个身形粗壮、穿着沾满尘土的皮质围裙、脸颊有疤的男人——正用力攥着一名女性奴隶手腕上的铁链。他另一只手像展示牲畜般，划过她的肩线，向台下稀落的顾客夸耀。\n\n被展示的女奴：她几乎全裸，仅有一片肮脏的破布勉强围在腰间。深色的长发被汗水黏在脸颊与瘦削的脊背上。她高昂着头，眼神空洞地望向远方的沙丘，仿佛灵魂已从这具受辱的躯壳中抽离。烈日在她年轻的皮肤上投下鲜明的高光，也照亮了那些新旧交叠的鞭痕与枷锁在脚踝磨出的红印。她的身体因缺水而显得格外纤细，肋骨隐约可见，但站姿却有一种被痛苦淬炼出的、奇异而脆弱的笔直。\n\n三、台下众生：无声的恐惧与贪婪\n\n蜷缩的女奴们：在拍卖台一侧的阴影里，另外几名女奴隶蜷缩在一起。她们共用一条长长的铁链拴住脖子，像受惊的羊群般彼此依偎。有人把脸深深埋进膝盖，有人紧紧搂着同伴颤抖的肩膀，还有一个格外年轻的女孩，睁着惊恐无比的大眼睛，死死盯着台上同伴的脚踝，仿佛看到了自己即刻的未来。她们的脚边放着几个缺口的陶碗，里面空无一物。\n\n潜在的顾客们：台下散落着几名顾客。有裹着头巾、眼神精明似在评估货物的沙漠商人；有穿着不合身旧礼服、拄着手杖的边陲小镇住民；还有一两个面露猥琐好奇、交头接耳的男人。他们的影子短短地拖在滚烫的地面上，与奴隶们蜷缩的影子形成沉默的对峙。\n\n四、光影与终极氛围\n正午的太阳如同冰冷的审判者高悬中天，投下几乎垂直的、短促而浓黑的阴影。木台边缘的阴影锋利如刀，将光明与黑暗截然分开——台上是暴露无遗的残酷展示，台下是浓缩的恐惧与冷漠。\n\n热浪让远处的景物微微波动，但此地的空气却仿佛凝固，只有奴隶主粗嘎的叫卖声、铁链偶然的碰撞声，以及沙漠永无止息的风的低吼在回荡。这是一幅被烈日定格的残酷静帧，充满了尘土的金黄、木头的灰白、皮肤的深褐与铁器的冰冷黝黑，每一处细节都在诉说着剥削、绝望以及在绝境中残存的一丝不屈尊严。",
+    "imagePath": "/imagedb/8f/88/8f883864f20fef61d68acfd62ef06cb5.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 29,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "createdAt": "2025-12-01T13:12:16.470Z",
+    "dimensionScores": {}
   }
 ]
