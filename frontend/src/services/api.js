@@ -104,7 +104,7 @@ export function deleteRun(runId) {
 // Generate image
 export function generateImage(payload) {
   // { prompt, modelId?, modelName?, questionId?, imagePaths? }
-  return api.post('/generate', payload, { timeout: 120000 }).then(r => r.data);
+  return api.post('/generate', payload, { timeout: 300000 }).then(r => r.data);
 }
 
 // Models

@@ -39,6 +39,22 @@ async function generate({ apiKey, model, prompt, images, config }) {
 
   // console.log('[doubao] request:', apiUrl, payload);
 
+  // Handle proxy: if config.useProxy is explicitly false, or env vars not set, use default fetch.
+  // But `undici` global dispatcher handles proxy automatically if set in app.js.
+  // To BYPASS proxy for a specific request in undici, we might need a custom dispatcher.
+  let dispatcher = undefined;
+  if (config.useProxy === false || config.useProxy === 'false') {
+     // Create a fresh Agent/Dispatcher that ignores global proxy settings if possible,
+     // or just use default undici Agent which usually doesn't pick up env vars unless global dispatcher is set.
+     // If global dispatcher IS set to ProxyAgent, we need to pass a new Agent() to bypass it.
+     try {
+       const { Agent } = require('undici');
+       dispatcher = new Agent(); 
+     } catch (e) {
+       // ignore if undici not available (though it is a dependency)
+     }
+  }
+
   try {
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -46,7 +62,8 @@ async function generate({ apiKey, model, prompt, images, config }) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      dispatcher // Pass dispatcher option (works with Node's fetch if backed by undici, or undici.fetch)
     });
 
     if (!response.ok) {
@@ -65,7 +82,7 @@ async function generate({ apiKey, model, prompt, images, config }) {
     }
 
     // Download image
-    const imgResp = await fetch(imageUrl);
+    const imgResp = await fetch(imageUrl, { dispatcher });
     if (!imgResp.ok) {
       throw new Error(`Failed to download image from Doubao URL: ${imgResp.status}`);
     }

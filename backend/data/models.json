@@ -24,7 +24,8 @@
     "driver": "doubao",
     "options": {
       "model": "doubao-seedream-4-5-251128",
-      "size": "2K"
+      "size": "2K",
+      "useProxy": false
     },
     "parameters": [
       {

@@ -1454,5 +1454,698 @@
     "duration": 59605,
     "createdAt": "2025-12-04T08:35:36.190Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "71d9aa46-ae60-4753-aced-26a542fabd16",
+    "prompt": "雪花的放大照片",
+    "imagePath": "/imagedb/c9/9b/c99b7a9a17d2a907f6d118bf16205868.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 21510,
+    "createdAt": "2025-12-04T08:41:09.421Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "e505847c-8f9c-4d5a-b84e-609db05d7854",
+    "prompt": "一张详细的对比图，展示中国凤凰与西方凤凰的区别，描述文字为手写中文，画面也是是手绘风格，有简单的色彩，纸张看起来就像老旧的魔法卷轴那样泛黄且有破损",
+    "imagePath": "/imagedb/e8/34/e834c3511548c08b96b303d66bd62d60.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 35198,
+    "createdAt": "2025-12-04T08:42:38.627Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "25ba63a7-7cd3-48ec-b73c-b7e2f5fa98f2",
+    "prompt": "生成一张2d动作序列帧，具体动作参考第一张图片，把角色换成原神的雷电将军，注意严格动作一致，尤其要区分左手手和左右腿。背景透明",
+    "imagePath": "/imagedb/5b/e4/5be40490deca5bd0b8e0a32a6457ac09.jpg",
+    "imageUrls": [
+      "imagedb/07/47/074704fbd8c40c16bd96588f04ee4145.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 33302,
+    "createdAt": "2025-12-04T08:45:24.460Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "c00718f9-a955-4386-b236-45bf1d2360cb",
+    "prompt": "生成一张2d动作序列帧，具体动作参考第一张图片，把角色换成第二张图片，注意严格动作一致，尤其要区分左手手和左右腿。背景透明",
+    "imagePath": "/imagedb/66/92/669296f7ee589d8f0837dbe56e69d13a.jpg",
+    "imageUrls": [
+      "imagedb/07/47/074704fbd8c40c16bd96588f04ee4145.png",
+      "/imagedb/bd/ab/bdab9c53d190735e0ab3191eb88b5794.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 63434,
+    "createdAt": "2025-12-04T08:48:24.578Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2c877c9f-9ddc-4415-9743-86075f6378f7",
+    "prompt": "生成一张2d动作序列帧，具体动作参考图1，把角色换成图2，注意严格动作一致，尤其要区分左手手和左右腿。背景透明。风格与图2一致",
+    "imagePath": "/imagedb/55/a1/55a1849d2a79f1518d3f8c5a73062e2e.jpg",
+    "imageUrls": [
+      "imagedb/07/47/074704fbd8c40c16bd96588f04ee4145.png",
+      "/imagedb/bd/ab/bdab9c53d190735e0ab3191eb88b5794.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 22650,
+    "createdAt": "2025-12-04T08:49:55.939Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "0edef10a-c3f3-4bdb-8cdc-c78c72a7b3f0",
+    "prompt": "生成一张2d动作序列帧，具体动作参考图1，把角色换成不知火舞，注意严格动作一致，尤其要区分左手手和左右腿。背景透明。",
+    "imagePath": "/imagedb/c6/1c/c61c33e4dcf3dd3e8bf0169ef9b1a6a2.jpg",
+    "imageUrls": [
+      "imagedb/07/47/074704fbd8c40c16bd96588f04ee4145.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 16634,
+    "createdAt": "2025-12-04T08:51:02.115Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "180307b1-9372-419a-8ff0-13839a1ceb1d",
+    "prompt": "生成一张2d动作序列帧，具体动作参考图1，把角色的衣服换成绿色的",
+    "imagePath": "/imagedb/31/eb/31eb7c34e250b4135ac0e437f86fe1fe.jpg",
+    "imageUrls": [
+      "imagedb/07/47/074704fbd8c40c16bd96588f04ee4145.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 20121,
+    "createdAt": "2025-12-04T08:52:20.698Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "e43dfa81-3628-472e-bd75-59cabdc25ab7",
+    "prompt": "设计一个SLG用的地图，左边是一个海，海中有个城堡在小岛上，只有一个吊桥连接外面的陆地。地图下方是沙漠地形，上方是雪山地形，俯视视角。要有合理的路来联通各个部分",
+    "imagePath": "/imagedb/4b/d9/4bd9070eda024258993d6df6afa3a179.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 14163,
+    "createdAt": "2025-12-04T08:53:58.064Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "388f67ed-df96-4872-8b9e-f137e5c995af",
+    "prompt": "设计一个SLG用的地图，左边是一个海，海中有个城堡在小岛上，只有一个吊桥连接外面的陆地。地图下方是沙漠地形，上方是雪山地形，俯视视角。要有合理的路来联通各个部分，红白机8bit风格",
+    "imagePath": "/imagedb/9d/f0/9df041fd980afa0258c94591aa52a27c.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 17581,
+    "createdAt": "2025-12-04T08:54:43.694Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "cb4a1d71-e5ba-4d9b-832e-a349af148357",
+    "prompt": "生成一个256x256的草地贴图，希望四方连续，重复排列无接缝",
+    "imagePath": "/imagedb/11/83/118380c88396769681300bbc3654be74.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 47039,
+    "createdAt": "2025-12-04T08:56:32.832Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "75caccba-6f84-4233-9e2b-a0572a7fc041",
+    "prompt": "生成一个256x256的地面贴图，希望四方连续，重复排列无接缝。主要大大小小的鹅卵石，使用PBR流程，所以要把光照效果去掉，只保留原始颜色",
+    "imagePath": "/imagedb/4f/b9/4fb9d053f5c9fc8dabf8cbdd03c31a73.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 39545,
+    "createdAt": "2025-12-04T08:59:10.049Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2c9ae9f1-802b-4446-8a0b-4965895abd16",
+    "prompt": "第一张图片是第二张图片的贴图，参考第二张图片，修改第一张贴图，把上衣部分换成金属胸甲，其他部分不要改变，注意区分贴图的不同部分",
+    "imagePath": "/imagedb/d6/fa/d6fa935e347bcbf0997a91e0594acbdc.jpg",
+    "imageUrls": [
+      "imagedb/97/83/97834d6fef7589d1bb7b3bc95105c278.png",
+      "imagedb/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 44977,
+    "createdAt": "2025-12-04T09:01:38.892Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "8e204889-bc73-4058-80ed-fb0f530ce0a5",
+    "prompt": "第一张图片是第二张图片的贴图，参考第二张图片，修改第一张贴图，把脸上的涂色去掉",
+    "imagePath": "/imagedb/d5/0c/d50c6fefa5e47eb3ba05fd3407a80af1.jpg",
+    "imageUrls": [
+      "imagedb/97/83/97834d6fef7589d1bb7b3bc95105c278.png",
+      "imagedb/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "duration": 41612,
+    "createdAt": "2025-12-04T09:13:14.420Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "cd9ecaeb-5f05-424e-9ea4-06bc1a8503ca",
+    "prompt": "根据这张图片生成一个精确的可以恢复三维信息的深度图",
+    "imagePath": "/imagedb/59/99/5999eb7f6d98972717da06dd0609ce0c.jpg",
+    "imageUrls": [
+      "imagedb/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 14786,
+    "createdAt": "2025-12-04T09:23:47.128Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "112727f1-ef64-48ee-9bb6-7d8758a564a5",
+    "prompt": "修改一下这张图片的视角，镜头在当前 位置下移1米，其他不变",
+    "imagePath": "/imagedb/87/e3/87e37f6be0758ce33b00875b92b1b07b.jpg",
+    "imageUrls": [
+      "imagedb/f3/88/f388d7ddc60ef1ae7aedfb85a78220a5.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 13989,
+    "createdAt": "2025-12-04T09:24:26.563Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "dbe954a5-895f-4137-a395-276a74e0d63b",
+    "prompt": "把这张低分辨率图片高清化",
+    "imagePath": "/imagedb/69/a5/69a53dd3b547c6d988dc4231735410f9.jpg",
+    "imageUrls": [
+      "imagedb/f8/da/f8da37e2c5aa8d8ee0667966bfc63328.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 11816,
+    "createdAt": "2025-12-04T09:25:53.843Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2932eb89-555c-4d53-a63c-cc48d6c169dd",
+    "prompt": "修改这张图片的镜头视角，改成侧面观察正在奔跑的lara",
+    "imagePath": "/imagedb/9c/cf/9ccf4a6f36381a0657b0f92a2ae565d5.jpg",
+    "imageUrls": [
+      "imagedb/7c/b8/7cb875081eaaab2a8c37f5b18906cf18.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 13349,
+    "createdAt": "2025-12-04T09:28:05.946Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "1d61686a-0ebd-4faa-82ef-30e87ae03e1c",
+    "prompt": "分离出这个画面中的角色图片，然后切分成头，上半身，下半身，左右胳膊左右腿都分成三部分，用来做spine动画，关节部分都要扩充一些以免穿帮",
+    "imagePath": "/imagedb/6c/39/6c39d6266dd8b581d9d303774459496e.jpg",
+    "imageUrls": [
+      "imagedb/89/94/8994fbbd1943c814089d877fac2930ec.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 18795,
+    "createdAt": "2025-12-04T09:28:51.929Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "503c9b3b-955c-40c6-ae24-fa996849c649",
+    "prompt": "分离出这个画面中的角色图片，然后切分成头，上半身，下半身，左右胳膊分成上臂前臂手三部分，左右腿都分成大腿小腿脚三部分，用来做spine动画，关节部分都要扩充一些以免穿帮。分离的图片重新排版整理一下，放到大图集中",
+    "imagePath": "/imagedb/de/61/de616c7d73fbf534ed0f25a6a11ea79a.jpg",
+    "imageUrls": [
+      "imagedb/89/94/8994fbbd1943c814089d877fac2930ec.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 28150,
+    "createdAt": "2025-12-04T09:29:44.928Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "5fb0e8b1-aaa8-4d88-ab8d-508850ca6ced",
+    "prompt": "第一张图片是第二张效果的贴图，根据这张贴图生成正确的法线贴图，表现贴图中的细节，像素位置与这张贴图完全匹配。",
+    "imagePath": "/imagedb/4a/a4/4aa4bdfc394202b3b7ef75ec00c83097.jpg",
+    "imageUrls": [
+      "imagedb/e5/60/e56060a4ab33164e08d1db63b90fb7a7.jpg",
+      "imagedb/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 16530,
+    "createdAt": "2025-12-04T09:30:21.160Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "da33f71c-f36e-49fb-ad45-73e77c4a9a7f",
+    "prompt": "第一张图片是第二张效果的贴图，处理这张贴图，把光照效果和细节阴影去掉，因为我要pbr和法线贴图来计算明暗",
+    "imagePath": "/imagedb/4d/c2/4dc2290173b01faa0587a30cd9b647d5.jpg",
+    "imageUrls": [
+      "imagedb/e5/60/e56060a4ab33164e08d1db63b90fb7a7.jpg",
+      "imagedb/52/9d/529d19a95ba7bd9c09beb29b70be8f51.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 61880,
+    "createdAt": "2025-12-04T09:31:42.765Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "67c3cfdf-df69-4282-92c2-70a9a7716751",
+    "prompt": "生成一张panorama天空图片，变形类似第一张图。要求左右拼接无缝连续。贴到球上以后，上下自然不变形。内容是阴雨来临前的大草原",
+    "imagePath": "/imagedb/ae/a2/aea28b3b0b7dd747858c9b0595175464.jpg",
+    "imageUrls": [
+      "imagedb/18/34/1834ef8913bd55b866c58651bd058801.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 23669,
+    "createdAt": "2025-12-04T09:32:37.036Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "9f181258-deaa-4cb8-840a-db7ab862c7ba",
+    "prompt": "一张纳西妲的立绘，根据第一张的骨骼图生成动作",
+    "imagePath": "/imagedb/08/29/082985fb74e290e71b70fd2cc70db268.jpg",
+    "imageUrls": [
+      "imagedb/37/c2/37c2aa006b3dd0a3ddccd387a9f7abae.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 11776,
+    "createdAt": "2025-12-04T09:33:04.666Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "43c678fe-d4bc-4113-a596-bb73ba288041",
+    "prompt": "根据图片说明生成ui元素，一个开始游戏的圆形按钮，一个开始游戏的方形按钮。这个是草图，需要美化，符合这个意思即可，不要保留说明文字。背景为纯白",
+    "imagePath": "/imagedb/44/23/4423bce07e3421aa4a17fce93d19cfe0.jpg",
+    "imageUrls": [
+      "imagedb/dd/f7/ddf75d81a15624a010b7fe9031c3f8a3.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 12951,
+    "createdAt": "2025-12-04T09:33:47.819Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "ef97f42b-9258-449a-ad1f-275bd7e33055",
+    "prompt": "修改这个ui图片的材质，变成手绘扁平风格，开始按钮材质改成木头，边缘有缺口。文字内陷有立体感。去掉图片边缘的阴影。",
+    "imagePath": "/imagedb/b2/a8/b2a8b4222e8f77f7110e534ede1bb03f.jpg",
+    "imageUrls": [
+      "imagedb/47/05/47056e78510411d663dc6e3caef40aff.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 14906,
+    "createdAt": "2025-12-04T09:34:38.243Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "226a0968-2a22-4534-a43a-a73084e1440e",
+    "prompt": "修改这个ui图片的材质，变成手绘扁平风格，开始按钮材质改成木头，边缘有缺口。文字内陷有立体感。去掉图片边缘的阴影。",
+    "imagePath": "/imagedb/98/35/98355ea8440a4a65ce324065f678d517.jpg",
+    "imageUrls": [
+      "imagedb/47/05/47056e78510411d663dc6e3caef40aff.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 11555,
+    "createdAt": "2025-12-04T09:35:31.790Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "b7fd871c-47e3-40b3-a3fa-dc688b5f90e5",
+    "prompt": "修改这个ui图片的材质，变成手绘扁平风格，左边的按钮变成冰块材质，开始按钮材质改成木头，边缘有缺口。文字内陷有立体感。去掉图片边缘的阴影。",
+    "imagePath": "/imagedb/dc/46/dc46f4826225ed690e0d90e3360d3d2f.jpg",
+    "imageUrls": [
+      "imagedb/47/05/47056e78510411d663dc6e3caef40aff.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 12045,
+    "createdAt": "2025-12-04T09:36:12.229Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "c9805fc8-fdba-4567-b130-b51df097d82b",
+    "prompt": "把每个角色的动作转成openpose的骨骼的形式。",
+    "imagePath": "/imagedb/ef/1b/ef1bdf2238504c5bf887075b0949ca24.jpg",
+    "imageUrls": [
+      "imagedb/72/fd/72fd1d810cf39dded95b2958bc0afe48.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 12118,
+    "createdAt": "2025-12-04T09:36:42.994Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "4ba9afe8-2c7a-4e50-97a8-3ad4e3872ce9",
+    "prompt": "把这张图片去掉背景和文字，改成写实风格",
+    "imagePath": "/imagedb/ca/bc/cabcefeb93d59197957fc62d71503de9.jpg",
+    "imageUrls": [
+      "imagedb/72/fd/72fd1d810cf39dded95b2958bc0afe48.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 15479,
+    "createdAt": "2025-12-04T09:37:57.653Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "0ebd56f0-537c-47f2-86bc-550fed311144",
+    "prompt": "根据这个草图的视角生成一组空中楼阁的图片，建筑为漂浮在云层之中的中式建筑，繁复华丽，整体为金色和红色，上下都有很多层，有一种压迫感",
+    "imagePath": "/imagedb/40/32/403207429d3f6cbbfe048cde9a99ec01.jpg",
+    "imageUrls": [
+      "imagedb/55/c9/55c9f45f692fb76cb7faacf422fccd11.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 12106,
+    "createdAt": "2025-12-04T09:38:42.145Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "20e542b4-e49a-4322-a17a-220a37650777",
+    "prompt": "把这张图片改成铅笔线条画，去掉背景，",
+    "imagePath": "/imagedb/79/2d/792dceba2b546d39f1932fdcb066a4eb.jpg",
+    "imageUrls": [
+      "imagedb/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 18401,
+    "createdAt": "2025-12-04T09:39:15.892Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "cfaddeec-2a8f-4d27-9fc3-6473c0be3dac",
+    "prompt": "去掉这张图片手中的物品，伸展手臂呈游戏中需要的T pose",
+    "imagePath": "/imagedb/ab/5f/ab5f6a32966b00729aa38024479c8366.jpg",
+    "imageUrls": [
+      "imagedb/a4/0d/a40d498b8b289e94fae51519c6cd4981.png"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 13734,
+    "createdAt": "2025-12-04T09:40:08.688Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "04067254-fa3d-4f29-91b7-799f89988355",
+    "prompt": "把这张图片改成4头身卡通风格，去掉背景",
+    "imagePath": "/imagedb/41/8e/418ea18d5a65916eae21353206117809.jpg",
+    "imageUrls": [
+      "imagedb/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 12743,
+    "createdAt": "2025-12-04T09:40:43.684Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "971d08e7-b103-4753-a12e-c416d8330aef",
+    "prompt": "生成一张斜45度游戏地图，内容是一个唐朝首都长安街景图，要求建筑符合历史，道路联通合理",
+    "imagePath": "/imagedb/9d/38/9d38dc97c0abd0be1bae314ae54c2a11.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 9349,
+    "createdAt": "2025-12-04T09:41:22.770Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "4db2cf98-4038-4a0a-a11d-429622abec8d",
+    "prompt": "生成一个游戏特效图标，表示让对方眩晕，128x128分辨率",
+    "imagePath": "/imagedb/d9/0a/d90af83c46b8ba90164c08cb2a5086b9.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 8133,
+    "createdAt": "2025-12-04T09:42:04.183Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "5f02e21b-b1f9-44f3-b808-467dedce3829",
+    "prompt": "把这张图片变成真人照片",
+    "imagePath": "/imagedb/c9/47/c94772de57339eaec6e0e5e6e822c1ac.jpg",
+    "imageUrls": [
+      "imagedb/38/c6/38c60e82bda3d96edffb9088c712aab2.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 12670,
+    "createdAt": "2025-12-04T09:42:44.623Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2e256fa1-d358-474a-a700-a242070f53a9",
+    "prompt": "根据这张图片生成一个精确的可以恢复三维信息的深度图",
+    "imagePath": "/imagedb/4b/5a/4b5a77e9ddbae6e46ba8c72f3e66d9ea.jpg",
+    "imageUrls": [
+      "imagedb/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 12491,
+    "createdAt": "2025-12-04T09:43:29.359Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "a05155ba-83d4-41a3-8c34-65e9c3629c4e",
+    "prompt": "这个人物设计感觉死板难看，你把不好的地方指出来，并且设计一个更好看的在旁边",
+    "imagePath": "/imagedb/2f/9b/2f9b5c76639aea619132ff8814e280e6.jpg",
+    "imageUrls": [
+      "imagedb/bd/ab/bdab9c53d190735e0ab3191eb88b5794.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 18636,
+    "createdAt": "2025-12-04T09:44:20.512Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "73c1e1f4-c6d8-4930-a400-dc8da22a5390",
+    "prompt": "「image_metadata」: \n{标题：《坦率的魅力：俏皮的凝视》“类别”: “超写实生活方式摄影”“基调”：“迷人、自然、青春、坦率”},\n「prompt_elements」: \n{\n“主题”： {描述：一位年轻的亚洲女性，拥有可爱、柔和、圆润的脸型和白皙如瓷的肌肤。她的肤质自然水润，散发着柔和的光泽。“面部细节”： “她有着一双醒目的大而深邃的圆眼睛，眼下有明显的卧蚕（迷人的眼窝），侧脸向上望着镜头，眼神既调皮又天真无邪。她的嘴唇微微抿紧，带着一丝羞涩、俏皮又略带古怪的微笑（嘴唇紧紧地抿成一条细线），营造出一种羞涩、活泼又古灵精怪的表情。”“姿势”：“双膝弯曲，身体呈深蹲姿势，身体侧身，但头部猛地回头越过肩膀，正对着镜头。”“动作”：“一只手臂从长袖中伸直，与一只姜黄色的猫互动。”},\n“时尚”： {「garment_top」: 「鼠尾草绿色罗纹针织披肩/上衣，袖子很长，可以遮住手，露背设计，有细细的交叉绑带。」「garment_bottom」: 「牛仔短裤。」,“鞋履”：“赤脚穿着棕褐色凉鞋。”},\n“环境”： {“环境”：“乡村风格的露天庭院。”道具：一张木桌，上面铺着粉色部落/几何图案的桌布。“地面”： “粗糙的混凝土地面。”},\n「technical_specs」: \n{风格： “自然流畅的智能手机摄影美学，高角度拍摄。”“光线”：“自然日光，柔和的阴影，捕捉眼神中的光芒。”“焦点”：“聚焦于眼睛和古怪的嘴部表情。”}\n},\n“full_prompt_string”: “一张高角度拍摄的超写实抓拍照片，展现了一位年轻的亚洲女性蹲在水泥露台上。她回头看向镜头，表情十分独特：双唇紧抿，带着一丝羞涩的微笑，眼睛又大又圆，眼窝深邃，眼下有明显的卧蚕，显得可爱又调皮。她皮肤白皙透亮。她身穿一件鼠尾草绿色的露背针织衫，长袖遮住了双手，下身穿着牛仔短裤。她正向一只拴着牵引绳的橘色虎斑猫伸出手，猫咪就在一张铺着粉色花纹桌布的木桌旁。8K 分辨率，原始风格。”\n「negative_prompt」: \n张开嘴，露出牙齿，大笑，涂口红，浓妆艳抹，西方人特征，眼睛扭曲，手部畸形，多余手指，分辨率低，模糊。",
+    "imagePath": "/imagedb/1e/5e/1e5ef4341f8e5517da5f3f496919c884.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 12083,
+    "createdAt": "2025-12-04T09:45:28.279Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "47c8852c-a5dd-4eaf-b7a7-2aeb384201fc",
+    "prompt": "画一张经典的三极管放大电路",
+    "imagePath": "/imagedb/0a/5c/0a5c734572ca29797cbbcd5b52c8072f.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 8103,
+    "createdAt": "2025-12-04T09:48:51.062Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "5a57e9bc-a41c-4c8e-ab17-3e72dd9324a7",
+    "prompt": "ethereal, dreamy, soft focus, art by Greg Rutkowski and Artgerm, (a serene snake woman emerging from a lotus pond:1.3), 面容纯洁宁静，水滴从她的湿发和脸颊滑落。上半身仅由湿润的长发和藤蔓巧妙遮挡，下半身是洁白无瑕、带有珍珠光泽的蛇身，半隐在盛开的莲花与清澈的水中。清晨的逆光，光线穿过水雾形成丁达尔效应，水面波光粼粼。整体色调柔和，粉蓝与浅金。唯美、空灵、神圣。\n负面提示词：\nscary, fierce, monster, dark, scales, armor, scales, dramatic, intense shadow, blood, weapon, modern\n\n",
+    "imagePath": "/imagedb/38/b0/38b029855eb51cc1c71960aef1cab3ba.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 10240,
+    "createdAt": "2025-12-04T09:49:45.134Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "a1e934b6-4d6a-4332-ac46-e85f621a9d77",
+    "prompt": "一个女人，下半身为蛇，站立，全身，透明背景。",
+    "imagePath": "/imagedb/f2/c8/f2c82718c4aec8d298ac313ac66fd492.jpg",
+    "imageUrls": [],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 8715,
+    "createdAt": "2025-12-04T09:50:45.732Z",
+    "dimensionScores": {}
   }
 ]
