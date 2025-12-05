@@ -65,6 +65,7 @@
       <el-table-column label="操作" width="280">
         <template #default="{ row }">
           <el-button size="small" @click="handleReEdit(row)">编辑</el-button>
+          <el-button size="small" style="margin-left: 12px;" @click="handleAddToQuestions(row)">加到问题集</el-button>
           <el-dropdown trigger="click" style="margin-left: 12px;" @command="(cmd) => handleCommand(cmd, row)">
              <el-button size="small" type="danger">
                删除<el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -76,7 +77,6 @@
                </el-dropdown-menu>
              </template>
           </el-dropdown>
-          <el-button size="small" type="success" style="margin-left: 12px;" @click="handleAddToQuestions(row)">加到问题集</el-button>
         </template>
       </el-table-column>
     </el-table>
