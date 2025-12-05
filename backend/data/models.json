@@ -105,5 +105,28 @@
         "description": "-1 for random"
       }
     ]
+  },
+  {
+    "id": "doubao_seed3d",
+    "name": "Doubao Seed3D (3D Generation)",
+    "driver": "doubao",
+    "options": {
+      "model": "doubao-seed3d-1-0-250928",
+      "useProxy": false,
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "parameters": [
+      {
+        "name": "textParams",
+        "label": "3D Parameters",
+        "type": "select",
+        "default": "--subdivisionlevel medium --fileformat glb",
+        "options": [
+          { "label": "Medium Quality (GLB)", "value": "--subdivisionlevel medium --fileformat glb" },
+          { "label": "High Quality (GLB)", "value": "--subdivisionlevel high --fileformat glb" },
+          { "label": "Low Quality (GLB)", "value": "--subdivisionlevel low --fileformat glb" }
+        ]
+      }
+    ]
   }]
 

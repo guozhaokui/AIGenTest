@@ -32,13 +32,37 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/', upload.any(), async (req, res, next) => {
   try {
+    console.log('[generate] ==== INCOMING REQUEST ====');
+    console.log('[generate] Request body:', JSON.stringify(req.body, null, 2));
+    console.log('[generate] Request files:', req.files ? req.files.length : 0);
+    
     const { prompt, modelName, count, numberOfImages, imagePath, imagePaths } = req.body || {};
-    if (!prompt) return res.status(400).json({ error: 'missing_prompt' });
-    if (!GOOGLE_API_KEY) return res.status(500).json({ error: 'missing_api_key', message: 'Set GOOGLE_API_KEY in environment' });
+    console.log('[generate] Extracted prompt:', prompt);
+    
+    // Check if it's a 3D model that might not require a prompt
+    const models = await readJson(MODELS_FILE).catch(() => []);
+    let is3DModel = false;
+    if (req.body && req.body.modelId) {
+      const selectedModel = models.find(m => m.id === req.body.modelId);
+      is3DModel = selectedModel?.driver === 'doubao' && selectedModel?.options?.model?.startsWith('doubao-seed3d');
+    }
+    
+    // For 3D models, allow empty prompt if there are images
+    if (!prompt && !is3DModel) {
+      console.log('[generate] ERROR: Missing prompt for non-3D model, returning 400');
+      return res.status(400).json({ error: 'missing_prompt' });
+    }
+    
+    console.log('[generate] Model type:', is3DModel ? '3D Model' : 'Image Model');
+    
+    if (!GOOGLE_API_KEY) {
+      console.log('[generate] ERROR: Missing API key, returning 500');
+      return res.status(500).json({ error: 'missing_api_key', message: 'Set GOOGLE_API_KEY in environment' });
+    }
 
     // 仅使用 GoogleGenAI SDK：统一使用 generateContent
     // 解析模型：支持传 modelId（优先），兼容 modelName（后备）
-    const models = await readJson(MODELS_FILE).catch(() => []);
+    //const models = await readJson(MODELS_FILE).catch(() => []);
     let selected = null;
     if (req.body && req.body.modelId) {
       selected = models.find(m => m.id === req.body.modelId);
@@ -177,28 +201,74 @@ router.post('/', upload.any(), async (req, res, next) => {
       const buf = Buffer.from(dataBase64, 'base64');
       const hash = crypto.createHash('md5').update(buf).digest('hex');
       const sub1 = hash.slice(0, 2);
-      const sub2 = hash.slice(2, 4);
-      const ext = mimeToExt(mimeType);
+      // Check if it's a zip file (3D generation result)
+      const isZip = mimeType === 'application/zip' || ext === '.zip';
       
-      // 判断是存入 imagedb, modeldb 还是 sounddb
-      const isModel = ['.glb', '.gltf', '.fbx', '.obj'].includes(ext);
-      const isSound = ['.mp3', '.wav', '.ogg', '.flac'].includes(ext);
-      
-      let baseDir = UPLOAD_DIR;
-      if (isModel) baseDir = MODEL_DIR;
-      if (isSound) baseDir = SOUND_DIR;
+      if (isZip) {
+        // Handle 3D zip file
+        const uuid = require('crypto').randomUUID();
+        const baseDir = path.resolve(__dirname, '../../modeldb');
+        const outputDir = path.join(baseDir, uuid);
+        
+        // Install adm-zip if not available
+        let admZip;
+        try {
+          admZip = require('adm-zip');
+        } catch (e) {
+          console.log('[generate] Installing adm-zip...');
+          const { execSync } = require('child_process');
+          execSync('npm install adm-zip', { cwd: path.resolve(__dirname, '../..') });
+          admZip = require('adm-zip');
+        }
+        
+        // Extract zip
+        const zip = new admZip(buf);
+        zip.extractAllTo(outputDir, true);
+        console.log(`[generate] Extracted 3D zip to ${outputDir}`);
+        
+        // Find the main GLB files
+        const extractedFiles = zip.getEntries().map(entry => entry.entryName);
+        console.log('[generate] Extracted files:', extractedFiles);
+        
+        // Return the uuid as the identifier, frontend can use this to access the files
+        const publicPath = `/modeldb/${uuid}/pbr/mesh_textured_pbr.glb`;
+        return res.json({ 
+          imagePath: publicPath, 
+          duration,
+          info3d:{
+            uuid: uuid,
+            hasPBR: extractedFiles.includes('pbr/mesh_textured_pbr.glb'),
+            hasRGB: extractedFiles.includes('rgb/mesh_textured.glb'),
+            files: extractedFiles
+          }
+        });
+      } else {
+        // Regular file handling (images, single 3D models, sounds)
+        const sub2 = hash.slice(2, 4);
+        const ext = mimeToExt(mimeType);
+        
+        // 判断是存入 imagedb, modeldb 还是 sounddb
+        const isModel = ['.glb', '.gltf', '.fbx', '.obj'].includes(ext);
+        const isSound = ['.mp3', '.wav', '.ogg', '.flac'].includes(ext);
+        
+        let baseDir = UPLOAD_DIR;
+        if (isModel) baseDir = MODEL_DIR;
+        if (isSound) baseDir = SOUND_DIR;
 
-      const dir = path.join(baseDir, sub1, sub2);
-      
-      await fs.mkdir(dir, { recursive: true });
-      const filename = `${hash}${ext}`;
-      const abs = path.join(dir, filename);
-      await fs.writeFile(abs, buf);
-      
-      // 修改公共路径生成逻辑，使其通用化
-      const relFromProject = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/'); 
-      // relFromProject 例如: 'imagedb/xx.png', 'modeldb/xx.glb', 'sounddb/xx.mp3'
-      const publicPath = `/${relFromProject}`;
+        const dir = path.join(baseDir, sub1, sub2);
+        
+        await fs.mkdir(dir, { recursive: true });
+        const filename = `${hash}${ext}`;
+        const abs = path.join(dir, filename);
+        await fs.writeFile(abs, buf);
+        
+        // 修改公共路径生成逻辑，使其通用化
+        const relFromProject = path.relative(path.resolve(__dirname, '../..'), abs).replace(/\\/g, '/'); 
+        // relFromProject 例如: 'imagedb/xx.png', 'modeldb/xx.glb', 'sounddb/xx.mp3'
+        const publicPath = `/${relFromProject}`;
+        
+        return res.json({ imagePath: publicPath, duration });
+      }
       
       // eslint-disable-next-line no-console
       console.log(`[generate] success: saved 1 file, duration=${duration}ms, path=${publicPath}`);

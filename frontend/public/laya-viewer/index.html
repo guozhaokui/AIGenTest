@@ -1,72 +1,201 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
     <meta charset="utf-8">
-    <title>Model Viewer</title>
-    <style>
-        html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; background: #333; }
+    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>LayaAir 3D Model Viewer</title>
+    <style type="text/css">
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #000;
+        }
+        #layaCanvas {
+            width: 100%;
+            height: 100%;
+        }
+        .controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 5px;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        button {
+            background: #4CAF50;
+            border: none;
+            color: white;
+            padding: 5px 10px;
+            margin: 5px 0;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        select {
+            background: #333;
+            border: 1px solid #555;
+            color: white;
+            padding: 5px;
+            border-radius: 3px;
+            font-size: 12px;
+        }
     </style>
-    <!-- 引入 LayaAir 3.x 引擎库 -->
-    <script src="https://cdn.jsdelivr.net/npm/layaair/laya.core.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/layaair/laya.d3.min.js"></script>
 </head>
 <body>
+    <div id="layaContainer">
+        <canvas id="layaCanvas"></canvas>
+    </div>
+    <div class="controls">
+        <div>模型选择：</div>
+        <select id="modelSelect"></select>
+        <div style="margin-top: 10px;">操作：</div>
+        <button id="resetBtn">重置视角</button>
+        <button id="fullscreenBtn">全屏</button>
+    </div>
+
+    <script src="https://layaair.ldc.layabox.com/3.x/laya.core.js"></script>
+    <script src="https://layaair.ldc.layabox.com/3.x/laya.d3.js"></script>
+    <script src="https://layaair.ldc.layabox.com/3.x/laya.ui.js"></script>
     <script>
-        const { Laya, Stage, Browser, Scene3D, Camera, DirectionLight, Vector3, Handler } = Laya;
+        // 解析URL参数
+        function getQueryParam(name) {
+            const url = window.location.href;
+            const regex = new RegExp('[/?&]' + name + '(=([^&#]*)|&|#|$)');
+            const results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }
 
-        // 1. 初始化引擎
-        Laya.init(Browser.clientWidth, Browser.clientHeight);
-        Laya.stage.scaleMode = "full";
-        Laya.stage.screenMode = "none";
-        Laya.stage.bgColor = "#333333";
+        // 初始化LayaAir
+        Laya3D.init('layaCanvas', Laya.Stage.FORCE_HORIZONTAL);
+        Laya.stage.bgColor = '#000000';
+        Laya.Stat.show();
 
-        // 2. 创建3D场景
-        const scene = new Scene3D();
-        Laya.stage.addChild(scene);
+        // 创建场景
+        const scene = Laya.stage.addChild(new Laya.Scene3D());
 
-        // 3. 添加摄像机
-        const camera = new Camera(0, 0.1, 100);
-        scene.addChild(camera);
-        camera.transform.translate(new Vector3(0, 1, 3));
-        camera.transform.lookAt(new Vector3(0, 0, 0), new Vector3(0, 1, 0));
-        camera.clearColor = new Vector3(0.2, 0.2, 0.2);
-        
-        // 添加鼠标控制 (需引入 laya.d3.js)
+        // 创建相机
+        const camera = scene.addChild(new Laya.Camera(0, 0.1, 100));
+        camera.transform.translate(new Laya.Vector3(0, 1, 3));
+        camera.transform.rotate(new Laya.Vector3(-15, 0, 0), true, false);
         camera.addComponent(Laya.CameraMoveScript);
+        camera.clearFlag = Laya.BaseCamera.CLEARFLAG_SKY;
 
-        // 4. 添加灯光
-        const light = new DirectionLight();
-        scene.addChild(light);
-        light.color = new Vector3(1, 1, 1);
-        light.transform.rotate(new Vector3(-30, 0, 0));
+        // 创建天空盒
+        const skyBox = new Laya.SkyBox();
+        skyBox.textureCube = Laya.TextureCube.load("https://layaair.ldc.layabox.com/3.x/demo/res/skybox/skybox1/skybox.png");
+        scene.skybox = skyBox;
 
-        // 5. 获取 URL 参数中的模型路径
-        const urlParams = new URLSearchParams(window.location.search);
-        const modelUrl = urlParams.get('url');
+        // 创建方向光
+        const light = scene.addChild(new Laya.DirectionLight());
+        light.color = new Laya.Vector3(1, 1, 1);
+        light.transform.worldMatrix.setForward(new Laya.Vector3(-1, -1, -1));
 
-        if (modelUrl) {
-            // 加载模型
-            Laya.loader.load(modelUrl, Handler.create(this, (res) => {
-                if (!res) {
-                    console.error("加载失败:", modelUrl);
-                    return;
-                }
-                // 如果是 Sprite3D (通常是 .lh, .ls) 或直接是资源
-                const model = res instanceof Laya.Sprite3D ? res : Laya.Loader.getRes(modelUrl);
+        // 创建地面
+        const plane = scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(10, 10, 10, 10)));
+        plane.transform.position = new Laya.Vector3(0, 0, 0);
+        plane.transform.rotate(new Laya.Vector3(-90, 0, 0), false, false);
+        const planeMat = new Laya.BlinnPhongMaterial();
+        planeMat.albedoTexture = Laya.Texture2D.load("https://layaair.ldc.layabox.com/3.x/demo/res/texture/wood.jpg");
+        plane.meshRenderer.material = planeMat;
+
+        // 模型容器
+        let currentModel = null;
+        const modelPath = getQueryParam('url');
+        let modelOptions = [];
+
+        // 解析模型路径，生成可用的模型选项
+        if (modelPath) {
+            // 提取UUID部分
+            const uuidMatch = modelPath.match(/\/modeldb\/([^\/]+)/);
+            if (uuidMatch && uuidMatch[1]) {
+                const uuid = uuidMatch[1];
+                // 生成模型选项
+                modelOptions = [
+                    {
+                        name: 'PBR模型',
+                        path: `/modeldb/${uuid}/pbr/mesh_textured_pbr.glb`
+                    },
+                    {
+                        name: 'RGB模型',
+                        path: `/modeldb/${uuid}/rgb/mesh_textured.glb`
+                    }
+                ];
+            }
+        }
+
+        // 填充模型选择下拉框
+        const modelSelect = document.getElementById('modelSelect');
+        modelOptions.forEach((option, index) => {
+            const opt = document.createElement('option');
+            opt.value = index;
+            opt.text = option.name;
+            modelSelect.appendChild(opt);
+        });
+
+        // 加载并显示模型
+        function loadModel(index) {
+            const option = modelOptions[index];
+            if (!option) return;
+
+            // 移除当前模型
+            if (currentModel) {
+                scene.removeChild(currentModel);
+                currentModel.destroy();
+                currentModel = null;
+            }
+
+            // 加载GLB模型
+            Laya.Mesh.load(option.path, Laya.Handler.create(null, (mesh) => {
+                currentModel = scene.addChild(new Laya.MeshSprite3D(mesh));
                 
-                if (model) {
-                    scene.addChild(model);
-                    // 简单的自动旋转脚本
-                    model.addComponent(AutoRotateScript);
-                    console.log("模型加载成功");
-                }
+                // 计算模型边界盒
+                const bounds = currentModel.meshRenderer.mesh.bounds;
+                const size = new Laya.Vector3();
+                bounds.getSize(size);
+                
+                // 调整模型位置和缩放
+                const scale = 1 / Math.max(size.x, size.y, size.z);
+                currentModel.transform.scale = new Laya.Vector3(scale, scale, scale);
+                currentModel.transform.position = new Laya.Vector3(0, -bounds.getMin().y * scale, 0);
+                
+                console.log('模型加载成功:', option.path);
             }));
         }
 
-        class AutoRotateScript extends Laya.Script3D {
-            onUpdate() {
-                this.owner.transform.rotate(new Vector3(0, 0.5, 0), false, false);
+        // 事件监听
+        modelSelect.addEventListener('change', (e) => {
+            loadModel(parseInt(e.target.value));
+        });
+
+        document.getElementById('resetBtn').addEventListener('click', () => {
+            camera.transform.position = new Laya.Vector3(0, 1, 3);
+            camera.transform.rotationEuler = new Laya.Vector3(-15, 0, 0);
+        });
+
+        document.getElementById('fullscreenBtn').addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen();
+            } else {
+                document.exitFullscreen();
             }
+        });
+
+        // 初始加载第一个模型
+        if (modelOptions.length > 0) {
+            loadModel(0);
         }
     </script>
 </body>

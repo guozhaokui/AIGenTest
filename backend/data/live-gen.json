@@ -2238,5 +2238,21 @@
     "duration": 13779,
     "createdAt": "2025-12-04T12:25:49.651Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "b5a39182-20f6-4891-b07b-6346d929c797",
+    "prompt": "",
+    "imagePath": "/modeldb/ed9adf3b-e2d8-4c50-95ab-3ccf844ad5ec/pbr/mesh_textured_pbr.glb",
+    "imageUrls": [
+      "/imagedb/ec/cd/eccd75bd5a54525ad469ee1ec704f31c.jpg"
+    ],
+    "modelId": "doubao_seed3d",
+    "modelName": "",
+    "params": {
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "duration": 5426,
+    "createdAt": "2025-12-05T13:12:57.554Z",
+    "dimensionScores": {}
   }
 ]
