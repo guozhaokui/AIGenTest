@@ -65,7 +65,7 @@
       <el-table-column label="操作" width="280">
         <template #default="{ row }">
           <el-button size="small" @click="handleReEdit(row)">编辑</el-button>
-          <el-button size="small" style="margin-left: 12px;" @click="handleAddToQuestions(row)">加到问题集</el-button>
+          <el-button size="small" style="margin-left: 12px;" @click="handleExport(row)">导出</el-button>
           <el-dropdown trigger="click" style="margin-left: 12px;" @command="(cmd) => handleCommand(cmd, row)">
              <el-button size="small" type="danger">
                删除<el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -77,6 +77,7 @@
                </el-dropdown-menu>
              </template>
           </el-dropdown>
+          <el-button size="small" style="margin-left: 12px;" @click="handleAddToQuestions(row)">加到问题集</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -215,6 +216,22 @@ async function handleDelete(row, fullDelete = false) {
     fetchList();
   } catch (e) {
     // cancel or error
+  }
+}
+
+async function handleExport(row) {
+  try {
+    await ElMessageBox.confirm('确定导出该记录的资源吗？', '确认', {
+      type: 'info',
+      confirmButtonText: '导出'
+    });
+    
+    await fetch(`/api/live-gen/${row.id}/export`, { method: 'POST' });
+    ElMessage.success('资源已导出');
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('导出失败');
+    }
   }
 }
 

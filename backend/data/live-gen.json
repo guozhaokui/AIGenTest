@@ -2147,5 +2147,96 @@
     "duration": 8715,
     "createdAt": "2025-12-04T09:50:45.732Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "624378b1-a28e-47ef-84a2-8045e4033992",
+    "prompt": "生成一张2d动作序列帧，具体动作参考第一张图片，把角色换成第二张图片，注意严格动作一致，尤其要区分左手手和左右腿。背景透明",
+    "imagePath": "/imagedb/18/25/18255ea1b733b47a787ad1cdc980dd4f.jpg",
+    "imageUrls": [
+      "imagedb/07/47/074704fbd8c40c16bd96588f04ee4145.png",
+      "/imagedb/bd/ab/bdab9c53d190735e0ab3191eb88b5794.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "duration": 35313,
+    "createdAt": "2025-12-04T11:41:27.125Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "4d7f5145-de56-4030-8302-772c38e46a31",
+    "prompt": "把这张图片改成只有几种颜色的像素画，去掉背景，",
+    "imagePath": "/imagedb/61/5f/615f3c3d22a16243e6f3735c9f8eadd7.jpg",
+    "imageUrls": [
+      "imagedb/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 12235,
+    "createdAt": "2025-12-04T12:21:42.558Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "26bd94a2-b916-4e6f-9337-996504cd060e",
+    "prompt": "把这张图片改成只有几种颜色的像素画，去掉背景，",
+    "imagePath": "/imagedb/0f/46/0f46c176db267b85085589dcc49cf5a0.jpg",
+    "imageUrls": [
+      "imagedb/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "duration": 43043,
+    "createdAt": "2025-12-04T12:23:04.155Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "01b05071-5248-4bdc-98ef-e616de572727",
+    "prompt": "把这张图片改成早期DOS游戏的256色像素画，去掉背景，",
+    "imagePath": "/imagedb/c4/f3/c4f35acd89e5d33c845bb8698a7f5b38.jpg",
+    "imageUrls": [
+      "imagedb/5d/07/5d0757734cdd2812efa8c434dd812e4f.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "duration": 39051,
+    "createdAt": "2025-12-04T12:24:21.823Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "f24f81f4-ec29-4804-9c38-6861d0602165",
+    "prompt": "把这张图片改成早期DOS游戏的256色像素画，去掉背景，",
+    "imagePath": "/imagedb/e4/9d/e49d4228cd24f7caa052aa6cf13d9064.jpg",
+    "imageUrls": [
+      "/imagedb/f9/ab/f9ab5560d82e8bd312cc78e6c213423c.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "duration": 36739,
+    "createdAt": "2025-12-04T12:25:21.685Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "22a7ad83-cfd7-415b-a8af-c77de74f3109",
+    "prompt": "把这张图片改成早期DOS游戏的256色像素画，去掉背景，",
+    "imagePath": "/imagedb/4b/36/4b365b82968565b5d4a25017ba817d8b.jpg",
+    "imageUrls": [
+      "/imagedb/f9/ab/f9ab5560d82e8bd312cc78e6c213423c.jpg"
+    ],
+    "modelId": "doubao_seedream_4_5",
+    "modelName": "",
+    "params": {
+      "size": "2K",
+      "watermark": "false"
+    },
+    "duration": 13779,
+    "createdAt": "2025-12-04T12:25:49.651Z",
+    "dimensionScores": {}
   }
 ]

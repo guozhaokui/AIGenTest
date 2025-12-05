@@ -148,5 +148,70 @@ router.delete('/:id', async (req, res, next) => {
   }
 });
 
+// Export resources
+router.post('/:id/export', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const fs = require('fs/promises');
+    
+    const items = await readJson(DATA_FILE);
+    const targetItem = items.find(x => x.id === id);
+    
+    if (!targetItem) {
+      return res.status(404).json({ error: 'not_found' });
+    }
+    
+    const exportsDir = path.resolve(__dirname, '../../exports');
+    
+    // Ensure exports directory exists
+    await fs.mkdir(exportsDir, { recursive: true });
+    
+    // Function to copy a file to exports directory
+    async function copyToExports(sourcePath) {
+      if (!sourcePath) return;
+      
+      let relPath = String(sourcePath);
+      
+      // Normalize path - remove leading slashes
+      if (relPath.startsWith('/')) {
+        relPath = relPath.slice(1);
+      }
+      
+      // All images go to exports/imagedb/ with same structure
+      const targetDir = path.resolve(exportsDir, 'imagedb');
+      
+      const sourceAbsPath = path.resolve(__dirname, '../../', relPath);
+      const targetAbsPath = path.resolve(targetDir, relPath.replace(/^imagedb\//, ''));
+      
+      try {
+        // Ensure target directory exists
+        await fs.mkdir(path.dirname(targetAbsPath), { recursive: true });
+        
+        // Copy file
+        await fs.copyFile(sourceAbsPath, targetAbsPath);
+        console.log(`[live-gen] exported file: ${sourceAbsPath} -> ${targetAbsPath}`);
+      } catch (e) {
+        console.warn(`[live-gen] failed to export file ${sourceAbsPath}:`, e.message);
+      }
+    }
+    
+    // Export generated image
+    if (targetItem.imagePath) {
+      await copyToExports(targetItem.imagePath);
+    }
+    
+    // Export reference images (imageUrls)
+    if (Array.isArray(targetItem.imageUrls)) {
+      for (const imageUrl of targetItem.imageUrls) {
+        await copyToExports(imageUrl);
+      }
+    }
+    
+    res.json({ ok: true, message: 'Resources exported successfully' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 module.exports = router;
 
