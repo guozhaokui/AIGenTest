@@ -148,7 +148,9 @@
             "2D": {
                 FPS: 60,
                 isAntialias: true,
-                isAlpha: false
+                isAlpha: false,
+                // 保留绘制缓冲区，用于截图
+                preserveDrawingBuffer: true
             },
             "3D": {
                 enableDynamicBatch: true,
@@ -158,6 +160,7 @@
         };
 
         Object.assign(Laya.Config, config["2D"]);
+        Laya.Config.preserveDrawingBuffer = true; // 确保设置生效
         Object.assign(Laya.Config3D, config["3D"]);
 
         // 初始化引擎
@@ -319,11 +322,72 @@
                     
                     document.getElementById('loadingText').style.display = 'none';
                     console.log('模型加载成功:', option.path);
+                    
+                    // 等待渲染完成后截图（等待10帧）
+                    waitFramesAndCapture(10, option.path);
                 } else {
                     document.getElementById('loadingText').textContent = '模型加载失败';
                     console.error('模型加载失败:', option.path);
                 }
             }), null, null, null, null, Laya.Loader.HIERARCHY);
+        }
+        
+        // 等待指定帧数后截图
+        let captureFrameCount = 0;
+        let captureModelPath = '';
+        function waitFramesAndCapture(frames, modelPath) {
+            captureFrameCount = frames;
+            captureModelPath = modelPath;
+            Laya.timer.frameLoop(1, null, onCaptureFrame);
+        }
+        
+        function onCaptureFrame() {
+            captureFrameCount--;
+            if (captureFrameCount <= 0) {
+                Laya.timer.clear(null, onCaptureFrame);
+                captureAndSendThumbnail(captureModelPath);
+            }
+        }
+        
+        // 截图并发送给父窗口
+        function captureAndSendThumbnail(modelPath) {
+            try {
+                // 获取 canvas
+                const canvas = document.querySelector('canvas');
+                if (!canvas) {
+                    console.error('Canvas not found');
+                    return;
+                }
+                
+                // 确保 canvas 有内容
+                const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
+                if (ctx) {
+                    // 强制完成所有渲染操作
+                    ctx.finish();
+                }
+                
+                // 截图
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // 检查是否是空白图片
+                if (dataUrl.length < 1000) {
+                    console.warn('截图可能是空的，重试...');
+                    waitFramesAndCapture(10, modelPath);
+                    return;
+                }
+                
+                // 发送给父窗口
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'thumbnail',
+                        modelPath: modelPath,
+                        dataUrl: dataUrl
+                    }, '*');
+                    console.log('缩略图已发送, 大小:', dataUrl.length);
+                }
+            } catch (e) {
+                console.error('截图失败:', e);
+            }
         }
 
         // 调整模型位置和缩放

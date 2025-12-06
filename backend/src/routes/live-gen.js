@@ -104,6 +104,58 @@ router.patch('/:id/score', async (req, res, next) => {
   }
 });
 
+// Upload thumbnail for 3D model
+router.post('/:id/thumbnail', async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { dataUrl } = req.body;
+    
+    if (!dataUrl) {
+      return res.status(400).json({ error: 'missing_dataUrl' });
+    }
+    
+    const items = await readJson(DATA_FILE);
+    const idx = items.findIndex(x => x.id === id);
+    
+    if (idx === -1) return res.status(404).json({ error: 'not_found' });
+    
+    // 解析 base64 数据
+    const matches = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+    if (!matches) {
+      return res.status(400).json({ error: 'invalid_dataUrl' });
+    }
+    
+    const ext = matches[1] === 'jpeg' ? 'jpg' : matches[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    // 使用 modelDir 作为缩略图保存路径的基础
+    const item = items[idx];
+    const modelDir = item.info3d?.modelDir;
+    
+    if (!modelDir) {
+      return res.status(400).json({ error: 'no_modelDir' });
+    }
+    
+    // 保存到 modelDir 下的 thumbnail.jpg
+    const fs = require('fs/promises');
+    const relPath = modelDir.startsWith('/') ? modelDir.slice(1) : modelDir;
+    const thumbnailPath = `${modelDir}/thumbnail.${ext}`;
+    const absPath = path.resolve(__dirname, '../..', relPath, `thumbnail.${ext}`);
+    
+    await fs.writeFile(absPath, buffer);
+    console.log(`[live-gen] Thumbnail saved: ${absPath}`);
+    
+    // 更新记录
+    items[idx].thumbnailPath = thumbnailPath;
+    await writeJson(DATA_FILE, items);
+    
+    res.json({ thumbnailPath });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // Delete
 router.delete('/:id', async (req, res, next) => {
   try {

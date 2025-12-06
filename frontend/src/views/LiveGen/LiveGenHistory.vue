@@ -15,14 +15,24 @@
     <el-table :data="items" v-loading="loading" style="width: 100%" :row-class-name="tableRowClassName">
       <el-table-column label="图片" width="120">
         <template #default="{ row }">
-          <!-- 3D模型显示特殊图标 -->
-          <div v-if="is3DModel(row)" 
-               class="model-thumbnail" 
-               @click="handleView3D(row)"
-               title="点击查看3D模型">
-            <el-icon :size="40"><Box /></el-icon>
-            <span class="model-label">3D</span>
-          </div>
+          <!-- 3D模型：优先显示缩略图，否则显示图标 -->
+          <template v-if="is3DModel(row)">
+            <el-image 
+              v-if="row.thumbnailPath"
+              :src="normalizeUrl(row.thumbnailPath)" 
+              fit="cover" 
+              style="width: 80px; height: 80px; border-radius: 4px; cursor: pointer;"
+              @click="handleView3D(row)"
+              title="点击查看3D模型"
+            />
+            <div v-else
+                 class="model-thumbnail" 
+                 @click="handleView3D(row)"
+                 title="点击查看3D模型">
+              <el-icon :size="40"><Box /></el-icon>
+              <span class="model-label">3D</span>
+            </div>
+          </template>
           <!-- 普通图片 -->
           <el-image 
             v-else

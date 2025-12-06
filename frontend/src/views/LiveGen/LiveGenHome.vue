@@ -119,7 +119,7 @@
             
             <!-- 3D模型预览 -->
             <template v-else-if="result.info3d">
-                <ModelViewer :info3d="result.info3d" />
+                <ModelViewer :info3d="result.info3d" @thumbnail="handleThumbnail" />
             </template>
 
             <!-- 音频播放 -->
@@ -417,6 +417,27 @@ function isImage(path) {
 function isSound(path) {
   if (!path) return false;
   return /\.(mp3|wav|ogg|flac)$/i.test(path);
+}
+
+// 处理3D模型缩略图
+async function handleThumbnail(dataUrl) {
+  if (!result.value?.id) return;
+  
+  try {
+    // 上传缩略图
+    const res = await fetch(`/api/live-gen/${result.value.id}/thumbnail`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dataUrl })
+    });
+    const json = await res.json();
+    if (json.thumbnailPath) {
+      result.value.thumbnailPath = json.thumbnailPath;
+      console.log('缩略图已保存:', json.thumbnailPath);
+    }
+  } catch (e) {
+    console.error('缩略图上传失败:', e);
+  }
 }
 </script>
 

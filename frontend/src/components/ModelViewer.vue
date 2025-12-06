@@ -19,7 +19,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   info3d: {
@@ -27,6 +27,8 @@ const props = defineProps({
     required: true
   }
 });
+
+const emit = defineEmits(['thumbnail']);
 
 // 当前选择的模型类型：pbr 或 rgb
 const selectedType = ref('pbr');
@@ -44,6 +46,21 @@ const currentModelUrl = computed(() => {
 const viewerUrl = computed(() => {
   if (!currentModelUrl.value) return '';
   return `/laya-viewer/index.html?url=${encodeURIComponent(currentModelUrl.value)}`;
+});
+
+// 接收 iframe 的截图消息
+function handleMessage(event) {
+  if (event.data?.type === 'thumbnail' && event.data?.dataUrl) {
+    emit('thumbnail', event.data.dataUrl);
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('message', handleMessage);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('message', handleMessage);
 });
 </script>
 
