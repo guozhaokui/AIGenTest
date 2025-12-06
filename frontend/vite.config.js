@@ -7,7 +7,16 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:3000',
-        changeOrigin: true
+        changeOrigin: true,
+        timeout: 1800000, // 30分钟超时
+        proxyTimeout: 1800000, // 代理连接超时
+        configure: (proxy, options) => {
+          // 设置代理 socket 超时
+          proxy.on('proxyReq', (proxyReq, req, res) => {
+            req.socket.setTimeout(1800000);
+            proxyReq.socket && proxyReq.socket.setTimeout(1800000);
+          });
+        }
       },
       // 添加新路径代理
       '/imagedb': {

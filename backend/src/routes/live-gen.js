@@ -55,7 +55,7 @@ router.post('/', async (req, res, next) => {
     await ensureDataFile();
     const items = await readJson(DATA_FILE);
     
-    const { prompt, imagePath, imageUrls, modelId, modelName, params, duration, info3d } = req.body;
+    const { prompt, imagePath, imageUrls, modelId, modelName, params, duration, info3d, usage } = req.body;
     const now = new Date().toISOString();
     
     const newItem = {
@@ -68,6 +68,7 @@ router.post('/', async (req, res, next) => {
       params: params || {}, // Store generation parameters
       duration: duration || 0, // Store generation duration in ms
       info3d: info3d || null, // Store 3D model info (modelDir, pbrPath, rgbPath, etc.)
+      usage: usage || null, // Store token usage (completion_tokens, total_tokens)
       createdAt: now,
       dimensionScores: {} // Stores score per dimension ID
     };

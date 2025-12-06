@@ -195,6 +195,8 @@ router.post('/', upload.any(), async (req, res, next) => {
 
       dataBase64 = out?.dataBase64;
       mimeType = out?.mimeType;
+      const usage = out?.usage || null; // 提取 token 使用信息
+      
       if (!dataBase64) {
         return res.status(500).json({ error: 'no_image_returned' });
       }
@@ -242,7 +244,8 @@ router.post('/', upload.any(), async (req, res, next) => {
         return res.json({ 
           imagePath: modelDir,
           duration,
-          info3d: { modelDir }
+          info3d: { modelDir },
+          usage
         });
       } else {
         // Regular file handling (images, single 3D models, sounds)
@@ -269,7 +272,7 @@ router.post('/', upload.any(), async (req, res, next) => {
         // relFromProject 例如: 'imagedb/xx.png', 'modeldb/xx.glb', 'sounddb/xx.mp3'
         const publicPath = `/${relFromProject}`;
         
-        return res.json({ imagePath: publicPath, duration });
+        return res.json({ imagePath: publicPath, duration, usage });
       }
       
       // eslint-disable-next-line no-console

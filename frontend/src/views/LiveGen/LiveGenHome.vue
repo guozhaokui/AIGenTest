@@ -362,7 +362,9 @@ async function handleGenerate() {
       duration: res.duration || 0, // Store generation time
       timestamp: new Date().toISOString(),
       // 保存 3D 模型信息
-      info3d: res.info3d || null
+      info3d: res.info3d || null,
+      // 保存 token 使用信息
+      usage: res.usage || null
     };
     
     // 自动保存到历史记录 (通过后端 API)

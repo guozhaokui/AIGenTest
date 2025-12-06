@@ -183,6 +183,9 @@ async function generateImage({ apiKey, model, prompt, images, config, dispatcher
 
     const result = await response.json();
     
+    // 打印完整返回结果，用于查看 token 信息
+    console.log('[doubao-image] Complete API response:', JSON.stringify(result, null, 2));
+    
     // Extract image URL from response
     const imageUrl = result.data?.[0]?.url;
     
@@ -193,10 +196,14 @@ async function generateImage({ apiKey, model, prompt, images, config, dispatcher
     // Download image
     const { buffer, contentType } = await downloadContent(imageUrl, dispatcher);
     const base64 = buffer.toString('base64');
+    
+    // 提取 usage/token 信息（如果存在）
+    const usage = result.usage || null;
 
     return {
       dataBase64: base64,
-      mimeType: contentType || 'image/jpeg'
+      mimeType: contentType || 'image/jpeg',
+      usage
     };
 
   } catch (error) {
@@ -296,9 +303,13 @@ async function generate3D({ apiKey, model, prompt, images, config, dispatcher })
     const { buffer, contentType } = await downloadContent(modelUrl, dispatcher);
     const base64 = buffer.toString('base64');
     
+    // 提取 usage/token 信息（如果存在）
+    const usage = taskResult.usage || null;
+    
     return {
       dataBase64: base64,
-      mimeType: contentType || 'model/gltf-binary' // Default to glb mime type
+      mimeType: contentType || 'model/gltf-binary', // Default to glb mime type
+      usage
     };
 
   } catch (error) {

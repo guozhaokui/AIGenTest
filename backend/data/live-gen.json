@@ -2258,5 +2258,73 @@
     "createdAt": "2025-12-06T09:09:16.203Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/b722da56-5b51-4deb-904b-837c5eb4e4d5/1a34511d-0919-42f4-a51f-6d793ae4a432/thumbnail.jpg"
+  },
+  {
+    "id": "5392fdfc-4d81-44a6-b23e-130f6893d109",
+    "prompt": "",
+    "imagePath": "/modeldb/e379856a-f436-4bb5-bdfe-350e0a491e99/0d8ceef5-a820-421b-8813-f52f94a707a9",
+    "imageUrls": [
+      "/imagedb/ec/cd/eccd75bd5a54525ad469ee1ec704f31c.jpg"
+    ],
+    "modelId": "doubao_seed3d",
+    "modelName": "",
+    "params": {
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "duration": 905780,
+    "info3d": {
+      "modelDir": "/modeldb/e379856a-f436-4bb5-bdfe-350e0a491e99/0d8ceef5-a820-421b-8813-f52f94a707a9"
+    },
+    "createdAt": "2025-12-06T10:21:01.767Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/e379856a-f436-4bb5-bdfe-350e0a491e99/0d8ceef5-a820-421b-8813-f52f94a707a9/thumbnail.jpg"
+  },
+  {
+    "id": "3b39dad8-1c73-4f60-b833-24f459a0e818",
+    "prompt": "",
+    "imagePath": "/modeldb/09d6d466-1fae-4888-a95e-644e6f381706/d4cebd0e-a0f8-4401-b8b8-f170ba1db136",
+    "imageUrls": [
+      "/imagedb/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "doubao_seed3d",
+    "modelName": "",
+    "params": {
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "duration": 1005602,
+    "info3d": {
+      "modelDir": "/modeldb/09d6d466-1fae-4888-a95e-644e6f381706/d4cebd0e-a0f8-4401-b8b8-f170ba1db136"
+    },
+    "usage": {
+      "completion_tokens": 30000,
+      "total_tokens": 30000
+    },
+    "createdAt": "2025-12-06T10:42:18.721Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/09d6d466-1fae-4888-a95e-644e6f381706/d4cebd0e-a0f8-4401-b8b8-f170ba1db136/thumbnail.jpg"
+  },
+  {
+    "id": "ba5c6cf2-44ae-4b4b-8bdf-ac93f5a32979",
+    "prompt": "",
+    "imagePath": "/modeldb/d9ad566d-6217-4a7a-8cb7-196eabac83d0/e3ccdbea-8e99-4496-9be8-6a7aef13dc04",
+    "imageUrls": [
+      "/imagedb/a8/d2/a8d2f9f7347a04827531a5f5ffa229b8.jpg"
+    ],
+    "modelId": "doubao_seed3d",
+    "modelName": "",
+    "params": {
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "duration": 305709,
+    "info3d": {
+      "modelDir": "/modeldb/d9ad566d-6217-4a7a-8cb7-196eabac83d0/e3ccdbea-8e99-4496-9be8-6a7aef13dc04"
+    },
+    "usage": {
+      "completion_tokens": 30000,
+      "total_tokens": 30000
+    },
+    "createdAt": "2025-12-06T10:50:13.395Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/d9ad566d-6217-4a7a-8cb7-196eabac83d0/e3ccdbea-8e99-4496-9be8-6a7aef13dc04/thumbnail.jpg"
   }
 ]

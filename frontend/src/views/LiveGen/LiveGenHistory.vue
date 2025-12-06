@@ -66,6 +66,7 @@
                 </div>
               </el-popover>
              <el-tag size="small" type="success" v-if="row.duration">{{ row.duration }}ms</el-tag>
+             <el-tag size="small" type="warning" v-if="row.usage?.total_tokens">{{ formatTokens(row.usage.total_tokens) }} tokens</el-tag>
              <span class="time">{{ formatTime(row.createdAt) }}</span>
            </div>
         </template>
@@ -169,6 +170,12 @@ function tableRowClassName({ row }) {
 function formatTime(t) {
   if (!t) return '';
   return new Date(t).toLocaleString();
+}
+
+function formatTokens(n) {
+  if (!n) return '0';
+  if (n >= 1000) return (n / 1000).toFixed(1) + 'k';
+  return String(n);
 }
 
 function normalizeUrl(p) {
