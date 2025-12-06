@@ -2240,9 +2240,9 @@
     "dimensionScores": {}
   },
   {
-    "id": "d09121de-2ff0-48bd-9039-821b61ec6097",
+    "id": "ed3cc508-1994-4f85-892f-94955c78eb88",
     "prompt": "",
-    "imagePath": "/modeldb/0edafb86-7e5f-4302-8aa2-908d15b1d1ec/dad766d1-9ae8-4b94-acd9-7861e153ab4c",
+    "imagePath": "/modeldb/b722da56-5b51-4deb-904b-837c5eb4e4d5/1a34511d-0919-42f4-a51f-6d793ae4a432",
     "imageUrls": [
       "/imagedb/ec/cd/eccd75bd5a54525ad469ee1ec704f31c.jpg"
     ],
@@ -2251,11 +2251,12 @@
     "params": {
       "textParams": "--subdivisionlevel medium --fileformat glb"
     },
-    "duration": 3326,
+    "duration": 3292,
     "info3d": {
-      "modelDir": "/modeldb/0edafb86-7e5f-4302-8aa2-908d15b1d1ec/dad766d1-9ae8-4b94-acd9-7861e153ab4c"
+      "modelDir": "/modeldb/b722da56-5b51-4deb-904b-837c5eb4e4d5/1a34511d-0919-42f4-a51f-6d793ae4a432"
     },
-    "createdAt": "2025-12-06T08:53:57.879Z",
-    "dimensionScores": {}
+    "createdAt": "2025-12-06T09:09:16.203Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/b722da56-5b51-4deb-904b-837c5eb4e4d5/1a34511d-0919-42f4-a51f-6d793ae4a432/thumbnail.jpg"
   }
 ]

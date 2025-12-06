@@ -173,25 +173,48 @@ router.delete('/:id', async (req, res, next) => {
       await writeJson(DATA_FILE, items);
       
       // Handle file deletion if requested
-      if (fullDelete === 'true' && targetItem && targetItem.imagePath) {
-          try {
-              const fs = require('fs/promises');
-              // imagePath e.g. "/imagedb/xx/yy.png"
-              // Need to map to absolute path
-              // The path structure assumes imagedb is at project root (../../imagedb) relative to this file
-              let relPath = targetItem.imagePath;
-              if (relPath.startsWith('/')) relPath = relPath.slice(1);
-              if (relPath.startsWith('imagedb/')) relPath = relPath.replace('imagedb/', '');
-              
-              const absPath = path.resolve(__dirname, '../../imagedb', relPath);
-              
-              // Check if file exists before deleting
-              await fs.unlink(absPath);
-              // eslint-disable-next-line no-console
-              console.log(`[live-gen] deleted file: ${absPath}`);
-          } catch (e) {
-              // eslint-disable-next-line no-console
-              console.warn(`[live-gen] failed to delete file for ${id}:`, e.message);
+      // 注意：只删除生成的结果，不删除 imageUrls 中引用的输入图片
+      if (fullDelete === 'true' && targetItem) {
+          const fs = require('fs/promises');
+          
+          // 检查是否是3D模型（有 modelDir）
+          if (targetItem.info3d && targetItem.info3d.modelDir) {
+              try {
+                  // 删除整个模型目录
+                  let relPath = targetItem.info3d.modelDir;
+                  if (relPath.startsWith('/')) relPath = relPath.slice(1);
+                  const absPath = path.resolve(__dirname, '../..', relPath);
+                  
+                  // 递归删除目录
+                  await fs.rm(absPath, { recursive: true, force: true });
+                  console.log(`[live-gen] deleted 3D model directory: ${absPath}`);
+                  
+                  // 检查问题目录是否为空，如果是则也删除
+                  const questionDir = path.dirname(absPath);
+                  try {
+                      const files = await fs.readdir(questionDir);
+                      if (files.length === 0) {
+                          await fs.rmdir(questionDir);
+                          console.log(`[live-gen] deleted empty question directory: ${questionDir}`);
+                      }
+                  } catch (e) {
+                      // 忽略
+                  }
+              } catch (e) {
+                  console.warn(`[live-gen] failed to delete 3D model for ${id}:`, e.message);
+              }
+          } else if (targetItem.imagePath) {
+              // 普通图片/音频，删除生成的文件
+              try {
+                  let relPath = targetItem.imagePath;
+                  if (relPath.startsWith('/')) relPath = relPath.slice(1);
+                  const absPath = path.resolve(__dirname, '../..', relPath);
+                  
+                  await fs.unlink(absPath);
+                  console.log(`[live-gen] deleted file: ${absPath}`);
+              } catch (e) {
+                  console.warn(`[live-gen] failed to delete file for ${id}:`, e.message);
+              }
           }
       }
     }
