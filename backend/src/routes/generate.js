@@ -201,14 +201,23 @@ router.post('/', upload.any(), async (req, res, next) => {
       const buf = Buffer.from(dataBase64, 'base64');
       const hash = crypto.createHash('md5').update(buf).digest('hex');
       const sub1 = hash.slice(0, 2);
+      
+      // 先计算 ext，以便判断是否为 zip
+      const ext = mimeToExt(mimeType);
+      
       // Check if it's a zip file (3D generation result)
-      const isZip = mimeType === 'application/zip' || ext === '.zip';
+      const isZip = mimeType === 'application/zip' || mimeType === 'application/x-zip-compressed' || ext === '.zip';
       
       if (isZip) {
         // Handle 3D zip file
-        const uuid = require('crypto').randomUUID();
+        // 使用前端传递的 questionId 作为问题目录，如果没有则创建新的
+        const questionUuid = req.body.questionId || crypto.randomUUID();
+        // 每次生成创建一个新的结果 uuid
+        const resultUuid = crypto.randomUUID();
+        
         const baseDir = path.resolve(__dirname, '../../modeldb');
-        const outputDir = path.join(baseDir, uuid);
+        // 目录结构：modeldb/{questionUuid}/{resultUuid}/
+        const outputDir = path.join(baseDir, questionUuid, resultUuid);
         
         // Install adm-zip if not available
         let admZip;
@@ -226,26 +235,19 @@ router.post('/', upload.any(), async (req, res, next) => {
         zip.extractAllTo(outputDir, true);
         console.log(`[generate] Extracted 3D zip to ${outputDir}`);
         
-        // Find the main GLB files
-        const extractedFiles = zip.getEntries().map(entry => entry.entryName);
-        console.log('[generate] Extracted files:', extractedFiles);
-        
-        // Return the uuid as the identifier, frontend can use this to access the files
-        const publicPath = `/modeldb/${uuid}/pbr/mesh_textured_pbr.glb`;
+        // 返回目录路径，文件结构固定为 pbr/mesh_textured_pbr.glb 和 rgb/mesh_textured.glb
+        const modelDir = `/modeldb/${questionUuid}/${resultUuid}`;
+        console.log(`[generate] 3D model extracted to ${modelDir}`);
+          
         return res.json({ 
-          imagePath: publicPath, 
+          imagePath: modelDir,
           duration,
-          info3d:{
-            uuid: uuid,
-            hasPBR: extractedFiles.includes('pbr/mesh_textured_pbr.glb'),
-            hasRGB: extractedFiles.includes('rgb/mesh_textured.glb'),
-            files: extractedFiles
-          }
+          info3d: { modelDir }
         });
       } else {
         // Regular file handling (images, single 3D models, sounds)
         const sub2 = hash.slice(2, 4);
-        const ext = mimeToExt(mimeType);
+        // ext 已在前面定义
         
         // 判断是存入 imagedb, modeldb 还是 sounddb
         const isModel = ['.glb', '.gltf', '.fbx', '.obj'].includes(ext);

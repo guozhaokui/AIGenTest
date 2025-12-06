@@ -118,8 +118,8 @@
             </template>
             
             <!-- 3D模型预览 -->
-            <template v-else-if="isModel(result.imagePath)">
-                <ModelViewer :src="normalizeUrl(result.imagePath)" />
+            <template v-else-if="result.info3d">
+                <ModelViewer :info3d="result.info3d" />
             </template>
 
             <!-- 音频播放 -->
@@ -169,7 +169,9 @@ const returnState = ref(null);
 const form = ref({
   modelId: '',
   prompt: '',
-  imageUrls: []
+  imageUrls: [],
+  // 用于再次生成同一问题时传递给后端
+  questionId: null
 });
 
 const dynamicParams = ref({});
@@ -235,6 +237,10 @@ onMounted(async () => {
         setTimeout(() => {
            dynamicParams.value = { ...dynamicParams.value, ...data.params };
         }, 100);
+      }
+      // 如果有 info3d，提取 questionId 以便再次生成时存到同一问题目录下
+      if (data.info3d && data.info3d.questionUuid) {
+        form.value.questionId = data.info3d.questionUuid;
       }
     }
 
@@ -334,6 +340,8 @@ async function handleGenerate() {
       modelId: form.value.modelId,
       prompt: form.value.prompt,
       imagePaths: cleanPaths,
+      // 如果是再次生成同一问题，传递 questionId
+      ...(form.value.questionId ? { questionId: form.value.questionId } : {}),
       ...dynamicParams.value
     };
     
@@ -352,7 +360,9 @@ async function handleGenerate() {
       modelId: form.value.modelId,
       params: { ...dynamicParams.value },
       duration: res.duration || 0, // Store generation time
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      // 保存 3D 模型信息
+      info3d: res.info3d || null
     };
     
     // 自动保存到历史记录 (通过后端 API)
@@ -403,10 +413,7 @@ function isImage(path) {
   if (!path) return false;
   return /\.(png|jpg|jpeg|webp|gif)$/i.test(path);
 }
-function isModel(path) {
-  if (!path) return false;
-  return /\.(glb|gltf|fbx|obj)$/i.test(path);
-}
+
 function isSound(path) {
   if (!path) return false;
   return /\.(mp3|wav|ogg|flac)$/i.test(path);

@@ -114,12 +114,13 @@
         // 解析模型路径
         const modelPath = getQueryParam('url');
         if (modelPath) {
-            const uuidMatch = modelPath.match(/\/modeldb\/([^\/]+)/);
+            // 匹配两级 uuid: /modeldb/{questionUuid}/{resultUuid}
+            const uuidMatch = modelPath.match(/\/modeldb\/([^\/]+\/[^\/]+)/);
             if (uuidMatch && uuidMatch[1]) {
-                const uuid = uuidMatch[1];
+                const uuidPath = uuidMatch[1];
                 modelOptions = [
-                    { name: 'PBR模型', path: `${API_BASE}/modeldb/${uuid}/pbr/mesh_textured_pbr.glb` },
-                    { name: 'RGB模型', path: `${API_BASE}/modeldb/${uuid}/rgb/mesh_textured.glb` }
+                    { name: 'PBR模型', path: `${API_BASE}/modeldb/${uuidPath}/pbr/mesh_textured_pbr.glb` },
+                    { name: 'RGB模型', path: `${API_BASE}/modeldb/${uuidPath}/rgb/mesh_textured.glb` }
                 ];
             }
         }

@@ -15,7 +15,17 @@
     <el-table :data="items" v-loading="loading" style="width: 100%" :row-class-name="tableRowClassName">
       <el-table-column label="图片" width="120">
         <template #default="{ row }">
+          <!-- 3D模型显示特殊图标 -->
+          <div v-if="is3DModel(row)" 
+               class="model-thumbnail" 
+               @click="handleView3D(row)"
+               title="点击查看3D模型">
+            <el-icon :size="40"><Box /></el-icon>
+            <span class="model-label">3D</span>
+          </div>
+          <!-- 普通图片 -->
           <el-image 
+            v-else
             :src="normalizeUrl(row.imagePath)" 
             :preview-src-list="[normalizeUrl(row.imagePath)]"
             fit="cover" 
@@ -98,7 +108,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Search, ArrowDown } from '@element-plus/icons-vue';
+import { Search, ArrowDown, Box } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { listDimensions, listModels, createQuestion } from '../../services/api';
 
@@ -263,7 +273,9 @@ function handleReEdit(row) {
     prompt: row.prompt,
     modelId: row.modelId,
     imageUrls: row.imageUrls || [],
-    params: row.params || {}
+    params: row.params || {},
+    // 传递 info3d，以便再次生成时可以使用同一个 questionId
+    info3d: row.info3d || null
   }));
   
   router.push({
@@ -274,6 +286,19 @@ function handleReEdit(row) {
       fromId: row.id
     }
   });
+}
+
+// 判断是否为3D模型
+function is3DModel(row) {
+  return !!(row.info3d?.modelDir);
+}
+
+// 查看3D模型
+function handleView3D(row) {
+  const dir = row.info3d?.modelDir;
+  if (!dir) return;
+  const modelUrl = `${dir}/pbr/mesh_textured_pbr.glb`;
+  window.open(`/laya-viewer/index.html?url=${encodeURIComponent(modelUrl)}`, '_blank');
 }
 </script>
 
@@ -312,6 +337,27 @@ function handleReEdit(row) {
 }
 :deep(.highlight-row) {
   background-color: #f0f9eb;
+}
+.model-thumbnail {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: white;
+  transition: transform 0.2s;
+}
+.model-thumbnail:hover {
+  transform: scale(1.05);
+}
+.model-label {
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 4px;
 }
 </style>
 
