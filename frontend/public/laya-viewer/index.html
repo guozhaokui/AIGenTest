@@ -3,6 +3,12 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+    <meta name="renderer" content="webkit" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="full-screen" content="true" />
+    <meta name="x5-fullscreen" content="true" />
+    <meta name="360-fullscreen" content="true" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
     <title>LayaAir 3D Model Viewer</title>
     <style type="text/css">
         html, body {
@@ -11,11 +17,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            background-color: #000;
-        }
-        #layaCanvas {
-            width: 100%;
-            height: 100%;
+            background-color: #888888;
         }
         .controls {
             position: absolute;
@@ -50,12 +52,18 @@
             border-radius: 3px;
             font-size: 12px;
         }
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 50;
+        }
     </style>
 </head>
 <body>
-    <div id="layaContainer">
-        <canvas id="layaCanvas"></canvas>
-    </div>
     <div class="controls">
         <div>模型选择：</div>
         <select id="modelSelect"></select>
@@ -63,10 +71,17 @@
         <button id="resetBtn">重置视角</button>
         <button id="fullscreenBtn">全屏</button>
     </div>
+    <div class="loading" id="loadingText">加载中...</div>
 
-    <script src="https://layaair.ldc.layabox.com/3.x/laya.core.js"></script>
-    <script src="https://layaair.ldc.layabox.com/3.x/laya.d3.js"></script>
-    <script src="https://layaair.ldc.layabox.com/3.x/laya.ui.js"></script>
+    <!-- LayaAir 3.x 本地库 -->
+    <script type="text/javascript" src="libs/laya.core.js"></script>
+    <script type="text/javascript" src="libs/laya.d3.js"></script>
+    <script type="text/javascript" src="libs/laya.webgl_2D.js"></script>
+    <script type="text/javascript" src="libs/laya.webgl_3D.js"></script>
+    <script type="text/javascript" src="libs/laya.ui.js"></script>
+    <script type="text/javascript" src="libs/laya.gltf.js"></script>
+
+    
     <script>
         // 解析URL参数
         function getQueryParam(name) {
@@ -78,60 +93,33 @@
             return decodeURIComponent(results[2].replace(/\+/g, ' '));
         }
 
-        // 初始化LayaAir
-        Laya3D.init('layaCanvas', Laya.Stage.FORCE_HORIZONTAL);
-        Laya.stage.bgColor = '#000000';
-        Laya.Stat.show();
+        // 获取后端API地址
+        // 优先使用 URL 参数 apiBase，否则使用当前页面的 origin（Vite 代理会处理）
+        function getApiBase() {
+            const apiBase = getQueryParam('apiBase');
+            if (apiBase) return apiBase;
+            // 开发环境通过 Vite 代理，使用相对路径即可
+            // 生产环境需要配置反向代理或传入 apiBase 参数
+            return '';
+        }
 
-        // 创建场景
-        const scene = Laya.stage.addChild(new Laya.Scene3D());
+        const API_BASE = getApiBase();
 
-        // 创建相机
-        const camera = scene.addChild(new Laya.Camera(0, 0.1, 100));
-        camera.transform.translate(new Laya.Vector3(0, 1, 3));
-        camera.transform.rotate(new Laya.Vector3(-15, 0, 0), true, false);
-        camera.addComponent(Laya.CameraMoveScript);
-        camera.clearFlag = Laya.BaseCamera.CLEARFLAG_SKY;
-
-        // 创建天空盒
-        const skyBox = new Laya.SkyBox();
-        skyBox.textureCube = Laya.TextureCube.load("https://layaair.ldc.layabox.com/3.x/demo/res/skybox/skybox1/skybox.png");
-        scene.skybox = skyBox;
-
-        // 创建方向光
-        const light = scene.addChild(new Laya.DirectionLight());
-        light.color = new Laya.Vector3(1, 1, 1);
-        light.transform.worldMatrix.setForward(new Laya.Vector3(-1, -1, -1));
-
-        // 创建地面
-        const plane = scene.addChild(new Laya.MeshSprite3D(Laya.PrimitiveMesh.createPlane(10, 10, 10, 10)));
-        plane.transform.position = new Laya.Vector3(0, 0, 0);
-        plane.transform.rotate(new Laya.Vector3(-90, 0, 0), false, false);
-        const planeMat = new Laya.BlinnPhongMaterial();
-        planeMat.albedoTexture = Laya.Texture2D.load("https://layaair.ldc.layabox.com/3.x/demo/res/texture/wood.jpg");
-        plane.meshRenderer.material = planeMat;
-
-        // 模型容器
+        // 全局变量
+        let scene = null;
+        let camera = null;
         let currentModel = null;
-        const modelPath = getQueryParam('url');
         let modelOptions = [];
 
-        // 解析模型路径，生成可用的模型选项
+        // 解析模型路径
+        const modelPath = getQueryParam('url');
         if (modelPath) {
-            // 提取UUID部分
             const uuidMatch = modelPath.match(/\/modeldb\/([^\/]+)/);
             if (uuidMatch && uuidMatch[1]) {
                 const uuid = uuidMatch[1];
-                // 生成模型选项
                 modelOptions = [
-                    {
-                        name: 'PBR模型',
-                        path: `/modeldb/${uuid}/pbr/mesh_textured_pbr.glb`
-                    },
-                    {
-                        name: 'RGB模型',
-                        path: `/modeldb/${uuid}/rgb/mesh_textured.glb`
-                    }
+                    { name: 'PBR模型', path: `${API_BASE}/modeldb/${uuid}/pbr/mesh_textured_pbr.glb` },
+                    { name: 'RGB模型', path: `${API_BASE}/modeldb/${uuid}/rgb/mesh_textured.glb` }
                 ];
             }
         }
@@ -145,34 +133,242 @@
             modelSelect.appendChild(opt);
         });
 
-        // 加载并显示模型
+        // LayaAir 3.x 配置
+        const config = {
+            resolution: {
+                designWidth: window.innerWidth,
+                designHeight: window.innerHeight,
+                scaleMode: "full",
+                alignV: "middle",
+                alignH: "center",
+                screenMode: "none",
+                backgroundColor: "#888888"
+            },
+            "2D": {
+                FPS: 60,
+                isAntialias: true,
+                isAlpha: false
+            },
+            "3D": {
+                enableDynamicBatch: true,
+                pixelRatio: 1,
+                enableMultiLight: true
+            }
+        };
+
+        Object.assign(Laya.Config, config["2D"]);
+        Object.assign(Laya.Config3D, config["3D"]);
+
+        // 初始化引擎
+        Laya.init(config.resolution).then(() => {
+            Laya.stage.bgColor = "#888888";
+            
+            // 创建3D场景
+            scene = new Laya.Scene3D();
+            Laya.stage.addChild(scene);
+
+            // 设置环境光颜色
+            scene.ambientMode = 0; // Solid Color
+            scene.ambientColor = new Laya.Color(0.5, 0.5, 0.5, 1);
+
+            // 创建相机
+            camera = new Laya.Camera(0, 0.1, 1000);
+            scene.addChild(camera);
+            camera.transform.position = new Laya.Vector3(0, 1, 5);
+            camera.transform.rotationEuler = new Laya.Vector3(-15, 0, 0);
+            camera.clearFlag = Laya.CameraClearFlags.SolidColor;
+            camera.clearColor = new Laya.Color(0.3921, 0.5843, 0.9294, 1);
+            
+            // 添加相机控制脚本
+            camera.addComponent(CameraController);
+
+            // 创建方向光
+            const directionLight = new Laya.Sprite3D();
+            scene.addChild(directionLight);
+            directionLight.transform.position = new Laya.Vector3(5, 5, 5);
+            directionLight.transform.rotationEuler = new Laya.Vector3(-45, 45, 0);
+            const lightCom = directionLight.addComponent(Laya.DirectionLightCom);
+            lightCom.color = new Laya.Color(1, 1, 1, 1);
+
+            // 创建地面
+            createGround();
+
+            // 加载第一个模型
+            if (modelOptions.length > 0) {
+                loadModel(0);
+            } else {
+                document.getElementById('loadingText').textContent = '请在URL中指定模型路径 ?url=xxx';
+            }
+
+            // 显示统计信息
+            // Laya.Stat.show();
+        });
+
+        // 相机控制器
+        class CameraController extends Laya.Script {
+            constructor() {
+                super();
+                this.yawPitchRoll = new Laya.Vector3(-15, 0, 0);
+                this.distance = 5;
+                this.target = new Laya.Vector3(0, 0.5, 0);
+                this.lastMouseX = 0;
+                this.lastMouseY = 0;
+                this.isMouseDown = false;
+            }
+
+            onStart() {
+                Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.onMouseDown);
+                Laya.stage.on(Laya.Event.MOUSE_UP, this, this.onMouseUp);
+                Laya.stage.on(Laya.Event.MOUSE_OUT, this, this.onMouseUp);
+                Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.onMouseMove);
+                Laya.stage.on(Laya.Event.MOUSE_WHEEL, this, this.onMouseWheel);
+                this.updateCamera();
+            }
+
+            onMouseDown(e) {
+                this.isMouseDown = true;
+                this.lastMouseX = Laya.stage.mouseX;
+                this.lastMouseY = Laya.stage.mouseY;
+            }
+
+            onMouseUp(e) {
+                this.isMouseDown = false;
+            }
+
+            onMouseMove(e) {
+                if (!this.isMouseDown) return;
+                
+                const deltaX = Laya.stage.mouseX - this.lastMouseX;
+                const deltaY = Laya.stage.mouseY - this.lastMouseY;
+                
+                this.yawPitchRoll.y += deltaX * 0.3;
+                this.yawPitchRoll.x -= deltaY * 0.3;
+                
+                // 限制俯仰角
+                this.yawPitchRoll.x = Math.max(-89, Math.min(89, this.yawPitchRoll.x));
+                
+                this.lastMouseX = Laya.stage.mouseX;
+                this.lastMouseY = Laya.stage.mouseY;
+                
+                this.updateCamera();
+            }
+
+            onMouseWheel(e) {
+                this.distance += e.delta * 0.01;
+                this.distance = Math.max(1, Math.min(50, this.distance));
+                this.updateCamera();
+            }
+
+            updateCamera() {
+                const pitch = this.yawPitchRoll.x * Math.PI / 180;
+                const yaw = this.yawPitchRoll.y * Math.PI / 180;
+                
+                const x = this.distance * Math.cos(pitch) * Math.sin(yaw);
+                const y = this.distance * Math.sin(pitch);
+                const z = this.distance * Math.cos(pitch) * Math.cos(yaw);
+                
+                this.owner.transform.position = new Laya.Vector3(
+                    this.target.x + x,
+                    this.target.y + y,
+                    this.target.z + z
+                );
+                this.owner.transform.lookAt(this.target, new Laya.Vector3(0, 1, 0));
+            }
+
+            resetView() {
+                this.yawPitchRoll = new Laya.Vector3(-15, 0, 0);
+                this.distance = 5;
+                this.updateCamera();
+            }
+        }
+
+        // 创建地面
+        function createGround() {
+            const plane = new Laya.Sprite3D();
+            scene.addChild(plane);
+            plane.addComponent(Laya.MeshFilter).sharedMesh = Laya.PrimitiveMesh.createPlane(10, 10, 10, 10);
+            const renderer = plane.addComponent(Laya.MeshRenderer);
+            const material = new Laya.BlinnPhongMaterial();
+            material.albedoColor = new Laya.Color(0.6, 0.6, 0.6, 1);
+            renderer.sharedMaterial = material;
+        }
+
+        // 加载模型
         function loadModel(index) {
             const option = modelOptions[index];
             if (!option) return;
 
+            document.getElementById('loadingText').style.display = 'block';
+            document.getElementById('loadingText').textContent = '加载中...';
+
             // 移除当前模型
             if (currentModel) {
-                scene.removeChild(currentModel);
                 currentModel.destroy();
                 currentModel = null;
             }
 
             // 加载GLB模型
-            Laya.Mesh.load(option.path, Laya.Handler.create(null, (mesh) => {
-                currentModel = scene.addChild(new Laya.MeshSprite3D(mesh));
-                
-                // 计算模型边界盒
-                const bounds = currentModel.meshRenderer.mesh.bounds;
+            Laya.Sprite3D.load(option.path, Laya.Handler.create(null, (sprite) => {
+                if (sprite) {
+                    currentModel = sprite;
+                    scene.addChild(currentModel);
+                    
+                    // 调整模型
+                    adjustModel(currentModel);
+                    
+                    document.getElementById('loadingText').style.display = 'none';
+                    console.log('模型加载成功:', option.path);
+                } else {
+                    document.getElementById('loadingText').textContent = '模型加载失败';
+                    console.error('模型加载失败:', option.path);
+                }
+            }), null, null, null, null, Laya.Loader.HIERARCHY);
+        }
+
+        // 调整模型位置和缩放
+        function adjustModel(model) {
+            // 计算边界盒
+            let bounds = null;
+            findBounds(model, (renderer) => {
+                if (renderer.bounds) {
+                    if (!bounds) {
+                        bounds = renderer.bounds.clone();
+                    } else {
+                        Laya.Bounds.merge(bounds, renderer.bounds, bounds);
+                    }
+                }
+            });
+
+            if (bounds) {
                 const size = new Laya.Vector3();
-                bounds.getSize(size);
+                bounds.getExtent(size);
+                const maxSize = Math.max(size.x, size.y, size.z) * 2;
                 
-                // 调整模型位置和缩放
-                const scale = 1 / Math.max(size.x, size.y, size.z);
-                currentModel.transform.scale = new Laya.Vector3(scale, scale, scale);
-                currentModel.transform.position = new Laya.Vector3(0, -bounds.getMin().y * scale, 0);
-                
-                console.log('模型加载成功:', option.path);
-            }));
+                if (maxSize > 0) {
+                    const scale = 2 / maxSize;
+                    model.transform.localScale = new Laya.Vector3(scale, scale, scale);
+                    
+                    // 重新计算边界
+                    const center = new Laya.Vector3();
+                    bounds.getCenter(center);
+                    model.transform.position = new Laya.Vector3(
+                        -center.x * scale,
+                        -bounds.getMin().y * scale,
+                        -center.z * scale
+                    );
+                }
+            }
+        }
+
+        // 遍历查找渲染器
+        function findBounds(node, callback) {
+            const renderer = node.getComponent(Laya.MeshRenderer) || node.getComponent(Laya.SkinnedMeshRenderer);
+            if (renderer) {
+                callback(renderer);
+            }
+            for (let i = 0; i < node.numChildren; i++) {
+                findBounds(node.getChildAt(i), callback);
+            }
         }
 
         // 事件监听
@@ -181,8 +377,12 @@
         });
 
         document.getElementById('resetBtn').addEventListener('click', () => {
-            camera.transform.position = new Laya.Vector3(0, 1, 3);
-            camera.transform.rotationEuler = new Laya.Vector3(-15, 0, 0);
+            if (camera) {
+                const controller = camera.getComponent(CameraController);
+                if (controller) {
+                    controller.resetView();
+                }
+            }
         });
 
         document.getElementById('fullscreenBtn').addEventListener('click', () => {
@@ -192,11 +392,6 @@
                 document.exitFullscreen();
             }
         });
-
-        // 初始加载第一个模型
-        if (modelOptions.length > 0) {
-            loadModel(0);
-        }
     </script>
 </body>
 </html>

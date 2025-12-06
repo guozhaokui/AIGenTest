@@ -13,6 +13,10 @@ export default defineConfig({
       '/imagedb': {
         target: 'http://localhost:3000',
         changeOrigin: true
+      },
+      '/modeldb': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
       }
     }
   },
