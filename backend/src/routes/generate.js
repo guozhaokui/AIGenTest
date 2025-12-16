@@ -181,6 +181,8 @@ router.post('/', upload.any(), async (req, res, next) => {
         apiKey = process.env.DASHSCOPE_API_KEY || process.env.QWEN_API_KEY;
       } else if (selected.driver === 'doubao') {
         apiKey = process.env.ARK_API_KEY;
+      } else if (selected.driver === 'tripo') {
+        apiKey = process.env.TRIPO_API_KEY;
       }
 
       const startT = Date.now();
@@ -256,8 +258,37 @@ router.post('/', upload.any(), async (req, res, next) => {
         const isModel = ['.glb', '.gltf', '.fbx', '.obj'].includes(ext);
         const isSound = ['.mp3', '.wav', '.ogg', '.flac'].includes(ext);
         
+        // 对于 3D 模型，使用与 ZIP 相同的目录结构
+        if (isModel) {
+          const questionUuid = req.body.questionId || crypto.randomUUID();
+          const resultUuid = crypto.randomUUID();
+          
+          const baseDir = path.resolve(__dirname, '../../modeldb');
+          const outputDir = path.join(baseDir, questionUuid, resultUuid);
+          
+          await fs.mkdir(outputDir, { recursive: true });
+          
+          // 保存 GLB 文件到 model.glb
+          const modelFilename = 'model.glb';
+          const abs = path.join(outputDir, modelFilename);
+          await fs.writeFile(abs, buf);
+          
+          const modelDir = `/modeldb/${questionUuid}/${resultUuid}`;
+          console.log(`[generate] 3D model saved to ${modelDir}/${modelFilename}`);
+          
+          return res.json({ 
+            imagePath: modelDir,
+            duration,
+            info3d: { 
+              modelDir,
+              isSingleFile: true,  // 标记为单个文件，非 ZIP 解压
+              modelFile: modelFilename
+            },
+            usage
+          });
+        }
+        
         let baseDir = UPLOAD_DIR;
-        if (isModel) baseDir = MODEL_DIR;
         if (isSound) baseDir = SOUND_DIR;
 
         const dir = path.join(baseDir, sub1, sub2);

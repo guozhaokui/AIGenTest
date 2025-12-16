@@ -1,7 +1,7 @@
 <template>
   <div class="model-viewer-container">
-    <!-- 模型类型选择器 -->
-    <div class="model-controls">
+    <!-- 模型类型选择器 (仅对 ZIP 解压的模型显示) -->
+    <div class="model-controls" v-if="!isSingleFile">
       <el-radio-group v-model="selectedType" size="small">
         <el-radio-button value="pbr">PBR 模型</el-radio-button>
         <el-radio-button value="rgb">RGB 模型</el-radio-button>
@@ -33,10 +33,21 @@ const emit = defineEmits(['thumbnail']);
 // 当前选择的模型类型：pbr 或 rgb
 const selectedType = ref('pbr');
 
+// 是否为单个文件模式 (Tripo 等返回单个 GLB)
+const isSingleFile = computed(() => props.info3d?.isSingleFile === true);
+
 // 固定的文件路径结构
 const currentModelUrl = computed(() => {
   const dir = props.info3d?.modelDir;
   if (!dir) return '';
+  
+  // 单文件模式：直接使用 modelDir/modelFile
+  if (isSingleFile.value) {
+    const filename = props.info3d?.modelFile || 'model.glb';
+    return `${dir}/${filename}`;
+  }
+  
+  // ZIP 解压模式：pbr/rgb 目录结构
   return selectedType.value === 'pbr' 
     ? `${dir}/pbr/mesh_textured_pbr.glb`
     : `${dir}/rgb/mesh_textured.glb`;

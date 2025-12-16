@@ -2326,5 +2326,115 @@
     "createdAt": "2025-12-06T10:50:13.395Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/d9ad566d-6217-4a7a-8cb7-196eabac83d0/e3ccdbea-8e99-4496-9be8-6a7aef13dc04/thumbnail.jpg"
+  },
+  {
+    "id": "6a1590dd-278b-4771-8af2-20e30f289e58",
+    "prompt": "",
+    "imagePath": "/modeldb/2d2fae9a-8b2c-4c92-8c63-6c929c5ba87f/b24849d6-bb84-4664-b860-3f9bfd10d7fa",
+    "imageUrls": [
+      "/imagedb/b9/8b/b98bae7b5578ee515dccab6200f73afb.png"
+    ],
+    "modelId": "doubao_seed3d",
+    "modelName": "",
+    "params": {
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "duration": 376938,
+    "info3d": {
+      "modelDir": "/modeldb/2d2fae9a-8b2c-4c92-8c63-6c929c5ba87f/b24849d6-bb84-4664-b860-3f9bfd10d7fa"
+    },
+    "usage": {
+      "completion_tokens": 30000,
+      "total_tokens": 30000
+    },
+    "createdAt": "2025-12-06T11:00:48.031Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/2d2fae9a-8b2c-4c92-8c63-6c929c5ba87f/b24849d6-bb84-4664-b860-3f9bfd10d7fa/thumbnail.jpg"
+  },
+  {
+    "id": "2dbdc9d7-c2df-48fa-b157-d717a485c23c",
+    "prompt": "",
+    "imagePath": "/modeldb/d78dde30-8e05-4672-bf29-49466a074416/9f73d054-e52a-4fbf-a954-85a97060868c",
+    "imageUrls": [
+      "/imagedb/bd/ab/bdab9c53d190735e0ab3191eb88b5794.jpg"
+    ],
+    "modelId": "doubao_seed3d",
+    "modelName": "",
+    "params": {
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "duration": 338289,
+    "info3d": {
+      "modelDir": "/modeldb/d78dde30-8e05-4672-bf29-49466a074416/9f73d054-e52a-4fbf-a954-85a97060868c"
+    },
+    "usage": {
+      "completion_tokens": 30000,
+      "total_tokens": 30000
+    },
+    "createdAt": "2025-12-06T11:16:35.408Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/d78dde30-8e05-4672-bf29-49466a074416/9f73d054-e52a-4fbf-a954-85a97060868c/thumbnail.jpg"
+  },
+  {
+    "id": "caa8a5f2-1f58-4d3c-8a35-7d38691ce824",
+    "prompt": "",
+    "imagePath": "/modeldb/71058946-a7a2-4d69-8a9d-990436588e78/c1eeef04-9e65-4631-8928-1a28f6507c4b",
+    "imageUrls": [
+      "/imagedb/89/94/8994fbbd1943c814089d877fac2930ec.jpg"
+    ],
+    "modelId": "doubao_seed3d",
+    "modelName": "",
+    "params": {
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "duration": 355358,
+    "info3d": {
+      "modelDir": "/modeldb/71058946-a7a2-4d69-8a9d-990436588e78/c1eeef04-9e65-4631-8928-1a28f6507c4b"
+    },
+    "usage": {
+      "completion_tokens": 30000,
+      "total_tokens": 30000
+    },
+    "createdAt": "2025-12-06T11:23:11.544Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/71058946-a7a2-4d69-8a9d-990436588e78/c1eeef04-9e65-4631-8928-1a28f6507c4b/thumbnail.jpg"
+  },
+  {
+    "id": "aaed3df0-032e-404c-9d9d-c8e72b17cb00",
+    "prompt": "洛天依头像的速写",
+    "imagePath": "/imagedb/1c/c0/1cc0234bdbbeb1996b0cc7c30a62c750.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {},
+    "duration": 18686,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-06T11:42:31.603Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "fa6ffaf5-da2d-4505-8c62-497334f7f041",
+    "prompt": "",
+    "imagePath": "/modeldb/242ef84d-ed9a-4011-87d3-b3bf4cbb76a4/f95bce7f-7450-4668-9a0e-dc8f35590d2f",
+    "imageUrls": [
+      "/imagedb/c0/75/c07555bcb616066191cb4af800205779.jpg"
+    ],
+    "modelId": "doubao_seed3d",
+    "modelName": "",
+    "params": {
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "duration": 407290,
+    "info3d": {
+      "modelDir": "/modeldb/242ef84d-ed9a-4011-87d3-b3bf4cbb76a4/f95bce7f-7450-4668-9a0e-dc8f35590d2f"
+    },
+    "usage": {
+      "completion_tokens": 30000,
+      "total_tokens": 30000
+    },
+    "createdAt": "2025-12-06T11:52:21.247Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/242ef84d-ed9a-4011-87d3-b3bf4cbb76a4/f95bce7f-7450-4668-9a0e-dc8f35590d2f/thumbnail.jpg"
   }
 ]

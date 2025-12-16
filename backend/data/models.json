@@ -3,6 +3,7 @@
     "id": "google_gemini_image",
     "name": "Gemini 2.5 Image",
     "driver": "google",
+    "inputMode": "both",
     "options": {
       "model": "gemini-2.5-flash-image",
       "useProxy": true
@@ -12,6 +13,7 @@
     "id": "google_gemini_image2",
     "name": "Gemini 3 Image",
     "driver": "google",
+    "inputMode": "both",
     "options": {
       "model": "gemini-3-pro-image-preview",
       "useProxy": true
@@ -22,6 +24,7 @@
     "id": "doubao_seedream_4_5",
     "name": "Doubao Seedream 4.5",
     "driver": "doubao",
+    "inputMode": "both",
     "options": {
       "model": "doubao-seedream-4-5-251128",
       "size": "2K",
@@ -54,6 +57,7 @@
     "id": "z_image_local",
     "name": "Z-Image (Local)",
     "driver": "z_image",
+    "inputMode": "prompt",
     "options": {
       "url": "http://192.168.0.100:6006/generate",
       "width": 1024,
@@ -110,6 +114,7 @@
     "id": "doubao_seed3d",
     "name": "Doubao Seed3D (3D Generation)",
     "driver": "doubao",
+    "inputMode": "image",
     "options": {
       "model": "doubao-seed3d-1-0-250928",
       "useProxy": false,
@@ -126,6 +131,129 @@
           { "label": "High Quality (GLB)", "value": "--subdivisionlevel high --fileformat glb" },
           { "label": "Low Quality (GLB)", "value": "--subdivisionlevel low --fileformat glb" }
         ]
+      }
+    ]
+  },
+  {
+    "id": "tripo_3d",
+    "name": "Tripo3D (3D Generation)",
+    "driver": "tripo",
+    "inputMode": "exclusive",
+    "defaultInput": "image",
+    "options": {
+      "useProxy": false,
+      "modelVersion": "default",
+      "texture": true,
+      "pbr": true
+    },
+    "parameters": [
+      {
+        "name": "modelVersion",
+        "label": "Model Version",
+        "type": "select",
+        "default": "default",
+        "options": [
+          { "label": "Default (Latest 3.0)", "value": "default" },
+          { "label": "v2.5", "value": "v2.5-20241101" },
+          { "label": "v2.0", "value": "v2.0-20240919" },
+          { "label": "v1.4", "value": "v1.4-20240625" }
+        ]
+      },
+      {
+        "name": "texture",
+        "label": "Generate Texture",
+        "type": "select",
+        "default": "true",
+        "options": [
+          { "label": "Yes", "value": "true" },
+          { "label": "No", "value": "false" }
+        ]
+      },
+      {
+        "name": "pbr",
+        "label": "PBR Material",
+        "type": "select",
+        "default": "true",
+        "options": [
+          { "label": "Yes", "value": "true" },
+          { "label": "No", "value": "false" }
+        ]
+      },
+      {
+        "name": "faceLimit",
+        "label": "Face Limit",
+        "type": "number",
+        "default": 50000,
+        "min": 1000,
+        "max": 500000,
+        "step": 1000,
+        "description": "Maximum number of faces in output mesh"
+      },
+      {
+        "name": "orientation",
+        "label": "Orientation (3.0)",
+        "type": "select",
+        "default": "",
+        "options": [
+          { "label": "Auto", "value": "" },
+          { "label": "Align to Image", "value": "align_image" },
+          { "label": "None", "value": "none" }
+        ],
+        "description": "Model orientation control"
+      }
+    ]
+  },
+  {
+    "id": "tripo_3d_multiview",
+    "name": "Tripo3D Multiview (3D, Multi-image)",
+    "driver": "tripo",
+    "inputMode": "image",
+    "options": {
+      "useProxy": false,
+      "modelVersion": "default",
+      "texture": true,
+      "pbr": true
+    },
+    "parameters": [
+      {
+        "name": "modelVersion",
+        "label": "Model Version",
+        "type": "select",
+        "default": "default",
+        "options": [
+          { "label": "Default (Latest 3.0)", "value": "default" },
+          { "label": "v2.5", "value": "v2.5-20241101" },
+          { "label": "v2.0", "value": "v2.0-20240919" }
+        ]
+      },
+      {
+        "name": "texture",
+        "label": "Generate Texture",
+        "type": "select",
+        "default": "true",
+        "options": [
+          { "label": "Yes", "value": "true" },
+          { "label": "No", "value": "false" }
+        ]
+      },
+      {
+        "name": "pbr",
+        "label": "PBR Material",
+        "type": "select",
+        "default": "true",
+        "options": [
+          { "label": "Yes", "value": "true" },
+          { "label": "No", "value": "false" }
+        ]
+      },
+      {
+        "name": "faceLimit",
+        "label": "Face Limit",
+        "type": "number",
+        "default": 50000,
+        "min": 1000,
+        "max": 500000,
+        "step": 1000
       }
     ]
   }]

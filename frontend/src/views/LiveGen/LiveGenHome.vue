@@ -28,7 +28,15 @@
             </el-select>
           </el-form-item>
           
-          <el-form-item label="提示词">
+          <!-- 互斥模式切换按钮 -->
+          <el-form-item v-if="isExclusiveMode" label="输入方式">
+            <el-radio-group v-model="activeInput" size="default">
+              <el-radio-button value="prompt">文本提示词</el-radio-button>
+              <el-radio-button value="image">参考图片</el-radio-button>
+            </el-radio-group>
+          </el-form-item>
+
+          <el-form-item v-if="showPrompt" label="提示词">
             <el-input 
               v-model="form.prompt" 
               type="textarea" 
@@ -69,7 +77,7 @@
             </el-row>
           </div>
 
-          <el-form-item label="参考图">
+          <el-form-item v-if="showImage" label="参考图">
             <el-upload
               ref="uploadRef"
               drag
@@ -180,7 +188,40 @@ const currentModel = computed(() => {
   return models.value.find(m => m.id === form.value.modelId);
 });
 
-// 监听模型切换，初始化动态参数
+// 输入模式配置
+const inputMode = computed(() => currentModel.value?.inputMode || 'both');
+const showPrompt = computed(() => {
+  const mode = inputMode.value;
+  if (mode === 'image') return false;
+  if (mode === 'exclusive') return activeInput.value === 'prompt';
+  return true; // both 或 prompt
+});
+const showImage = computed(() => {
+  const mode = inputMode.value;
+  if (mode === 'prompt') return false;
+  if (mode === 'exclusive') return activeInput.value === 'image';
+  return true; // both 或 image
+});
+const isExclusiveMode = computed(() => inputMode.value === 'exclusive');
+
+// 互斥模式下当前激活的输入类型
+const activeInput = ref('image');
+
+// 互斥模式切换时清除另一种输入
+watch(activeInput, (newVal) => {
+  if (inputMode.value === 'exclusive') {
+    if (newVal === 'prompt') {
+      // 切换到提示词模式，清除图片
+      fileList.value = [];
+      form.value.imageUrls = [];
+    } else if (newVal === 'image') {
+      // 切换到图片模式，清除提示词
+      form.value.prompt = '';
+    }
+  }
+});
+
+// 监听模型切换，初始化动态参数和输入模式
 watch(() => form.value.modelId, (newVal) => {
   const model = models.value.find(m => m.id === newVal);
   if (model && Array.isArray(model.parameters)) {
@@ -191,6 +232,11 @@ watch(() => form.value.modelId, (newVal) => {
     dynamicParams.value = params;
   } else {
     dynamicParams.value = {};
+  }
+  
+  // 重置互斥模式的默认输入类型
+  if (model?.inputMode === 'exclusive') {
+    activeInput.value = model.defaultInput || 'image';
   }
 });
 
@@ -309,7 +355,30 @@ function closeViewer() {
 }
 
 async function handleGenerate() {
-  if (!form.value.prompt && form.value.imageUrls.length === 0) {
+  // 根据输入模式验证
+  const mode = inputMode.value;
+  const hasPrompt = form.value.prompt && form.value.prompt.trim();
+  const hasImages = fileList.value.length > 0;
+  
+  if (mode === 'prompt' && !hasPrompt) {
+    ElMessage.warning('请输入提示词');
+    return;
+  }
+  if (mode === 'image' && !hasImages) {
+    ElMessage.warning('请上传参考图');
+    return;
+  }
+  if (mode === 'exclusive') {
+    if (activeInput.value === 'prompt' && !hasPrompt) {
+      ElMessage.warning('请输入提示词');
+      return;
+    }
+    if (activeInput.value === 'image' && !hasImages) {
+      ElMessage.warning('请上传参考图');
+      return;
+    }
+  }
+  if (mode === 'both' && !hasPrompt && !hasImages) {
     ElMessage.warning('请输入提示词或上传图片');
     return;
   }
@@ -371,7 +440,15 @@ async function handleGenerate() {
     await saveToHistory(result.value);
     
   } catch (e) {
-    ElMessage.error(e.message || '生成失败');
+    // 优先获取后端返回的详细错误信息
+    const serverMessage = e.response?.data?.message;
+    const errorMsg = serverMessage || e.message || '生成失败';
+    ElMessage.error({
+      message: errorMsg,
+      duration: 10000,  // 显示更长时间，方便用户阅读
+      showClose: true
+    });
+    console.error('生成失败:', e.response?.data || e);
   } finally {
     loading.value = false;
   }
