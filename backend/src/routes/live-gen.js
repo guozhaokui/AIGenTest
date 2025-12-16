@@ -22,9 +22,14 @@ router.get('/', async (req, res, next) => {
     await ensureDataFile();
     let items = await readJson(DATA_FILE);
     
-    const { page = 1, pageSize = 10, q = '' } = req.query;
+    const { page = 1, pageSize = 10, q = '', modelId = '' } = req.query;
     const p = parseInt(page, 10) || 1;
     const ps = parseInt(pageSize, 10) || 10;
+    
+    // 按模型 ID 过滤
+    if (modelId) {
+      items = items.filter(i => i.modelId === modelId);
+    }
     
     if (q) {
       const lower = q.toLowerCase();

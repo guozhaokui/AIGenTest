@@ -6,8 +6,16 @@
     <el-row v-if="!currentRun" :gutter="12">
       <el-col :span="24">
         <el-card header="批次列表">
+          <!-- 过滤栏 -->
+          <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 12px;">
+            <span style="font-size: 14px; color: #606266;">模型过滤：</span>
+            <el-select v-model="selectedModel" placeholder="全部模型" clearable style="width: 220px;">
+              <el-option label="全部模型" value="" />
+              <el-option v-for="m in models" :key="m.id" :label="m.name" :value="m.name" />
+            </el-select>
+          </div>
           <el-table
-            :data="runs"
+            :data="filteredRuns"
             size="small"
             @row-click="selectRun"
             style="width:100%;"
@@ -104,13 +112,15 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { listRuns, getRun, getRunItems, listQuestions, listDimensions, cloneRun, listQuestionSets, deleteRun } from '../services/api';
+import { listRuns, getRun, getRunItems, listQuestions, listDimensions, cloneRun, listQuestionSets, deleteRun, listModels } from '../services/api';
 import { useRouter } from 'vue-router';
 
 const runs = ref([]);
 const questions = ref([]);
 const dimensions = ref([]);
 const questionSets = ref([]);
+const models = ref([]);
+const selectedModel = ref(''); // 空字符串表示全部
 const loading = ref(false);
 const lastSelectedRunId = ref('');
 const currentRun = ref(null);
@@ -120,6 +130,14 @@ const currentItem = computed(() => items.value[currentIndex.value] || {});
 const progressText = computed(() => items.value.length ? `进度：${currentIndex.value + 1} / ${items.value.length}` : '');
 const counts = ref({}); // runId -> answered count
 const scores = ref({}); // runId -> totalScore
+
+// 根据模型过滤后的 runs
+const filteredRuns = computed(() => {
+  if (!selectedModel.value) {
+    return runs.value;
+  }
+  return runs.value.filter(r => r.modelName === selectedModel.value);
+});
 
 function normalize(p) {
   let url = (p || '').replace(/\\/g, '/');
@@ -174,10 +192,18 @@ function imagesForItem(item) {
 async function loadAll() {
   try {
     loading.value = true;
-    runs.value = await listRuns();
-    questions.value = await listQuestions();
-    dimensions.value = await listDimensions();
-    questionSets.value = await listQuestionSets();
+    const [runsData, questionsData, dimensionsData, questionSetsData, modelsData] = await Promise.all([
+      listRuns(),
+      listQuestions(),
+      listDimensions(),
+      listQuestionSets(),
+      listModels()
+    ]);
+    runs.value = runsData;
+    questions.value = questionsData;
+    dimensions.value = dimensionsData;
+    questionSets.value = questionSetsData;
+    models.value = modelsData || [];
     // 异步拉取每个批次的条目与总分
     for (const r of runs.value) {
       // 获取 run 元数据（带 totalScore）

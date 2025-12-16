@@ -5,6 +5,10 @@
     </div>
     
     <div class="filter-bar">
+      <el-select v-model="selectedModelId" placeholder="全部模型" clearable style="width: 200px; margin-right: 12px;" @change="onModelChange">
+        <el-option label="全部模型" value="" />
+        <el-option v-for="m in models" :key="m.id" :label="m.name" :value="m.id" />
+      </el-select>
       <el-input v-model="keyword" placeholder="搜索提示词..." style="width: 300px;" clearable @clear="fetchList" @keyup.enter="fetchList">
         <template #append>
            <el-button @click="fetchList"><el-icon><Search /></el-icon></el-button>
@@ -135,6 +139,8 @@ const dimensions = ref([]);
 const dimMap = ref({});
 const highlightId = ref('');
 const modelMap = ref({});
+const models = ref([]);
+const selectedModelId = ref(''); // 空字符串表示全部
 
 onMounted(async () => {
   try {
@@ -145,13 +151,14 @@ onMounted(async () => {
       highlightId.value = route.query.highlight;
     }
 
-    const [dims, models] = await Promise.all([listDimensions(), listModels()]);
+    const [dims, modelsData] = await Promise.all([listDimensions(), listModels()]);
     
     dimensions.value = dims;
     dims.forEach(d => { dimMap.value[d.id] = d.name; });
     
-    if (models) {
-      models.forEach(m => { modelMap.value[m.id] = m.name; });
+    if (modelsData) {
+      models.value = modelsData;
+      modelsData.forEach(m => { modelMap.value[m.id] = m.name; });
     }
     
     fetchList();
@@ -201,7 +208,11 @@ async function fetchList() {
   loading.value = true;
   try {
     // 调用后端 API 获取历史
-    const res = await fetch(`/api/live-gen?page=${page.value}&pageSize=${pageSize.value}&q=${encodeURIComponent(keyword.value)}`);
+    let url = `/api/live-gen?page=${page.value}&pageSize=${pageSize.value}&q=${encodeURIComponent(keyword.value)}`;
+    if (selectedModelId.value) {
+      url += `&modelId=${encodeURIComponent(selectedModelId.value)}`;
+    }
+    const res = await fetch(url);
     const data = await res.json();
     items.value = data.items || [];
     total.value = data.total || 0;
@@ -214,6 +225,11 @@ async function fetchList() {
 
 function onPageChange(p) {
   page.value = p;
+  fetchList();
+}
+
+function onModelChange() {
+  page.value = 1; // 切换模型时重置到第一页
   fetchList();
 }
 
