@@ -343,7 +343,7 @@
       },
       {
         "name": "texture",
-        "label": "Generate Texture",
+        "label": "纹理",
         "type": "select",
         "default": "true",
         "options": [
@@ -353,7 +353,7 @@
       },
       {
         "name": "pbr",
-        "label": "PBR Material",
+        "label": "PBR材质",
         "type": "select",
         "default": "true",
         "options": [
@@ -363,7 +363,7 @@
       },
       {
         "name": "faceLimit",
-        "label": "Face Limit",
+        "label": "面数",
         "type": "number",
         "default": 50000,
         "min": 1000,

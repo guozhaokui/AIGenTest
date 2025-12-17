@@ -2600,5 +2600,265 @@
     "usage": null,
     "createdAt": "2025-12-17T11:50:33.880Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "413e6802-031f-43f1-9a32-93642acf0962",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5444,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:15:51.907Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "3d607bab-040e-4e14-b409-4fe4e3beee9d",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5432,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:16:02.384Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "8943a239-5d12-4c66-9785-284f836fca4b",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5447,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:16:30.636Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "323f3caa-db9c-415f-8e67-5b44ad9dd96a",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5444,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:20:36.444Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "e20b19c4-b068-4c8d-a221-a3ee1001adc6",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5434,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:20:44.883Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "df93ca45-db87-45dc-a7a7-b438c5088436",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5434,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:20:55.083Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "c798cebc-0a77-442d-9453-f15d4772b6e2",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5440,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:22:01.095Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "c455ef98-0f15-4a09-8f08-4966203e1f6e",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5436,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:22:09.056Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "bfe3c804-7c1f-4e7f-8a74-49bed5571a42",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5447,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:23:44.208Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2ab3f6f3-efce-4366-ada4-bc3dc9aab9a6",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5442,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:23:54.940Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "7009a108-3570-467b-b4b1-185c4fc3a208",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5437,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:24:14.052Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "77618fa1-cdbc-44cd-a27d-f0d0d8586006",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5448,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:24:43.768Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "18d22c98-11d7-44be-9cad-92ddf5526b7c",
+    "prompt": "青蛙",
+    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5443,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T12:26:26.350Z",
+    "dimensionScores": {}
   }
 ]

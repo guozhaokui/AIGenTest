@@ -7,8 +7,8 @@
       :z-index="9999"
     />
     
-    <!-- 三栏布局：左侧配置 | 中间参考图 | 右侧结果 -->
-    <div class="main-layout">
+    <!-- 布局：无结果时居中，有结果时三栏 -->
+    <div class="main-layout" :class="{ 'no-result': !result }">
       <!-- 左侧配置面板 -->
       <div class="config-panel">
         <div class="panel-header">
@@ -111,12 +111,11 @@
         </div>
       </div>
 
-      <!-- 结果区域 -->
-      <div class="result-panel">
+      <!-- 结果区域 - 有结果时才显示 -->
+      <div class="result-panel" v-if="result">
         <div class="result-header">
           <span>生成结果</span>
           <el-button 
-            v-if="result" 
             size="small" 
             :type="showScore ? 'primary' : 'default'"
             @click="showScore = !showScore"
@@ -126,7 +125,7 @@
             {{ showScore ? '收起' : '评分' }}
           </el-button>
         </div>
-        <div class="result-content" v-if="result">
+        <div class="result-content">
           <div class="image-wrapper">
             <!-- 图片预览 -->
             <template v-if="isImage(result.imagePath)">
@@ -156,10 +155,6 @@
             <div v-else class="unsupported">暂不支持: {{ result.imagePath }}</div>
           </div>
         </div>
-        <div v-else class="result-placeholder">
-          <el-icon :size="48" color="#4a5568"><Monitor /></el-icon>
-          <p>等待生成结果</p>
-        </div>
       </div>
 
       <!-- 最右侧评分面板 -->
@@ -187,7 +182,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { Plus, Monitor, Star, Close } from '@element-plus/icons-vue';
+import { Plus, Star, Close } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { listModels, generateImage, listDimensions, createQuestion, submitEvaluation } from '../../services/api';
 import ScoreInput from '../../components/ScoreInput.vue';
@@ -427,7 +422,7 @@ async function handleGenerate() {
   }
   
   loading.value = true;
-  result.value = null;
+  // 不再清空 result，保留旧结果直到新结果生成成功
   
   try {
     // 整理图片路径
@@ -571,20 +566,23 @@ async function handleThumbnail(dataUrl) {
   color: #c9d1d9;
 }
 
-/* 三栏布局 */
+/* 布局 */
 .main-layout {
   display: flex;
   gap: 16px;
   height: calc(100vh - 72px);
 }
 
+/* 无结果时居中显示配置和参考图 */
+.main-layout.no-result {
+  justify-content: center;
+}
+
 /* 左侧配置面板 - 高度自适应内容 */
 .config-panel {
-  width: 260px;
+  width: 360px;
   flex-shrink: 0;
   align-self: flex-start;
-  max-height: calc(100vh - 100px);
-  overflow-y: auto;
 }
 
 .panel-header {
@@ -683,16 +681,15 @@ async function handleThumbnail(dataUrl) {
 .upload-panel {
   width: 280px;
   flex-shrink: 0;
+  align-self: flex-start;
 }
 
 .upload-zone {
   background: #161b22;
   border: 2px dashed #30363d;
   border-radius: 10px;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 150px;
+  padding: 16px;
   transition: border-color 0.2s;
 }
 
@@ -702,17 +699,17 @@ async function handleThumbnail(dataUrl) {
 
 .ref-image-upload {
   width: 100%;
-  height: 100%;
 }
 
 .ref-image-upload :deep(.el-upload-dragger) {
   background: transparent;
   border: none;
   width: 100%;
-  height: 100%;
+  min-height: 100px;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 12px;
 }
 
 .ref-image-upload :deep(.el-upload-list--picture-card) {
@@ -803,21 +800,6 @@ async function handleThumbnail(dataUrl) {
   flex: 1;
   overflow-y: auto;
   padding: 12px;
-}
-
-.result-placeholder {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: #4a5568;
-}
-
-.result-placeholder p {
-  margin: 0;
-  font-size: 13px;
 }
 
 .image-wrapper {
