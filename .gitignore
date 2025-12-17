@@ -16,6 +16,7 @@ genImgGoogle.py
 
 # uploads (keep folder with .gitkeep)
 backend/imagedb/**
+backend/modeldb/**
 !backend/imagedb/.gitkeep
 backend/exports/**
 !backend/exports/.gitkeep
