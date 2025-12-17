@@ -1,23 +1,138 @@
 [
   {
     "id": "google_gemini_image",
-    "name": "Gemini 2.5 Image",
+    "name": "Gemini 2.5 Flash",
     "driver": "google",
     "inputMode": "both",
     "options": {
       "model": "gemini-2.5-flash-image",
       "useProxy": true
-    }
+    },
+    "parameters": [
+      {
+        "name": "aspectRatio",
+        "label": "宽高比",
+        "type": "select",
+        "default": "1:1",
+        "options": [
+          { "label": "1:1 (方形)", "value": "1:1" },
+          { "label": "3:4 (竖版)", "value": "3:4" },
+          { "label": "4:3 (横版)", "value": "4:3" },
+          { "label": "9:16 (手机竖屏)", "value": "9:16" },
+          { "label": "16:9 (宽屏)", "value": "16:9" }
+        ]
+      },
+      {
+        "name": "numberOfImages",
+        "label": "生成数量",
+        "type": "select",
+        "default": "1",
+        "options": [
+          { "label": "1 张", "value": "1" },
+          { "label": "2 张", "value": "2" },
+          { "label": "3 张", "value": "3" },
+          { "label": "4 张", "value": "4" }
+        ]
+      },
+      {
+        "name": "personGeneration",
+        "label": "人物生成",
+        "type": "select",
+        "default": "ALLOW_ADULT",
+        "options": [
+          { "label": "允许成年人", "value": "ALLOW_ADULT" },
+          { "label": "允许所有人", "value": "ALLOW_ALL" },
+          { "label": "禁止", "value": "DONT_ALLOW" }
+        ]
+      },
+      {
+        "name": "outputMimeType",
+        "label": "输出格式",
+        "type": "select",
+        "default": "image/png",
+        "options": [
+          { "label": "PNG", "value": "image/png" },
+          { "label": "JPEG", "value": "image/jpeg" },
+          { "label": "WebP", "value": "image/webp" }
+        ]
+      }
+    ]
   },
   {
     "id": "google_gemini_image2",
-    "name": "Gemini 3 Image",
+    "name": "Gemini 3 Pro Image",
     "driver": "google",
     "inputMode": "both",
     "options": {
       "model": "gemini-3-pro-image-preview",
       "useProxy": true
-    }
+    },
+    "parameters": [
+      {
+        "name": "aspectRatio",
+        "label": "宽高比",
+        "type": "select",
+        "default": "1:1",
+        "options": [
+          { "label": "1:1 (方形)", "value": "1:1" },
+          { "label": "2:3", "value": "2:3" },
+          { "label": "3:2", "value": "3:2" },
+          { "label": "3:4 (竖版)", "value": "3:4" },
+          { "label": "4:3 (横版)", "value": "4:3" },
+          { "label": "4:5", "value": "4:5" },
+          { "label": "5:4", "value": "5:4" },
+          { "label": "9:16 (手机竖屏)", "value": "9:16" },
+          { "label": "16:9 (宽屏)", "value": "16:9" },
+          { "label": "21:9 (超宽)", "value": "21:9" }
+        ]
+      },
+      {
+        "name": "numberOfImages",
+        "label": "生成数量",
+        "type": "select",
+        "default": "1",
+        "options": [
+          { "label": "1 张", "value": "1" },
+          { "label": "2 张", "value": "2" },
+          { "label": "3 张", "value": "3" },
+          { "label": "4 张", "value": "4" }
+        ]
+      },
+      {
+        "name": "personGeneration",
+        "label": "人物生成",
+        "type": "select",
+        "default": "ALLOW_ADULT",
+        "options": [
+          { "label": "不生成儿童", "value": "ALLOW_ADULT" },
+          { "label": "不限制", "value": "ALLOW_ALL" },
+          { "label": "无人物", "value": "DONT_ALLOW" }
+        ]
+      },
+      {
+        "name": "outputMimeType",
+        "label": "输出格式",
+        "type": "select",
+        "default": "image/png",
+        "options": [
+          { "label": "PNG", "value": "image/png" },
+          { "label": "JPEG", "value": "image/jpeg" },
+          { "label": "WebP", "value": "image/webp" }
+        ]
+      },
+      {
+        "name": "outputResolution",
+        "label": "分辨率",
+        "type": "select",
+        "default": "1K",
+        "options": [
+          { "label": "1K", "value": "1K" },
+          { "label": "2K", "value": "2K" },
+          { "label": "4K", "value": "4K" }
+        ],
+        "description": "仅 Gemini 3 Pro 支持"
+      }
+    ]
   },
 
   {
@@ -67,7 +182,7 @@
     "parameters": [
       {
         "name": "width",
-        "label": "Width",
+        "label": "宽",
         "type": "number",
         "default": 1024,
         "min": 256,
@@ -76,7 +191,7 @@
       },
       {
         "name": "height",
-        "label": "Height",
+        "label": "高",
         "type": "number",
         "default": 1024,
         "min": 256,
@@ -149,7 +264,7 @@
     "parameters": [
       {
         "name": "modelVersion",
-        "label": "Model Version",
+        "label": "版本",
         "type": "select",
         "default": "default",
         "options": [
@@ -161,7 +276,7 @@
       },
       {
         "name": "texture",
-        "label": "Generate Texture",
+        "label": "纹理",
         "type": "select",
         "default": "true",
         "options": [
@@ -171,7 +286,7 @@
       },
       {
         "name": "pbr",
-        "label": "PBR Material",
+        "label": "PBR材质",
         "type": "select",
         "default": "true",
         "options": [
@@ -181,7 +296,7 @@
       },
       {
         "name": "faceLimit",
-        "label": "Face Limit",
+        "label": "面数",
         "type": "number",
         "default": 50000,
         "min": 1000,

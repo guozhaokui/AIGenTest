@@ -2436,5 +2436,48 @@
     "createdAt": "2025-12-06T11:52:21.247Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/242ef84d-ed9a-4011-87d3-b3bf4cbb76a4/f95bce7f-7450-4668-9a0e-dc8f35590d2f/thumbnail.jpg"
+  },
+  {
+    "id": "4d63fce3-1b33-41a9-b48b-76230dbf8614",
+    "prompt": "这是一个图片生成界面，根据功能需求重新设计这个界面，要求美化、简洁",
+    "imagePath": "/imagedb/0c/05/0c05a2b12e36ac42509f62d33ae49cd8.jpg",
+    "imageUrls": [
+      "/imagedb/90/52/9052b8c170d35a1557b8b78caf6f4e91.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ALL",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 18798,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 277,
+      "candidatesTokenCount": 1315,
+      "totalTokenCount": 1777,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 19
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 185
+    },
+    "createdAt": "2025-12-17T10:22:38.282Z",
+    "dimensionScores": {}
   }
 ]
