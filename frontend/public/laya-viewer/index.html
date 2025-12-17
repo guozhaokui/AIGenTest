@@ -194,6 +194,14 @@
             directionLight.transform.rotationEuler = new Laya.Vector3(-45, 45, 0);
             const lightCom = directionLight.addComponent(Laya.DirectionLightCom);
             lightCom.color = new Laya.Color(1, 1, 1, 1);
+            
+            // 开启方向光阴影
+            lightCom.shadowMode = Laya.ShadowMode.SoftLow;
+            lightCom.shadowDistance = 20;
+            lightCom.shadowResolution = 1024;
+            lightCom.shadowCascadesMode = Laya.ShadowCascadesMode.NoCascades;
+            lightCom.shadowDepthBias = 1.0;
+            lightCom.shadowNormalBias = 1.0;
 
             // 创建地面
             createGround();
@@ -213,7 +221,7 @@
         class CameraController extends Laya.Script {
             constructor() {
                 super();
-                this.yawPitchRoll = new Laya.Vector3(-15, 0, 0);
+                this.yawPitchRoll = new Laya.Vector3(15, 0, 0);
                 this.distance = 5;
                 this.target = new Laya.Vector3(0, 0.5, 0);
                 this.lastMouseX = 0;
@@ -246,8 +254,8 @@
                 const deltaX = Laya.stage.mouseX - this.lastMouseX;
                 const deltaY = Laya.stage.mouseY - this.lastMouseY;
                 
-                this.yawPitchRoll.y += deltaX * 0.3;
-                this.yawPitchRoll.x -= deltaY * 0.3;
+                this.yawPitchRoll.y -= deltaX * 0.3;
+                this.yawPitchRoll.x += deltaY * 0.3;
                 
                 // 限制俯仰角
                 this.yawPitchRoll.x = Math.max(-89, Math.min(89, this.yawPitchRoll.x));
@@ -281,7 +289,7 @@
             }
 
             resetView() {
-                this.yawPitchRoll = new Laya.Vector3(-15, 0, 0);
+                this.yawPitchRoll = new Laya.Vector3(15, 0, 0);
                 this.distance = 5;
                 this.updateCamera();
             }
@@ -296,6 +304,9 @@
             const material = new Laya.BlinnPhongMaterial();
             material.albedoColor = new Laya.Color(0.6, 0.6, 0.6, 1);
             renderer.sharedMaterial = material;
+            
+            // 地面接收阴影
+            renderer.receiveShadow = true;
         }
 
         // 更新地面位置到模型包围盒底部
@@ -343,6 +354,9 @@
                     
                     // 调整模型
                     adjustModel(currentModel);
+                    
+                    // 设置模型阴影
+                    setupModelShadow(currentModel);
                     
                     document.getElementById('loadingText').style.display = 'none';
                     console.log('模型加载成功:', option.path);
@@ -462,6 +476,14 @@
             for (let i = 0; i < node.numChildren; i++) {
                 findBounds(node.getChildAt(i), callback);
             }
+        }
+
+        // 设置模型阴影（投射和接收）
+        function setupModelShadow(model) {
+            findBounds(model, (renderer) => {
+                renderer.castShadow = true;
+                renderer.receiveShadow = true;
+            });
         }
 
         // 事件监听
