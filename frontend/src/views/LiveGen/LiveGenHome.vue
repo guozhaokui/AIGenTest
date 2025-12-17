@@ -127,7 +127,7 @@
             
             <!-- 3D模型预览 -->
             <template v-else-if="result.info3d">
-                <ModelViewer :info3d="result.info3d" @thumbnail="handleThumbnail" />
+                <ModelViewer :info3d="result.info3d" :recordId="result.id" @thumbnail="handleThumbnail" />
             </template>
 
             <!-- 音频播放 -->

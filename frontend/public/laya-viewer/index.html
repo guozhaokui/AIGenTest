@@ -70,6 +70,7 @@
         <div style="margin-top: 10px;">操作：</div>
         <button id="resetBtn">重置视角</button>
         <button id="fullscreenBtn">全屏</button>
+        <button id="updateThumbnailBtn">更新缩略图</button>
     </div>
     <div class="loading" id="loadingText">加载中...</div>
 
@@ -390,39 +391,105 @@
         // 截图并发送给父窗口
         function captureAndSendThumbnail(modelPath) {
             try {
-                // 获取 canvas
-                const canvas = document.querySelector('canvas');
-                if (!canvas) {
-                    console.error('Canvas not found');
-                    return;
+                if (!currentModel || !camera) return;
+                
+                // 保存当前相机控制器状态
+                const controller = camera.getComponent(CameraController);
+                let savedDistance, savedYawPitchRoll, savedTarget;
+                if (controller) {
+                    savedDistance = controller.distance;
+                    savedYawPitchRoll = controller.yawPitchRoll.clone();
+                    savedTarget = controller.target.clone();
                 }
                 
-                // 确保 canvas 有内容
-                const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
-                if (ctx) {
-                    // 强制完成所有渲染操作
-                    ctx.finish();
+                // 计算模型包围盒
+                let bounds = null;
+                findBounds(currentModel, (renderer) => {
+                    if (renderer.bounds) {
+                        if (!bounds) {
+                            bounds = renderer.bounds.clone();
+                        } else {
+                            Laya.Bounds.merge(bounds, renderer.bounds, bounds);
+                        }
+                    }
+                });
+                
+                if (bounds) {
+                    // 计算包围盒中心和大小
+                    const center = new Laya.Vector3();
+                    bounds.getCenter(center);
+                    const extent = bounds.getExtent();
+                    const maxExtent = Math.max(extent.x, extent.y, extent.z);
+                    
+                    // 根据相机 FOV 计算最佳距离（让模型填满视野）
+                    const fov = camera.fieldOfView * Math.PI / 180;
+                    const distance = (maxExtent * 1.2) / Math.tan(fov / 2);
+                    
+                    // 设置相机位置（从斜上方45度角观察）
+                    const pitch = 20 * Math.PI / 180;
+                    const yaw = 30 * Math.PI / 180;
+                    const x = distance * Math.cos(pitch) * Math.sin(yaw);
+                    const y = distance * Math.sin(pitch);
+                    const z = distance * Math.cos(pitch) * Math.cos(yaw);
+                    
+                    camera.transform.position = new Laya.Vector3(
+                        center.x + x,
+                        center.y + y,
+                        center.z + z
+                    );
+                    camera.transform.lookAt(center, new Laya.Vector3(0, 1, 0));
                 }
                 
-                // 截图
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                // 等待一帧渲染后截图
+                Laya.timer.frameOnce(2, null, () => {
+                    // 获取 canvas
+                    const canvas = document.querySelector('canvas');
+                    if (!canvas) {
+                        console.error('Canvas not found');
+                        restoreCamera();
+                        return;
+                    }
+                    
+                    // 确保 canvas 有内容
+                    const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
+                    if (ctx) {
+                        ctx.finish();
+                    }
+                    
+                    // 截图
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    // 检查是否是空白图片
+                    if (dataUrl.length < 1000) {
+                        console.warn('截图可能是空的，重试...');
+                        restoreCamera();
+                        waitFramesAndCapture(10, modelPath);
+                        return;
+                    }
+                    
+                    // 发送给父窗口
+                    if (window.parent !== window) {
+                        window.parent.postMessage({
+                            type: 'thumbnail',
+                            modelPath: modelPath,
+                            dataUrl: dataUrl
+                        }, '*');
+                        console.log('缩略图已发送, 大小:', dataUrl.length);
+                    }
+                    
+                    // 恢复相机位置
+                    restoreCamera();
+                });
                 
-                // 检查是否是空白图片
-                if (dataUrl.length < 1000) {
-                    console.warn('截图可能是空的，重试...');
-                    waitFramesAndCapture(10, modelPath);
-                    return;
+                function restoreCamera() {
+                    if (controller && savedDistance !== undefined) {
+                        controller.distance = savedDistance;
+                        controller.yawPitchRoll = savedYawPitchRoll;
+                        controller.target = savedTarget;
+                        controller.updateCamera();
+                    }
                 }
                 
-                // 发送给父窗口
-                if (window.parent !== window) {
-                    window.parent.postMessage({
-                        type: 'thumbnail',
-                        modelPath: modelPath,
-                        dataUrl: dataUrl
-                    }, '*');
-                    console.log('缩略图已发送, 大小:', dataUrl.length);
-                }
             } catch (e) {
                 console.error('截图失败:', e);
             }
@@ -507,6 +574,86 @@
                 document.exitFullscreen();
             }
         });
+
+        document.getElementById('updateThumbnailBtn').addEventListener('click', () => {
+            if (currentModel && modelOptions.length > 0) {
+                const currentIndex = modelSelect.value;
+                const option = modelOptions[currentIndex];
+                if (option) {
+                    // 使用当前视角截图并发送
+                    captureThumbnailCurrentView(option.path);
+                }
+            }
+        });
+
+        // 获取记录 ID（从 URL 参数）
+        const recordId = getQueryParam('id');
+
+        // 使用当前视角截图（不调整相机）
+        async function captureThumbnailCurrentView(modelPath) {
+            try {
+                const canvas = document.querySelector('canvas');
+                if (!canvas) {
+                    console.error('Canvas not found');
+                    return;
+                }
+                
+                const ctx = canvas.getContext('webgl') || canvas.getContext('webgl2');
+                if (ctx) {
+                    ctx.finish();
+                }
+                
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                
+                if (dataUrl.length < 1000) {
+                    console.warn('截图可能是空的');
+                    return;
+                }
+                
+                // 发送给父窗口（嵌入模式）
+                if (window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'thumbnail',
+                        modelPath: modelPath,
+                        dataUrl: dataUrl
+                    }, '*');
+                    console.log('缩略图已更新并发送, 大小:', dataUrl.length);
+                    alert('缩略图已更新！');
+                } else {
+                    // 非嵌入模式，直接调用后端 API
+                    if (!recordId) {
+                        alert('URL 中缺少记录 ID，无法更新缩略图');
+                        return;
+                    }
+                    
+                    try {
+                        const response = await fetch(`${API_BASE}/api/live-gen/${recordId}/thumbnail`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ dataUrl })
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            console.log('缩略图已保存:', result.thumbnailPath);
+                            alert('缩略图已更新！');
+                        } else {
+                            const error = await response.json();
+                            console.error('保存缩略图失败:', error);
+                            alert('保存缩略图失败：' + (error.error || '未知错误'));
+                        }
+                    } catch (e) {
+                        console.error('请求失败:', e);
+                        alert('请求失败：' + e.message);
+                    }
+                }
+            } catch (e) {
+                console.error('截图失败:', e);
+                alert('截图失败：' + e.message);
+            }
+        }
     </script>
 </body>
 </html>

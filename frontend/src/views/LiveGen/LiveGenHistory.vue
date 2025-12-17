@@ -331,7 +331,7 @@ function handleView3D(row) {
   const dir = row.info3d?.modelDir;
   if (!dir) return;
   const modelUrl = `${dir}/pbr/mesh_textured_pbr.glb`;
-  window.open(`/laya-viewer/index.html?url=${encodeURIComponent(modelUrl)}`, '_blank');
+  window.open(`/laya-viewer/index.html?url=${encodeURIComponent(modelUrl)}&id=${row.id}`, '_blank');
 }
 </script>
 

@@ -25,6 +25,10 @@ const props = defineProps({
   info3d: {
     type: Object,
     required: true
+  },
+  recordId: {
+    type: String,
+    default: ''
   }
 });
 
@@ -56,7 +60,11 @@ const currentModelUrl = computed(() => {
 // 拼接 viewer 地址
 const viewerUrl = computed(() => {
   if (!currentModelUrl.value) return '';
-  return `/laya-viewer/index.html?url=${encodeURIComponent(currentModelUrl.value)}`;
+  let url = `/laya-viewer/index.html?url=${encodeURIComponent(currentModelUrl.value)}`;
+  if (props.recordId) {
+    url += `&id=${props.recordId}`;
+  }
+  return url;
 });
 
 // 接收 iframe 的截图消息
