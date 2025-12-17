@@ -561,9 +561,9 @@ async function handleThumbnail(dataUrl) {
 <style scoped>
 .live-gen-container {
   padding: 12px 16px;
-  background: #0d1117;
+  background: #f5f7fa;
   min-height: calc(100vh - 48px);
-  color: #c9d1d9;
+  color: #303133;
 }
 
 /* 布局 */
@@ -592,15 +592,16 @@ async function handleThumbnail(dataUrl) {
   margin-bottom: 10px;
   font-size: 14px;
   font-weight: 500;
-  color: #e6edf3;
+  color: #303133;
 }
 
 .config-form {
-  background: #161b22;
+  background: #fff;
   border-radius: 8px;
   padding: 12px;
-  border: 1px solid #30363d;
+  border: 1px solid #e4e7ed;
   margin-bottom: 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .config-form :deep(.el-form-item) {
@@ -608,23 +609,10 @@ async function handleThumbnail(dataUrl) {
 }
 
 .config-form :deep(.el-form-item__label) {
-  color: #8b949e;
+  color: #606266;
   font-size: 12px;
   line-height: 28px;
   padding-right: 8px;
-}
-
-.config-form :deep(.el-input__wrapper),
-.config-form :deep(.el-select .el-input__wrapper),
-.config-form :deep(.el-textarea__inner) {
-  background: #0d1117;
-  border-color: #30363d;
-  box-shadow: none;
-}
-
-.config-form :deep(.el-input__inner),
-.config-form :deep(.el-textarea__inner) {
-  color: #c9d1d9;
 }
 
 .config-form :deep(.el-select) {
@@ -633,10 +621,6 @@ async function handleThumbnail(dataUrl) {
 
 .config-form :deep(.el-input-number) {
   width: 100%;
-}
-
-.config-form :deep(.el-select__placeholder) {
-  color: #6e7681;
 }
 
 .prompt-item {
@@ -648,19 +632,6 @@ async function handleThumbnail(dataUrl) {
   padding-top: 6px;
 }
 
-.input-mode-switch :deep(.el-radio-button__inner) {
-  background: #21262d;
-  border-color: #30363d;
-  color: #8b949e;
-  padding: 6px 12px;
-}
-
-.input-mode-switch :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
-  background: #238636;
-  border-color: #238636;
-  color: #fff;
-}
-
 /* 生成按钮 */
 .generate-btn {
   width: 100%;
@@ -669,12 +640,12 @@ async function handleThumbnail(dataUrl) {
   font-size: 14px;
   font-weight: 500;
   border-radius: 6px;
-  background: linear-gradient(135deg, #1a8cff 0%, #0066cc 100%);
+  background: linear-gradient(135deg, #409eff 0%, #337ecc 100%);
   border: none;
 }
 
 .generate-btn:hover {
-  background: linear-gradient(135deg, #3399ff 0%, #0077ee 100%);
+  background: linear-gradient(135deg, #66b1ff 0%, #409eff 100%);
 }
 
 /* 中间上传区域 */
@@ -685,16 +656,17 @@ async function handleThumbnail(dataUrl) {
 }
 
 .upload-zone {
-  background: #161b22;
-  border: 2px dashed #30363d;
+  background: #fff;
+  border: 2px dashed #dcdfe6;
   border-radius: 10px;
   min-height: 150px;
   padding: 16px;
   transition: border-color 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .upload-zone:hover {
-  border-color: #58a6ff;
+  border-color: #409eff;
 }
 
 .ref-image-upload {
@@ -725,8 +697,8 @@ async function handleThumbnail(dataUrl) {
   width: 100px;
   height: 100px;
   border-radius: 6px;
-  border: 1px solid #30363d;
-  background: #0d1117;
+  border: 1px solid #e4e7ed;
+  background: #fafafa;
   margin: 0;
 }
 
@@ -734,8 +706,8 @@ async function handleThumbnail(dataUrl) {
   width: 100px;
   height: 100px;
   border-radius: 6px;
-  border: 2px dashed #30363d;
-  background: #0d1117;
+  border: 2px dashed #dcdfe6;
+  background: #fafafa;
   margin: 0;
 }
 
@@ -744,23 +716,23 @@ async function handleThumbnail(dataUrl) {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  color: #8b949e;
+  color: #909399;
 }
 
 .upload-title {
   font-size: 16px;
   font-weight: 500;
-  color: #c9d1d9;
+  color: #606266;
 }
 
 .upload-icon {
   font-size: 40px;
-  color: #6e7681;
+  color: #c0c4cc;
 }
 
 .upload-hint {
   font-size: 12px;
-  color: #6e7681;
+  color: #909399;
 }
 
 
@@ -768,21 +740,22 @@ async function handleThumbnail(dataUrl) {
 .result-panel {
   flex: 1;
   min-width: 0;
-  background: #161b22;
-  border: 1px solid #30363d;
+  background: #fff;
+  border: 1px solid #e4e7ed;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .result-header {
   padding: 10px 14px;
   font-size: 14px;
   font-weight: 500;
-  color: #e6edf3;
-  background: #21262d;
-  border-bottom: 1px solid #30363d;
+  color: #303133;
+  background: #fafafa;
+  border-bottom: 1px solid #e4e7ed;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -806,7 +779,7 @@ async function handleThumbnail(dataUrl) {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #0d1117;
+  background: #f5f7fa;
   border-radius: 6px;
   padding: 12px;
   flex: 1;
@@ -832,7 +805,7 @@ async function handleThumbnail(dataUrl) {
 }
 
 .unsupported {
-  color: #6e7681;
+  color: #909399;
   font-size: 12px;
 }
 
@@ -840,21 +813,22 @@ async function handleThumbnail(dataUrl) {
 .score-panel {
   width: 320px;
   flex-shrink: 0;
-  background: #161b22;
-  border: 1px solid #30363d;
+  background: #fff;
+  border: 1px solid #e4e7ed;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .score-header {
   padding: 10px 14px;
   font-size: 14px;
   font-weight: 500;
-  color: #e6edf3;
-  background: #21262d;
-  border-bottom: 1px solid #30363d;
+  color: #303133;
+  background: #fafafa;
+  border-bottom: 1px solid #e4e7ed;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -895,13 +869,7 @@ async function handleThumbnail(dataUrl) {
 
 .score-content :deep(.el-form-item__label) {
   font-size: 12px;
-  color: #8b949e;
-}
-
-.score-content :deep(.el-textarea__inner) {
-  background: #0d1117;
-  border-color: #30363d;
-  color: #c9d1d9;
+  color: #606266;
 }
 
 .score-content :deep(.el-rate) {
@@ -910,16 +878,6 @@ async function handleThumbnail(dataUrl) {
 
 .score-content :deep(.el-rate__icon) {
   font-size: 16px;
-}
-
-/* Element Plus 组件深度样式覆盖 */
-:deep(.el-divider__text) {
-  background: #161b22;
-  color: #8b949e;
-}
-
-:deep(.el-divider) {
-  border-color: #30363d;
 }
 </style>
 

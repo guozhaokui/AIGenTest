@@ -46,17 +46,18 @@ const isHistory = computed(() => route.path === '/live/history');
 .live-layout {
   display: flex;
   min-height: 100vh;
-  background: #0d1117;
+  background: #f5f7fa;
 }
 
 .live-sidebar {
   width: 48px;
-  background: #161b22;
-  border-right: 1px solid #30363d;
+  background: #fff;
+  border-right: 1px solid #e4e7ed;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 12px 0;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04);
 }
 
 .sidebar-logo {
@@ -65,7 +66,7 @@ const isHistory = computed(() => route.path === '/live/history');
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #58a6ff;
+  color: #409eff;
   margin-bottom: 24px;
 }
 
@@ -82,18 +83,18 @@ const isHistory = computed(() => route.path === '/live/history');
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  color: #8b949e;
+  color: #909399;
   cursor: pointer;
   transition: all 0.2s;
 }
 
 .sidebar-item:hover {
-  background: #21262d;
-  color: #c9d1d9;
+  background: #f5f7fa;
+  color: #606266;
 }
 
 .sidebar-item.active {
-  background: #1f6feb;
+  background: #409eff;
   color: #fff;
 }
 
@@ -107,6 +108,6 @@ const isHistory = computed(() => route.path === '/live/history');
 .live-main {
   flex: 1;
   overflow-y: auto;
-  background: #0d1117;
+  background: #f5f7fa;
 }
 </style>
