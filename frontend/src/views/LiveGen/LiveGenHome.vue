@@ -301,6 +301,20 @@ onMounted(async () => {
       if (data.info3d && data.info3d.questionUuid) {
         form.value.questionId = data.info3d.questionUuid;
       }
+      // 恢复之前的生成结果
+      if (data.imagePath || data.info3d) {
+        result.value = {
+          id: data.id,
+          imagePath: data.imagePath,
+          prompt: data.prompt,
+          imageUrls: data.imageUrls || [],
+          modelId: data.modelId,
+          params: data.params || {},
+          duration: data.duration || 0,
+          info3d: data.info3d || null,
+          usage: data.usage || null
+        };
+      }
     }
 
     if (state && state.fromPage) {
@@ -801,14 +815,16 @@ async function handleThumbnail(dataUrl) {
   justify-content: center;
   align-items: center;
   background: #0d1117;
-  min-height: 300px;
   border-radius: 6px;
-  padding: 16px;
+  padding: 12px;
+  flex: 1;
+  min-height: 0;
 }
 
 .result-image {
   max-width: 100%;
-  max-height: 500px;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 .audio-wrapper {

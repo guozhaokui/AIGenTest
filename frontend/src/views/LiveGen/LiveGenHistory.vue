@@ -303,12 +303,18 @@ function handleReEdit(row) {
   // 跳转到生成页，并携带参数
   // 深度拷贝，避免 Proxy 代理问题
   const data = JSON.parse(JSON.stringify({
+    id: row.id,
     prompt: row.prompt,
     modelId: row.modelId,
     imageUrls: row.imageUrls || [],
     params: row.params || {},
     // 传递 info3d，以便再次生成时可以使用同一个 questionId
-    info3d: row.info3d || null
+    info3d: row.info3d || null,
+    // 传递生成结果，以便在编辑页显示
+    imagePath: row.imagePath || null,
+    duration: row.duration || 0,
+    usage: row.usage || null,
+    dimensionScores: row.dimensionScores || {}
   }));
   
   router.push({
