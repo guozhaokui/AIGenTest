@@ -33,11 +33,13 @@
         </div>
       </el-form-item>
 
-      <el-form-item label="增加维度" v-if="allowAdd">
-        <el-select v-model="newDimId" filterable placeholder="选择维度" style="min-width:240px;">
-          <el-option v-for="d in availableDims" :key="d.id" :label="d.name" :value="d.id" />
-        </el-select>
-        <el-button style="margin-left:8px;" @click="addDim" :disabled="!newDimId">加入</el-button>
+      <el-form-item label="增加维度" v-if="allowAdd" class="add-dim-item">
+        <div class="add-dim-row">
+          <el-select v-model="newDimId" filterable placeholder="选择" size="small" style="width: 120px;">
+            <el-option v-for="d in availableDims" :key="d.id" :label="d.name" :value="d.id" />
+          </el-select>
+          <el-button size="small" @click="addDim" :disabled="!newDimId">加入</el-button>
+        </div>
       </el-form-item>
 
       <el-form-item label="主观评价">
@@ -140,6 +142,14 @@ function submit() {
   color: #666;
   font-size: 12px;
   min-width: 24px;
+}
+.add-dim-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.add-dim-item :deep(.el-form-item__content) {
+  flex-wrap: nowrap;
 }
 </style>
 

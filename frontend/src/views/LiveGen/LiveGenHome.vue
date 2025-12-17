@@ -1,149 +1,158 @@
 <template>
   <div class="live-gen-container">
-    <div class="header">
-      <h2>实时生成</h2>
-      <el-button type="primary" link @click="handleBack">
-        {{ returnState ? '返回' : '查看历史记录' }}
-      </el-button>
-    </div>
-
-    <div class="content">
-      <el-image-viewer 
-        v-if="showViewer" 
-        :url-list="previewUrlList" 
-        @close="closeViewer" 
-        :z-index="9999"
-      />
-      <el-card class="input-card">
-        <template #header>
-          <div class="card-header">
-            <span>输入配置</span>
-          </div>
-        </template>
+    <el-image-viewer 
+      v-if="showViewer" 
+      :url-list="previewUrlList" 
+      @close="closeViewer" 
+      :z-index="9999"
+    />
+    
+    <!-- 三栏布局：左侧配置 | 中间参考图 | 右侧结果 -->
+    <div class="main-layout">
+      <!-- 左侧配置面板 -->
+      <div class="config-panel">
+        <div class="panel-header">
+          <span>输入配置</span>
+          <el-button type="primary" link size="small" @click="handleBack">
+            {{ returnState ? '返回' : '历史' }}
+          </el-button>
+        </div>
         
-        <el-form :model="form" label-width="80px">
+        <el-form :model="form" label-position="left" label-width="70px" class="config-form">
+          <!-- 模型选择 -->
           <el-form-item label="模型">
-            <el-select v-model="form.modelId" placeholder="选择模型" style="width: 100%">
-               <el-option v-for="m in models" :key="m.id" :label="m.name" :value="m.id" />
+            <el-select v-model="form.modelId" placeholder="选择模型">
+              <el-option v-for="m in models" :key="m.id" :label="m.name" :value="m.id" />
             </el-select>
           </el-form-item>
           
           <!-- 互斥模式切换按钮 -->
-          <el-form-item v-if="isExclusiveMode" label="输入方式">
-            <el-radio-group v-model="activeInput" size="default">
-              <el-radio-button value="prompt">文本提示词</el-radio-button>
-              <el-radio-button value="image">参考图片</el-radio-button>
+          <el-form-item v-if="isExclusiveMode" label=" ">
+            <el-radio-group v-model="activeInput" size="small" class="input-mode-switch">
+              <el-radio-button value="prompt">文本</el-radio-button>
+              <el-radio-button value="image">图片</el-radio-button>
             </el-radio-group>
           </el-form-item>
 
-          <el-form-item v-if="showPrompt" label="提示词">
+          <!-- 动态参数配置区域 -->
+          <template v-if="currentModel && currentModel.parameters && currentModel.parameters.length">
+            <el-form-item 
+              v-for="param in currentModel.parameters" 
+              :key="param.name"
+              :label="param.label || param.name"
+            >
+              <template v-if="param.type === 'number'">
+                <el-input-number 
+                  v-model="dynamicParams[param.name]" 
+                  :min="param.min" 
+                  :max="param.max" 
+                  :step="param.step"
+                  controls-position="right"
+                  size="small"
+                />
+              </template>
+              <template v-else-if="param.type === 'select'">
+                <el-select v-model="dynamicParams[param.name]" placeholder="请选择" size="small">
+                  <el-option v-for="opt in param.options" :key="opt.value" :label="opt.label" :value="opt.value" />
+                </el-select>
+              </template>
+              <template v-else>
+                <el-input v-model="dynamicParams[param.name]" :placeholder="param.description" size="small" />
+              </template>
+            </el-form-item>
+          </template>
+          
+          <!-- 提示词输入 -->
+          <el-form-item v-if="showPrompt" label="提示词" class="prompt-item">
             <el-input 
               v-model="form.prompt" 
               type="textarea" 
-              :rows="4" 
-              placeholder="请输入提示词..."
+              :rows="5" 
+              placeholder="输入提示词..."
+              resize="vertical"
             />
           </el-form-item>
-
-          <!-- 动态参数配置区域 -->
-          <div v-if="currentModel && currentModel.parameters && currentModel.parameters.length" style="background: #f8f9fa; padding: 10px; border-radius: 4px; margin-bottom: 18px;">
-            <el-row :gutter="10">
-              <el-col :span="8" v-for="param in currentModel.parameters" :key="param.name">
-                <el-form-item :label="param.label || param.name" label-width="110px" style="margin-bottom: 12px;">
-                  <template v-if="param.type === 'number'">
-                    <el-input-number 
-                      v-model="dynamicParams[param.name]" 
-                      :min="param.min" 
-                      :max="param.max" 
-                      :step="param.step"
-                      controls-position="right"
-                      style="width: 140px;" 
-                    />
-                  </template>
-                  <template v-else-if="param.type === 'select'">
-                    <el-select v-model="dynamicParams[param.name]" placeholder="请选择" style="width: 140px;">
-                      <el-option v-for="opt in param.options" :key="opt.value" :label="opt.label" :value="opt.value" />
-                    </el-select>
-                  </template>
-                  <template v-else>
-                    <el-input v-model="dynamicParams[param.name]" :placeholder="param.description" style="width: 140px;" />
-                  </template>
-                  
-                  <div v-if="param.description" style="font-size: 12px; color: #999; line-height: 1.2; margin-top: 4px;">
-                    {{ param.description }}
-                  </div>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </div>
-
-          <el-form-item v-if="showImage" label="参考图">
-            <el-upload
-              ref="uploadRef"
-              drag
-              multiple
-              :limit="14"
-              list-type="picture-card"
-              action="/api/examples/upload"
-              v-model:file-list="fileList"
-              :on-success="onUploadSuccess"
-              :on-remove="onRemove"
-              :on-preview="handlePreview"
-              accept="image/*"
-            >
-              <el-icon><Plus /></el-icon>
-            </el-upload>
-            <div style="font-size: 12px; color: #666; margin-top: 4px;">最多上传 14 张参考图</div>
-          </el-form-item>
-
-          <el-form-item>
-            <el-button type="primary" :loading="loading" @click="handleGenerate" style="width: 100%">
-              {{ loading ? '生成中...' : '立即生成' }}
-            </el-button>
-          </el-form-item>
         </el-form>
-      </el-card>
+        
+        <!-- 生成按钮 -->
+        <el-button 
+          type="primary" 
+          :loading="loading" 
+          @click="handleGenerate" 
+          class="generate-btn"
+        >
+          {{ loading ? '生成中...' : '立即生成' }}
+        </el-button>
+      </div>
 
-      <div class="result-section" v-if="result">
-        <el-card class="result-card">
-          <template #header>
-            <div class="card-header">
-              <span>生成结果</span>
+      <!-- 中间参考图区域 -->
+      <div class="upload-panel">
+        <div class="upload-zone" v-if="showImage">
+          <el-upload
+            ref="uploadRef"
+            drag
+            multiple
+            :limit="14"
+            list-type="picture-card"
+            action="/api/examples/upload"
+            v-model:file-list="fileList"
+            :on-success="onUploadSuccess"
+            :on-remove="onRemove"
+            :on-preview="handlePreview"
+            accept="image/*"
+            class="ref-image-upload"
+          >
+            <div class="upload-placeholder">
+              <span class="upload-title">参考图</span>
+              <el-icon class="upload-icon"><Plus /></el-icon>
+              <span class="upload-hint">最多 14 张</span>
             </div>
-          </template>
-          
+          </el-upload>
+        </div>
+        
+        <!-- 如果不需要图片，显示提示 -->
+        <div v-else class="no-image-hint">
+          <el-icon :size="40" color="#666"><Picture /></el-icon>
+          <p>无需上传参考图</p>
+        </div>
+      </div>
+
+      <!-- 右侧结果区域 -->
+      <div class="result-panel">
+        <div class="result-header">生成结果</div>
+        <div class="result-content" v-if="result">
           <div class="image-wrapper">
             <!-- 图片预览 -->
             <template v-if="isImage(result.imagePath)">
-                <el-image 
-                  :src="normalizeUrl(result.imagePath)" 
-                  :preview-src-list="[normalizeUrl(result.imagePath)]"
-                  fit="contain"
-                  style="max-width: 100%; max-height: 500px;"
-                  :preview-teleported="true"
-                  :z-index="9999"
-                />
+              <el-image 
+                :src="normalizeUrl(result.imagePath)" 
+                :preview-src-list="[normalizeUrl(result.imagePath)]"
+                fit="contain"
+                class="result-image"
+                :preview-teleported="true"
+                :z-index="9999"
+              />
             </template>
             
             <!-- 3D模型预览 -->
             <template v-else-if="result.info3d">
-                <ModelViewer :info3d="result.info3d" :recordId="result.id" @thumbnail="handleThumbnail" />
+              <ModelViewer :info3d="result.info3d" :recordId="result.id" @thumbnail="handleThumbnail" />
             </template>
 
             <!-- 音频播放 -->
             <template v-else-if="isSound(result.imagePath)">
-                <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; width: 100%;">
-                    <div style="font-size: 60px; color: #909399;">🎵</div>
-                    <audio controls :src="normalizeUrl(result.imagePath)" style="width: 80%; max-width: 500px;"></audio>
-                </div>
+              <div class="audio-wrapper">
+                <div style="font-size: 48px;">🎵</div>
+                <audio controls :src="normalizeUrl(result.imagePath)"></audio>
+              </div>
             </template>
             
-            <div v-else style="color: #999;">暂不支持该格式预览: {{ result.imagePath }}</div>
+            <div v-else class="unsupported">暂不支持: {{ result.imagePath }}</div>
           </div>
           
           <!-- 评分组件 -->
-          <div style="margin-top: 20px;">
-            <el-divider content-position="left">评估打分</el-divider>
+          <div class="score-section">
+            <div class="score-title">评分</div>
             <ScoreInput 
               :catalog="dimensions" 
               :initial-dimension-ids="[]"
@@ -151,7 +160,11 @@
               @submit="handleScoreSubmit" 
             />
           </div>
-        </el-card>
+        </div>
+        <div v-else class="result-placeholder">
+          <el-icon :size="48" color="#4a5568"><Monitor /></el-icon>
+          <p>等待生成结果</p>
+        </div>
       </div>
     </div>
   </div>
@@ -159,7 +172,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { Plus, InfoFilled } from '@element-plus/icons-vue';
+import { Plus, Picture, Monitor } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { listModels, generateImage, listDimensions, createQuestion, submitEvaluation } from '../../services/api';
 import ScoreInput from '../../components/ScoreInput.vue';
@@ -522,36 +535,320 @@ async function handleThumbnail(dataUrl) {
 
 <style scoped>
 .live-gen-container {
-  padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 12px 16px;
+  background: #0d1117;
+  min-height: calc(100vh - 48px);
+  color: #c9d1d9;
 }
-.header {
+
+/* 三栏布局 */
+.main-layout {
+  display: flex;
+  gap: 16px;
+  height: calc(100vh - 72px);
+}
+
+/* 左侧配置面板 - 高度自适应内容 */
+.config-panel {
+  width: 260px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+
+.panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #e6edf3;
 }
-.content {
+
+.config-form {
+  background: #161b22;
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid #30363d;
+  margin-bottom: 0;
+}
+
+.config-form :deep(.el-form-item) {
+  margin-bottom: 12px;
+}
+
+.config-form :deep(.el-form-item__label) {
+  color: #8b949e;
+  font-size: 12px;
+  line-height: 28px;
+  padding-right: 8px;
+}
+
+.config-form :deep(.el-input__wrapper),
+.config-form :deep(.el-select .el-input__wrapper),
+.config-form :deep(.el-textarea__inner) {
+  background: #0d1117;
+  border-color: #30363d;
+  box-shadow: none;
+}
+
+.config-form :deep(.el-input__inner),
+.config-form :deep(.el-textarea__inner) {
+  color: #c9d1d9;
+}
+
+.config-form :deep(.el-select) {
+  width: 100%;
+}
+
+.config-form :deep(.el-input-number) {
+  width: 100%;
+}
+
+.config-form :deep(.el-select__placeholder) {
+  color: #6e7681;
+}
+
+.prompt-item {
+  margin-top: 8px;
+}
+
+.prompt-item :deep(.el-form-item__label) {
+  align-self: flex-start;
+  padding-top: 6px;
+}
+
+.input-mode-switch :deep(.el-radio-button__inner) {
+  background: #21262d;
+  border-color: #30363d;
+  color: #8b949e;
+  padding: 6px 12px;
+}
+
+.input-mode-switch :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+  background: #238636;
+  border-color: #238636;
+  color: #fff;
+}
+
+/* 生成按钮 */
+.generate-btn {
+  width: 100%;
+  height: 40px;
+  margin-top: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #1a8cff 0%, #0066cc 100%);
+  border: none;
+}
+
+.generate-btn:hover {
+  background: linear-gradient(135deg, #3399ff 0%, #0077ee 100%);
+}
+
+/* 中间上传区域 */
+.upload-panel {
+  width: 280px;
+  flex-shrink: 0;
+}
+
+.upload-zone {
+  background: #161b22;
+  border: 2px dashed #30363d;
+  border-radius: 10px;
+  height: 100%;
   display: flex;
-  gap: 20px;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s;
+}
+
+.upload-zone:hover {
+  border-color: #58a6ff;
+}
+
+.ref-image-upload {
+  width: 100%;
+  height: 100%;
+}
+
+.ref-image-upload :deep(.el-upload-dragger) {
+  background: transparent;
+  border: none;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ref-image-upload :deep(.el-upload-list--picture-card) {
+  display: flex;
   flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px;
+  justify-content: center;
+  align-content: flex-start;
 }
-.input-card {
+
+.ref-image-upload :deep(.el-upload-list__item) {
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  background: #0d1117;
+  margin: 0;
+}
+
+.ref-image-upload :deep(.el-upload--picture-card) {
+  width: 100px;
+  height: 100px;
+  border-radius: 6px;
+  border: 2px dashed #30363d;
+  background: #0d1117;
+  margin: 0;
+}
+
+.upload-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: #8b949e;
+}
+
+.upload-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #c9d1d9;
+}
+
+.upload-icon {
+  font-size: 40px;
+  color: #6e7681;
+}
+
+.upload-hint {
+  font-size: 12px;
+  color: #6e7681;
+}
+
+.no-image-hint {
+  background: #161b22;
+  border: 2px dashed #30363d;
+  border-radius: 10px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #6e7681;
+}
+
+.no-image-hint p {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* 右侧结果区域 */
+.result-panel {
   flex: 1;
-  min-width: 300px;
+  min-width: 0;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.result-section {
+
+.result-header {
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #e6edf3;
+  background: #21262d;
+  border-bottom: 1px solid #30363d;
+}
+
+.result-content {
   flex: 1;
-  min-width: 300px;
+  overflow-y: auto;
+  padding: 12px;
 }
+
+.result-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #4a5568;
+}
+
+.result-placeholder p {
+  margin: 0;
+  font-size: 13px;
+}
+
 .image-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  background: #f5f7fa;
-  min-height: 200px;
-  border-radius: 4px;
+  background: #0d1117;
+  min-height: 300px;
+  border-radius: 6px;
+  padding: 16px;
+}
+
+.result-image {
+  max-width: 100%;
+  max-height: 500px;
+}
+
+.audio-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.audio-wrapper audio {
+  width: 100%;
+}
+
+.unsupported {
+  color: #6e7681;
+  font-size: 12px;
+}
+
+.score-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #30363d;
+}
+
+.score-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: #8b949e;
+  margin-bottom: 8px;
+}
+
+/* Element Plus 组件深度样式覆盖 */
+:deep(.el-divider__text) {
+  background: #161b22;
+  color: #8b949e;
+}
+
+:deep(.el-divider) {
+  border-color: #30363d;
 }
 </style>
 

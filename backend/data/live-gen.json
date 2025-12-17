@@ -2479,5 +2479,126 @@
     },
     "createdAt": "2025-12-17T10:22:38.282Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "0a9cbab0-a026-40a3-85d1-27916a21ffed",
+    "prompt": "猴子",
+    "imagePath": "/imagedb/e1/44/e144592c8ce6759ffec336bb02e923bd.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5405,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T10:34:23.449Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "617e7c1b-f09d-40a4-990e-7fd8929e5bd0",
+    "prompt": "转到正面",
+    "imagePath": "/imagedb/22/77/2277fe7d3b47d9808de89f16480ff802.png",
+    "imageUrls": [
+      "/imagedb/f2/83/f2836605d186d51804ddae2d90f446b0"
+    ],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png"
+    },
+    "duration": 19965,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 262,
+      "candidatesTokenCount": 1290,
+      "totalTokenCount": 1552,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 4
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1290
+        }
+      ]
+    },
+    "createdAt": "2025-12-17T10:36:14.562Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "ad09231a-79e0-4652-9b7a-8b105a49b0e6",
+    "prompt": "哪吒大战孙悟空",
+    "imagePath": "/imagedb/67/33/6733a48445f61a68f02598d92789bad0.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 512,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 2378,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T11:28:26.182Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "d79c2e0f-250b-40e0-aebe-89c5fe961483",
+    "prompt": "站立的狗",
+    "imagePath": "/imagedb/3e/df/3edf05059c807e17335e6be919d232c5.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5399,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T11:40:31.650Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "effb8ad7-47bd-40ce-9778-b8443381da4e",
+    "prompt": "黑猩猩扔石头",
+    "imagePath": "/imagedb/71/3a/713a4cd6d78b19371ae3cb82ce2e3c92.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 5424,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-17T11:50:33.880Z",
+    "dimensionScores": {}
   }
 ]
