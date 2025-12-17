@@ -1,6 +1,6 @@
 <template>
   <div class="score-input">
-    <el-form label-width="96px">
+    <el-form label-width="80px">
       <!-- 基础维度：用星级表示，默认0 => 3星 -->
       <el-form-item
         v-for="id in baseIds"

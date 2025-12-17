@@ -85,9 +85,9 @@
         </el-button>
       </div>
 
-      <!-- 中间参考图区域 -->
-      <div class="upload-panel">
-        <div class="upload-zone" v-if="showImage">
+      <!-- 中间参考图区域 - 仅在需要图片时显示 -->
+      <div class="upload-panel" v-if="showImage">
+        <div class="upload-zone">
           <el-upload
             ref="uploadRef"
             drag
@@ -109,17 +109,23 @@
             </div>
           </el-upload>
         </div>
-        
-        <!-- 如果不需要图片，显示提示 -->
-        <div v-else class="no-image-hint">
-          <el-icon :size="40" color="#666"><Picture /></el-icon>
-          <p>无需上传参考图</p>
-        </div>
       </div>
 
-      <!-- 右侧结果区域 -->
+      <!-- 结果区域 -->
       <div class="result-panel">
-        <div class="result-header">生成结果</div>
+        <div class="result-header">
+          <span>生成结果</span>
+          <el-button 
+            v-if="result" 
+            size="small" 
+            :type="showScore ? 'primary' : 'default'"
+            @click="showScore = !showScore"
+            class="score-toggle-btn"
+          >
+            <el-icon><Star /></el-icon>
+            {{ showScore ? '收起' : '评分' }}
+          </el-button>
+        </div>
         <div class="result-content" v-if="result">
           <div class="image-wrapper">
             <!-- 图片预览 -->
@@ -149,10 +155,23 @@
             
             <div v-else class="unsupported">暂不支持: {{ result.imagePath }}</div>
           </div>
-          
-          <!-- 评分组件 -->
-          <div class="score-section">
-            <div class="score-title">评分</div>
+        </div>
+        <div v-else class="result-placeholder">
+          <el-icon :size="48" color="#4a5568"><Monitor /></el-icon>
+          <p>等待生成结果</p>
+        </div>
+      </div>
+
+      <!-- 最右侧评分面板 -->
+      <transition name="slide-right">
+        <div class="score-panel" v-if="showScore && result">
+          <div class="score-header">
+            <span>评分</span>
+            <el-button size="small" text @click="showScore = false">
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+          <div class="score-content">
             <ScoreInput 
               :catalog="dimensions" 
               :initial-dimension-ids="[]"
@@ -161,18 +180,14 @@
             />
           </div>
         </div>
-        <div v-else class="result-placeholder">
-          <el-icon :size="48" color="#4a5568"><Monitor /></el-icon>
-          <p>等待生成结果</p>
-        </div>
-      </div>
+      </transition>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { Plus, Picture, Monitor } from '@element-plus/icons-vue';
+import { Plus, Monitor, Star, Close } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { listModels, generateImage, listDimensions, createQuestion, submitEvaluation } from '../../services/api';
 import ScoreInput from '../../components/ScoreInput.vue';
@@ -186,6 +201,7 @@ const loading = ref(false);
 const fileList = ref([]);
 const result = ref(null);
 const returnState = ref(null);
+const showScore = ref(false); // 评分区域是否展开
 
 const form = ref({
   modelId: '',
@@ -750,23 +766,6 @@ async function handleThumbnail(dataUrl) {
   color: #6e7681;
 }
 
-.no-image-hint {
-  background: #161b22;
-  border: 2px dashed #30363d;
-  border-radius: 10px;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  color: #6e7681;
-}
-
-.no-image-hint p {
-  margin: 0;
-  font-size: 13px;
-}
 
 /* 右侧结果区域 */
 .result-panel {
@@ -787,6 +786,17 @@ async function handleThumbnail(dataUrl) {
   color: #e6edf3;
   background: #21262d;
   border-bottom: 1px solid #30363d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.score-toggle-btn {
+  padding: 4px 10px;
+}
+
+.score-toggle-btn .el-icon {
+  margin-right: 4px;
 }
 
 .result-content {
@@ -844,17 +854,80 @@ async function handleThumbnail(dataUrl) {
   font-size: 12px;
 }
 
-.score-section {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid #30363d;
+/* 最右侧评分面板 */
+.score-panel {
+  width: 320px;
+  flex-shrink: 0;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.score-title {
-  font-size: 13px;
+.score-header {
+  padding: 10px 14px;
+  font-size: 14px;
   font-weight: 500;
+  color: #e6edf3;
+  background: #21262d;
+  border-bottom: 1px solid #30363d;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.score-content {
+  padding: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+}
+
+/* 评分面板过渡动画 */
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: all 0.3s ease;
+}
+
+.slide-right-enter-from,
+.slide-right-leave-to {
+  opacity: 0;
+  width: 0;
+  padding: 0;
+  margin-left: -16px;
+}
+
+.slide-right-enter-to,
+.slide-right-leave-from {
+  opacity: 1;
+  width: 320px;
+  margin-left: 0;
+}
+
+/* 评分面板内部样式覆盖 */
+.score-content :deep(.el-form-item) {
+  margin-bottom: 12px;
+}
+
+.score-content :deep(.el-form-item__label) {
+  font-size: 12px;
   color: #8b949e;
-  margin-bottom: 8px;
+}
+
+.score-content :deep(.el-textarea__inner) {
+  background: #0d1117;
+  border-color: #30363d;
+  color: #c9d1d9;
+}
+
+.score-content :deep(.el-rate) {
+  height: 20px;
+}
+
+.score-content :deep(.el-rate__icon) {
+  font-size: 16px;
 }
 
 /* Element Plus 组件深度样式覆盖 */
