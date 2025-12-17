@@ -122,15 +122,27 @@
       <div class="result-panel" v-if="result">
         <div class="result-header">
           <span>生成结果</span>
-          <el-button 
-            size="small" 
-            :type="showScore ? 'primary' : 'default'"
-            @click="showScore = !showScore"
-            class="score-toggle-btn"
-          >
-            <el-icon><Star /></el-icon>
-            {{ showScore ? '收起' : '评分' }}
-          </el-button>
+          <div class="result-actions">
+            <!-- 添加到参考图按钮 - 仅图片类型显示 -->
+            <el-button 
+              v-if="isImage(result.imagePath)"
+              size="small" 
+              @click="addResultToRef"
+              title="添加到参考图"
+            >
+              <el-icon><Picture /></el-icon>
+              加入参考
+            </el-button>
+            <el-button 
+              size="small" 
+              :type="showScore ? 'primary' : 'default'"
+              @click="showScore = !showScore"
+              class="score-toggle-btn"
+            >
+              <el-icon><Star /></el-icon>
+              {{ showScore ? '收起' : '评分' }}
+            </el-button>
+          </div>
         </div>
         <div class="result-content">
           <div class="image-wrapper">
@@ -189,7 +201,7 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { Plus, Star, Close } from '@element-plus/icons-vue';
+import { Plus, Star, Close, Picture } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { listModels, generateImage, listDimensions, createQuestion, submitEvaluation } from '../../services/api';
 import ScoreInput from '../../components/ScoreInput.vue';
@@ -397,6 +409,35 @@ function handlePreview(file) {
 
 function closeViewer() {
   showViewer.value = false;
+}
+
+// 将生成结果添加到参考图
+function addResultToRef() {
+  if (!result.value || !result.value.imagePath) return;
+  
+  const url = normalizeUrl(result.value.imagePath);
+  
+  // 检查是否已存在
+  const exists = fileList.value.some(f => f.url === url || f.response?.url === result.value.imagePath);
+  if (exists) {
+    ElMessage.warning('该图片已在参考图中');
+    return;
+  }
+  
+  // 检查数量限制
+  if (fileList.value.length >= 14) {
+    ElMessage.warning('参考图最多 14 张');
+    return;
+  }
+  
+  // 添加到 fileList
+  fileList.value.push({
+    name: result.value.imagePath.split('/').pop(),
+    url: url,
+    response: { url: result.value.imagePath }
+  });
+  
+  ElMessage.success('已添加到参考图');
 }
 
 async function handleGenerate() {
@@ -786,6 +827,12 @@ async function handleThumbnail(dataUrl) {
   border-bottom: 1px solid #e4e7ed;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+}
+
+.result-actions {
+  display: flex;
+  gap: 8px;
   align-items: center;
 }
 
