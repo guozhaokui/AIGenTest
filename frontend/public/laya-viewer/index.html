@@ -186,16 +186,37 @@
             scene = new Laya.Scene3D();
             Laya.stage.addChild(scene);
 
+            // 设置环境光照模式为球谐光照 (Spherical Harmonics)
+            scene.ambientMode = 1; // 1 = SphericalHarmonics
+            
+            // 设置球谐系数（从 Scene.ls 提取）
+            scene.ambientSH = new Float32Array([
+                0.561861515045166, 0.5691413879394531, 0.5156031250953674,
+                0.25098922848701477, 0.29723599553108215, 0.3360276222229004,
+                0.18643078207969666, 0.16357596218585968, 0.11102143675088882,
+                -0.5348716974258423, -0.507384181022644, -0.4003814160823822,
+                -0.24370312690734863, -0.22358225286006927, -0.1722458302974701,
+                0.11344613134860992, 0.10041586309671402, 0.07283135503530502,
+                -0.04577554389834404, -0.036940183490514755, -0.020133458077907562,
+                -0.28794020414352417, -0.2579245865345001, -0.19256529211997986,
+                0.20134146511554718, 0.1833409070968628, 0.1309514194726944
+            ]);
+            
             // 设置环境光颜色
-            scene.ambientMode = 0; // Solid Color
-            scene.ambientColor = new Laya.Color(0.5, 0.5, 0.5, 1);
+            scene.ambientColor = new Laya.Color(0.424308, 0.4578516, 0.5294118, 1);
+            
+            // IBL 反射采样数
+            scene._reflectionsIblSamples = 1024;
+            
+            // 加载天空盒和 IBL 环境贴图
+            setupSkyAndIBL(scene);
 
             // 创建相机
             camera = new Laya.Camera(0, 0.1, 1000);
             scene.addChild(camera);
             camera.transform.position = new Laya.Vector3(0, 1, 5);
             camera.transform.rotationEuler = new Laya.Vector3(-15, 0, 0);
-            camera.clearFlag = Laya.CameraClearFlags.SolidColor;
+            camera.clearFlag = Laya.CameraClearFlags.Sky;
             camera.clearColor = new Laya.Color(0.3921, 0.5843, 0.9294, 1);
             
             // 添加相机控制脚本
@@ -205,7 +226,7 @@
             const directionLight = new Laya.Sprite3D();
             scene.addChild(directionLight);
             directionLight.transform.position = new Laya.Vector3(5, 5, 5);
-            directionLight.transform.rotationEuler = new Laya.Vector3(-45, 45, 0);
+            directionLight.transform.rotationEuler = new Laya.Vector3(-12.5, 77.7, 0);
             const lightCom = directionLight.addComponent(Laya.DirectionLightCom);
             lightCom.color = new Laya.Color(1, 1, 1, 1);
             
@@ -307,6 +328,32 @@
                 this.distance = 5;
                 this.updateCamera();
             }
+        }
+
+        // 设置天空盒和 IBL 环境贴图
+        function setupSkyAndIBL(scene) {
+            // 尝试加载天空盒材质
+            Laya.loader.load('sky.lmat', Laya.Handler.create(null, (material) => {
+                if (material) {
+                    // 设置天空盒渲染器
+                    //scene.skyRenderer.meshType = Laya.SkyMeshType.Dome;
+                    scene.skyRenderer.material = material;
+                    console.log('[laya-viewer] 天空盒材质加载成功');
+                } else {
+                    console.log('[laya-viewer] 天空盒材质不存在，使用默认背景');
+                }
+            }), null, Laya.Loader.MATERIAL);
+            
+            // 尝试加载 IBL 环境贴图
+            Laya.loader.load('Scene/Scene.ktx', Laya.Handler.create(null, (texture) => {
+                if (texture) {
+                    scene.iblTex = texture;
+                    scene.iblTexRGBD = true;
+                    console.log('[laya-viewer] IBL 环境贴图加载成功');
+                } else {
+                    console.log('[laya-viewer] IBL 环境贴图不存在，使用默认环境');
+                }
+            }), null, Laya.Loader.TEXTURECUBE);
         }
 
         // 创建地面
