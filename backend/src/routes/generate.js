@@ -39,21 +39,36 @@ router.post('/', upload.any(), async (req, res, next) => {
     const { prompt, modelName, count, numberOfImages, imagePath, imagePaths } = req.body || {};
     console.log('[generate] Extracted prompt:', prompt);
     
-    // Check if it's a 3D model that might not require a prompt
+    // 读取模型配置，根据 inputMode 判断是否需要 prompt
     const models = await readJson(MODELS_FILE).catch(() => []);
-    let is3DModel = false;
+    let selectedModel = null;
     if (req.body && req.body.modelId) {
-      const selectedModel = models.find(m => m.id === req.body.modelId);
-      is3DModel = selectedModel?.driver === 'doubao' && selectedModel?.options?.model?.startsWith('doubao-seed3d');
+      selectedModel = models.find(m => m.id === req.body.modelId);
     }
     
-    // For 3D models, allow empty prompt if there are images
-    if (!prompt && !is3DModel) {
-      console.log('[generate] ERROR: Missing prompt for non-3D model, returning 400');
+    // 根据 inputMode 判断是否需要 prompt：
+    // - "prompt": 必须有 prompt
+    // - "image": 不需要 prompt，需要图片
+    // - "both": prompt 和图片都可以有
+    // - "exclusive": prompt 或图片二选一
+    const inputMode = selectedModel?.inputMode || 'both';
+    const hasImages = (req.files && req.files.length > 0) || imagePath || imagePaths;
+    
+    // 只有 inputMode 为 "prompt" 或 "both" 且没有图片时，才要求必须有 prompt
+    const requiresPrompt = inputMode === 'prompt' || (inputMode === 'both' && !hasImages);
+    
+    if (!prompt && requiresPrompt) {
+      console.log('[generate] ERROR: Missing prompt for model with inputMode:', inputMode);
       return res.status(400).json({ error: 'missing_prompt' });
     }
     
-    console.log('[generate] Model type:', is3DModel ? '3D Model' : 'Image Model');
+    // 对于 exclusive 模式，需要至少有 prompt 或 image
+    if (inputMode === 'exclusive' && !prompt && !hasImages) {
+      console.log('[generate] ERROR: Missing prompt or image for exclusive mode');
+      return res.status(400).json({ error: 'missing_prompt_or_image' });
+    }
+    
+    console.log('[generate] Input mode:', inputMode, 'hasPrompt:', !!prompt, 'hasImages:', !!hasImages);
     
     if (!GOOGLE_API_KEY) {
       console.log('[generate] ERROR: Missing API key, returning 500');

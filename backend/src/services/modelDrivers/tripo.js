@@ -3,8 +3,19 @@
 /**
  * Tripo3D 驱动
  * 用于 Tripo3D 图生 3D 模型
- * 文档: https://platform.tripo3d.ai/docs/quick-start
+ * 
+ * API 文档:
+ * - 生成: https://platform.tripo3d.com/docs/generation
+ * - 上传: https://platform.tripo3d.com/docs/upload
+ * 
+ * 流程:
+ * 1. 上传图片 -> 获取 image_token
+ * 2. 创建生成任务 -> 获取 task_id
+ * 3. 轮询任务状态 -> 获取模型 URL
+ * 4. 下载模型文件
  */
+
+const API_BASE = 'https://api.tripo3d.com/v2/openapi';
 
 /**
  * 获取网络请求分发器（用于处理代理设置）
@@ -24,21 +35,14 @@ function getDispatcher(config) {
 
 /**
  * 从 URL 下载内容
- * @param {string} url - 下载地址
- * @param {object} dispatcher - 网络分发器
- * @param {string} apiKey - API 密钥（如需要）
  */
 async function downloadContent(url, dispatcher, apiKey) {
   const headers = {};
-  // Tripo 下载链接可能需要认证
   if (apiKey) {
     headers['Authorization'] = `Bearer ${apiKey}`;
   }
   
-  const resp = await fetch(url, { 
-    dispatcher,
-    headers 
-  });
+  const resp = await fetch(url, { dispatcher, headers });
   if (!resp.ok) {
     throw new Error(`下载失败: ${resp.status}`);
   }
@@ -49,68 +53,15 @@ async function downloadContent(url, dispatcher, apiKey) {
 }
 
 /**
- * 轮询任务状态
- * @param {string} taskId - 任务 ID
- * @param {string} apiKey - API 密钥
- * @param {object} dispatcher - 网络分发器
- */
-async function pollTask(taskId, apiKey, dispatcher) {
-  const pollUrl = `https://api.tripo3d.com/v2/openapi/task/${taskId}`;
-  const maxAttempts = 120; // 最多轮询 120 次（间隔 10 秒，共 20 分钟）
-  const intervalMs = 10000; // 轮询间隔 10 秒
-
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    const response = await fetch(pollUrl, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`
-      },
-      dispatcher
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Tripo API 轮询失败: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const result = await response.json();
-    
-    // Tripo API 响应格式: { code: 0, data: { status: 'success'|'running'|'failed', ... } }
-    if (result.code !== 0) {
-      throw new Error(`Tripo API 错误: ${result.message || JSON.stringify(result)}`);
-    }
-    
-    const status = result.data?.status;
-    const progress = result.data?.progress || 0;
-    
-    console.log(`[tripo-3d] 轮询第 ${attempt + 1}/${maxAttempts} 次, 状态: ${status}, 进度: ${progress}%`);
-
-    if (status === 'success') {
-      return result.data;
-    } else if (status === 'failed') {
-      throw new Error(`3D 生成失败: ${result.data?.error || '未知错误'}`);
-    } else if (status === 'cancelled') {
-      throw new Error('3D 生成任务已取消');
-    }
-
-    // 等待后继续轮询
-    await new Promise(resolve => setTimeout(resolve, intervalMs));
-  }
-
-  throw new Error('3D 生成超时，已达到最大轮询次数');
-}
-
-/**
- * 上传图片并获取文件 token
- * @param {string} imageBase64 - Base64 编码的图片数据
- * @param {string} mimeType - 图片 MIME 类型
- * @param {string} apiKey - API 密钥
- * @param {object} dispatcher - 网络分发器
+ * 上传图片到 Tripo3D
+ * 
+ * API: POST /upload
+ * 请求: multipart/form-data, file 字段
+ * 响应: { code: 0, data: { image_token: "xxx" } }
  */
 async function uploadImage(imageBase64, mimeType, apiKey, dispatcher) {
-  const uploadUrl = 'https://api.tripo3d.com/v2/openapi/upload';
+  const uploadUrl = `${API_BASE}/upload`;
   
-  // 将 Base64 转换为二进制 Buffer
   const buffer = Buffer.from(imageBase64, 'base64');
   
   // 根据 MIME 类型确定文件扩展名
@@ -123,38 +74,154 @@ async function uploadImage(imageBase64, mimeType, apiKey, dispatcher) {
   const ext = extMap[mimeType] || 'png';
   const filename = `image.${ext}`;
   
-  // 使用 form-data 包创建 FormData
+  console.log(`[tripo] 上传图片到 ${uploadUrl}, 大小: ${buffer.length} 字节, 类型: ${mimeType}`);
+  
+  // 使用 form-data 包 + axios 进行上传（更稳定的 multipart 支持）
   const FormData = require('form-data');
+  const axios = require('axios');
+  const https = require('https');
+  
   const formData = new FormData();
   formData.append('file', buffer, {
     filename: filename,
     contentType: mimeType
   });
   
-  // 发送上传请求
-  const response = await fetch(uploadUrl, {
+  try {
+    const response = await axios.post(uploadUrl, formData, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        ...formData.getHeaders()
+      },
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      // 禁用代理，直接连接
+      proxy: false,
+      httpsAgent: new https.Agent({ rejectUnauthorized: true })
+    });
+    
+    const result = response.data;
+    
+    if (result.code !== 0) {
+      throw new Error(`上传错误: ${result.message || JSON.stringify(result)}`);
+    }
+    
+    const imageToken = result.data?.image_token;
+    if (!imageToken) {
+      throw new Error(`上传成功但未返回 image_token: ${JSON.stringify(result.data)}`);
+    }
+    
+    console.log('[tripo] 图片上传成功, token:', imageToken);
+    return imageToken;
+  } catch (error) {
+    if (error.response) {
+      throw new Error(`上传失败: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+    }
+    throw error;
+  }
+}
+
+/**
+ * 创建 3D 生成任务
+ * 
+ * API: POST /task
+ * 请求体:
+ * - type: "image_to_model" | "text_to_model" | "multiview_to_model"
+ * - file/files: 图片 token
+ * - prompt: 文本提示词
+ * - model_version: 模型版本
+ * - 其他可选参数
+ */
+async function createTask(payload, apiKey, dispatcher) {
+  const taskUrl = `${API_BASE}/task`;
+  
+  console.log('[tripo] 创建任务:', JSON.stringify(payload, null, 2));
+  
+  const response = await fetch(taskUrl, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      ...formData.getHeaders()
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
     },
-    body: formData,
+    body: JSON.stringify(payload),
     dispatcher
   });
 
+  // 获取 Trace ID
+  const traceId = response.headers.get('X-Tripo-Trace-ID') || response.headers.get('x-tripo-trace-id');
+  if (traceId) {
+    console.log(`[tripo] Trace ID: ${traceId}`);
+  }
+
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Tripo 上传失败: ${response.status} ${response.statusText} - ${errorText}`);
+    throw new Error(`创建任务失败: ${response.status} ${response.statusText} - ${errorText}`);
   }
 
   const result = await response.json();
   
   if (result.code !== 0) {
-    throw new Error(`Tripo 上传错误: ${result.message || JSON.stringify(result)}`);
+    throw new Error(`任务创建错误: ${result.message || JSON.stringify(result)}`);
   }
   
-  console.log('[tripo-3d] 图片上传成功, token:', result.data?.image_token);
-  return result.data?.image_token;
+  const taskId = result.data?.task_id;
+  if (!taskId) {
+    throw new Error(`任务创建成功但未返回 task_id: ${JSON.stringify(result.data)}`);
+  }
+  
+  console.log(`[tripo] 任务已创建, ID: ${taskId}`);
+  return { taskId, traceId };
+}
+
+/**
+ * 轮询任务状态
+ * 
+ * API: GET /task/{task_id}
+ * 响应: { code: 0, data: { status: "success"|"running"|"failed", output: {...} } }
+ */
+async function pollTask(taskId, apiKey, dispatcher) {
+  const pollUrl = `${API_BASE}/task/${taskId}`;
+  const maxAttempts = 120; // 最多 20 分钟
+  const intervalMs = 10000; // 10 秒间隔
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const response = await fetch(pollUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      },
+      dispatcher
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`轮询失败: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.code !== 0) {
+      throw new Error(`轮询错误: ${result.message || JSON.stringify(result)}`);
+    }
+    
+    const data = result.data;
+    const status = data?.status;
+    const progress = data?.progress || 0;
+    
+    console.log(`[tripo] 轮询 ${attempt + 1}/${maxAttempts}, 状态: ${status}, 进度: ${progress}%`);
+
+    if (status === 'success') {
+      return data;
+    } else if (status === 'failed') {
+      throw new Error(`生成失败: ${data?.error || data?.message || '未知错误'}`);
+    } else if (status === 'cancelled') {
+      throw new Error('任务已取消');
+    }
+
+    await new Promise(resolve => setTimeout(resolve, intervalMs));
+  }
+
+  throw new Error('生成超时');
 }
 
 /**
@@ -162,9 +229,38 @@ async function uploadImage(imageBase64, mimeType, apiKey, dispatcher) {
  */
 function getLocalTimeString() {
   const now = new Date();
-  const offset = now.getTimezoneOffset() * 60000;
-  const localTime = new Date(now.getTime() - offset);
-  return localTime.toISOString().replace('Z', '') + '+' + String(Math.abs(now.getTimezoneOffset() / 60)).padStart(2, '0') + ':00';
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  
+  const tzOffset = -now.getTimezoneOffset();
+  const tzSign = tzOffset >= 0 ? '+' : '-';
+  const tzHours = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
+  const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}${tzSign}${tzHours}:${tzMinutes}`;
+}
+
+/**
+ * 检查账户余额（调试用）
+ */
+async function checkBalance(apiKey, dispatcher) {
+  try {
+    const response = await fetch(`${API_BASE}/user/balance`, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
+      dispatcher
+    });
+    const data = await response.json();
+    console.log('[tripo] 账户余额:', JSON.stringify(data, null, 2));
+    return data;
+  } catch (e) {
+    console.log('[tripo] 无法获取余额:', e.message);
+    return null;
+  }
 }
 
 /**
@@ -180,227 +276,162 @@ async function generate({ apiKey, model, prompt, images, config }) {
 
   const dispatcher = getDispatcher(config);
   
-  // 3D 生成
+  console.log('[tripo] ===== 开始 3D 生成 =====');
+  console.log('[tripo] API Key:', apiKey ? `${apiKey.slice(0, 8)}...${apiKey.slice(-4)}` : '未设置');
+  
+  // 检查余额
+  await checkBalance(apiKey, dispatcher);
+  
   return generate3D({ apiKey, model, prompt, images, config, dispatcher });
 }
 
 /**
- * 3D 生成函数
+ * 3D 生成主流程
  */
 async function generate3D({ apiKey, model, prompt, images, config, dispatcher }) {
-  const apiUrl = 'https://api.tripo3d.com/v2/openapi/task';
-  
   const hasImage = images && images.length > 0;
   const hasPrompt = prompt && prompt.trim();
   
-  // 需要至少有图片或提示词
   if (!hasImage && !hasPrompt) {
-    throw new Error('Tripo 3D 生成需要输入图片或提示词');
+    throw new Error('需要提供图片或提示词');
   }
   
+  // ========== 步骤 1: 构建任务参数 ==========
   let payload = {};
+  let uploadedTokens = [];
   
   if (hasImage) {
-    // 检查是否有多张图片（多视图模式 - Tripo 3.0 特性）
+    // 上传所有图片
+    console.log(`[tripo] 上传 ${images.length} 张图片...`);
+    for (const img of images) {
+      const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
+      uploadedTokens.push(token);
+    }
+    
     if (images.length > 1) {
-      // 多视图转 3D 模式（Tripo 3.0）
-      console.log(`[tripo-3d] 上传 ${images.length} 张图片用于多视图模式...`);
-      const imageTokens = [];
-      for (const img of images) {
-        const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
-        imageTokens.push(token);
-      }
-      
+      // 多视图模式
       payload = {
         type: 'multiview_to_model',
-        files: imageTokens.map(token => ({
+        files: uploadedTokens.map(token => ({
           type: 'image',
           file_token: token
         }))
       };
     } else {
-      // 单图转 3D 模式
-      const img = images[0];
-      
-      // 先上传图片获取文件 token
-      console.log('[tripo-3d] 上传图片...');
-      const imageToken = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
-      
+      // 单图模式
       payload = {
         type: 'image_to_model',
         file: {
           type: 'image',
-          file_token: imageToken
+          file_token: uploadedTokens[0]
         }
       };
     }
   } else {
-    // 文本转 3D 模式（无图片，仅提示词）
+    // 文本模式
     payload = {
       type: 'text_to_model',
       prompt: prompt.trim()
     };
   }
   
-  // 添加可选的模型版本（如果是 "default" 则跳过，使用 API 的最新版本）
+  // ========== 步骤 2: 添加可选参数 ==========
+  
+  // 模型版本（跳过 default）
   if (config.modelVersion && config.modelVersion !== 'default') {
     payload.model_version = config.modelVersion;
   }
   
-  // 添加可选的面数限制
+  // 面数限制
   if (config.faceLimit) {
     payload.face_limit = parseInt(config.faceLimit);
   }
   
-  // 添加纹理设置
+  // 纹理设置
   if (config.texture !== undefined) {
     payload.texture = config.texture !== false && config.texture !== 'false';
   }
   
-  // 添加 PBR 设置
+  // PBR 材质
   if (config.pbr !== undefined) {
     payload.pbr = config.pbr === true || config.pbr === 'true';
   }
   
-  // Tripo 3.0 新特性
-  // 添加方向控制（auto, align_image, none）
-  if (config.orientation) {
+  // 方向控制
+  if (config.orientation && config.orientation !== 'auto') {
     payload.orientation = config.orientation;
   }
   
-  // 添加文本转 3D 的风格控制
-  if (payload.type === 'text_to_model' && config.style) {
-    payload.style = config.style;
+  // 文本模式专用参数
+  if (payload.type === 'text_to_model') {
+    if (config.style) {
+      payload.style = config.style;
+    }
+    if (config.negativePrompt) {
+      payload.negative_prompt = config.negativePrompt;
+    }
   }
   
-  // 添加文本转 3D 的负面提示词
-  if (payload.type === 'text_to_model' && config.negativePrompt) {
-    payload.negative_prompt = config.negativePrompt;
+  // ========== 步骤 3: 创建任务 ==========
+  const { taskId, traceId } = await createTask(payload, apiKey, dispatcher);
+  
+  // ========== 步骤 4: 轮询结果 ==========
+  const taskResult = await pollTask(taskId, apiKey, dispatcher);
+  console.log('[tripo] 任务完成:', JSON.stringify(taskResult, null, 2));
+  
+  // ========== 步骤 5: 提取模型 URL ==========
+  let modelUrl = null;
+  const output = taskResult.output || {};
+  
+  // 优先使用 PBR 模型
+  modelUrl = output.pbr_model || output.model || output.base_model;
+  
+  if (!modelUrl) {
+    throw new Error(`未返回模型 URL: ${JSON.stringify(output)}`);
   }
-
-  console.log('[tripo-3d] 创建任务，参数:', JSON.stringify(payload, null, 2));
-  console.log('[tripo-3d] 使用 API Key:', apiKey ? `${apiKey.slice(0, 8)}...${apiKey.slice(-4)}` : '未设置');
-
-  try {
-    // 可选：检查账户余额（调试用）
-    console.log('[tripo-3d] 检查账户余额...');
-    try {
-      const balanceResp = await fetch('https://api.tripo3d.com/v2/openapi/user/balance', {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${apiKey}` },
-        dispatcher
-      });
-      const balanceData = await balanceResp.json();
-      console.log('[tripo-3d] 账户余额信息:', JSON.stringify(balanceData, null, 2));
-    } catch (e) {
-      console.log('[tripo-3d] 无法获取余额:', e.message);
+  
+  console.log(`[tripo] 模型 URL: ${modelUrl}`);
+  
+  // ========== 步骤 6: 下载模型 ==========
+  console.log('[tripo] 下载模型...');
+  const startDownload = Date.now();
+  const { buffer, contentType } = await downloadContent(modelUrl, dispatcher, null);
+  console.log(`[tripo] 下载完成, 耗时 ${Date.now() - startDownload}ms, 大小 ${buffer.length} 字节`);
+  
+  // ========== 步骤 7: 构建返回结果 ==========
+  const usage = taskResult.running_left_credits !== undefined ? {
+    credits_used: taskResult.running_left_credits,
+    total_tokens: taskResult.running_left_credits * 1000
+  } : null;
+  
+  const meta = {
+    traceId: traceId || null,
+    taskId: taskId,
+    createdAt: getLocalTimeString(),
+    taskType: payload.type,
+    modelVersion: payload.model_version || 'default',
+    parameters: {
+      texture: payload.texture,
+      pbr: payload.pbr,
+      faceLimit: payload.face_limit,
+      orientation: payload.orientation,
+      style: payload.style,
+      negativePrompt: payload.negative_prompt
+    },
+    taskResult: {
+      status: taskResult.status,
+      progress: taskResult.progress,
+      output: output
     }
-
-    // 创建 3D 生成任务
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify(payload),
-      dispatcher
-    });
-
-    // 获取 Trace ID 用于跟踪
-    const traceId = response.headers.get('X-Tripo-Trace-ID') || response.headers.get('x-tripo-trace-id');
-    if (traceId) {
-      console.log(`[tripo-3d] Trace ID: ${traceId}`);
-    }
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Tripo API 失败: ${response.status} ${response.statusText} - ${errorText}`);
-    }
-
-    const result = await response.json();
-    
-    if (result.code !== 0) {
-      throw new Error(`Tripo API 错误: ${result.message || JSON.stringify(result)}`);
-    }
-    
-    const taskId = result.data?.task_id;
-    
-    if (!taskId) {
-      throw new Error('Tripo API 未返回任务 ID');
-    }
-    
-    console.log(`[tripo-3d] 任务已创建，ID: ${taskId}`);
-    
-    // 轮询获取结果
-    const taskResult = await pollTask(taskId, apiKey, dispatcher);
-    
-    // 打印完整的任务结果（调试用）
-    console.log('[tripo-3d] 任务成功，完整结果:', JSON.stringify(taskResult, null, 2));
-    
-    // 从结果中提取模型 URL
-    // Tripo 返回格式: { output: { model: "url_to_glb" } } 或 { output: { pbr_model: "url" } }
-    let modelUrl = null;
-    
-    if (taskResult.output) {
-      // 优先使用 PBR 模型（如果有）
-      modelUrl = taskResult.output.pbr_model || taskResult.output.model;
-    }
-    
-    if (!modelUrl) {
-      throw new Error(`Tripo API 未返回模型 URL。可用输出: ${JSON.stringify(taskResult.output)}`);
-    }
-    
-    console.log(`[tripo-3d] 3D 生成成功，模型 URL: ${modelUrl}`);
-    
-    // 下载 3D 模型（Tripo URL 通常不需要认证头）
-    console.log('[tripo-3d] 下载模型...');
-    const startDownload = Date.now();
-    const { buffer, contentType } = await downloadContent(modelUrl, dispatcher, null);
-    console.log(`[tripo-3d] 下载完成，耗时 ${Date.now() - startDownload}ms，大小: ${buffer.length} 字节`);
-    
-    const base64 = buffer.toString('base64');
-    
-    // 提取使用信息（如果有）
-    const usage = taskResult.running_left_credits !== undefined ? {
-      credits_used: taskResult.running_left_credits,
-      total_tokens: taskResult.running_left_credits * 1000 // 近似 token 等价
-    } : null;
-    
-    // 构建元数据
-    const meta = {
-      traceId: traceId || null,
-      taskId: taskId,
-      createdAt: getLocalTimeString(),
-      taskType: payload.type,
-      modelVersion: payload.model_version || 'default',
-      parameters: {
-        texture: payload.texture,
-        pbr: payload.pbr,
-        faceLimit: payload.face_limit,
-        orientation: payload.orientation,
-        style: payload.style,
-        negativePrompt: payload.negative_prompt
-      },
-      taskResult: {
-        status: taskResult.status,
-        progress: taskResult.progress,
-        output: taskResult.output
-      }
-    };
-    
-    return {
-      dataBase64: base64,
-      mimeType: contentType || 'model/gltf-binary',
-      usage,
-      meta,
-      // 返回模型文件的相对路径（相对于模型目录），供前端显示
-      modelPath: 'model.glb'
-    };
-
-  } catch (error) {
-    throw new Error(`Tripo 3D 驱动错误: ${error.message}`);
-  }
+  };
+  
+  return {
+    dataBase64: buffer.toString('base64'),
+    mimeType: contentType || 'model/gltf-binary',
+    usage,
+    meta,
+    modelPath: 'model.glb'
+  };
 }
 
 module.exports = { generate };

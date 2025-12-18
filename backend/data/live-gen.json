@@ -2614,5 +2614,32 @@
     "createdAt": "2025-12-18T08:05:29.629Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/40cabaf2-eaa9-454e-a026-448191c44d61/c23b4ae1-aa48-413a-a95a-507ee59be90d/thumbnail.jpg"
+  },
+  {
+    "id": "9b4a462a-cf94-4127-8a8b-a91264dab1fb",
+    "prompt": "",
+    "imagePath": "/modeldb/5ef714be-be33-4e60-9d35-3364ec684234/9d45838b-94db-425a-ad6a-427d3adf1d4f",
+    "imageUrls": [
+      "/imagedb/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": ""
+    },
+    "duration": 63857,
+    "info3d": {
+      "modelDir": "/modeldb/5ef714be-be33-4e60-9d35-3364ec684234/9d45838b-94db-425a-ad6a-427d3adf1d4f",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-18T10:00:04.727Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/5ef714be-be33-4e60-9d35-3364ec684234/9d45838b-94db-425a-ad6a-427d3adf1d4f/thumbnail.jpg"
   }
 ]
