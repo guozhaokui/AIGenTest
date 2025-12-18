@@ -384,6 +384,32 @@
             }), null, null, null, null, Laya.Loader.HIERARCHY);
         }
         
+        // 截取正方形缩略图（取屏幕中间区域）
+        function captureSquareThumbnail(canvas, size) {
+            const w = canvas.width;
+            const h = canvas.height;
+            
+            // 计算正方形裁剪区域（取中间）
+            const squareSize = Math.min(w, h);
+            const sx = Math.floor((w - squareSize) / 2);
+            const sy = Math.floor((h - squareSize) / 2);
+            
+            // 创建临时 canvas 进行裁剪和缩放
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = size;
+            tempCanvas.height = size;
+            const tempCtx = tempCanvas.getContext('2d');
+            
+            // 从原始 canvas 裁剪中间正方形区域并缩放
+            tempCtx.drawImage(
+                canvas,
+                sx, sy, squareSize, squareSize,  // 源区域
+                0, 0, size, size                  // 目标区域
+            );
+            
+            return tempCanvas.toDataURL('image/jpeg', 0.85);
+        }
+
         // 等待指定帧数后截图
         let captureFrameCount = 0;
         let captureModelPath = '';
@@ -432,15 +458,26 @@
                     const center = new Laya.Vector3();
                     bounds.getCenter(center);
                     const extent = bounds.getExtent();
-                    const maxExtent = Math.max(extent.x, extent.y, extent.z);
                     
-                    // 根据相机 FOV 计算最佳距离（让模型填满视野）
+                    // 由于我们截取正方形区域，需要确保模型在正方形内完全可见
+                    // 计算从斜上方观察时模型的可见范围
+                    const pitch = 25 * Math.PI / 180;  // 俯仰角
+                    const yaw = 35 * Math.PI / 180;    // 偏航角
+                    
+                    // 考虑旋转后的有效尺寸（取最大范围以确保完全可见）
+                    const effectiveSize = Math.max(
+                        extent.x * 2,
+                        extent.y * 2,
+                        extent.z * 2,
+                        Math.sqrt(extent.x * extent.x + extent.z * extent.z) * 2  // 对角线
+                    );
+                    
+                    // 根据相机 FOV 计算最佳距离
+                    // 由于截取正方形，需要用较大的边距（1.5倍）确保模型完全在视野内
                     const fov = camera.fieldOfView * Math.PI / 180;
-                    const distance = (maxExtent * 1.2) / Math.tan(fov / 2);
+                    const distance = (effectiveSize * 0.8) / Math.tan(fov / 2);
                     
-                    // 设置相机位置（从斜上方45度角观察）
-                    const pitch = 20 * Math.PI / 180;
-                    const yaw = 30 * Math.PI / 180;
+                    // 设置相机位置
                     const x = distance * Math.cos(pitch) * Math.sin(yaw);
                     const y = distance * Math.sin(pitch);
                     const z = distance * Math.cos(pitch) * Math.cos(yaw);
@@ -469,8 +506,8 @@
                         ctx.finish();
                     }
                     
-                    // 截图
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    // 截取正方形缩略图（取屏幕中间区域）
+                    const dataUrl = captureSquareThumbnail(canvas, 512);
                     
                     // 检查是否是空白图片
                     if (dataUrl.length < 1000) {
@@ -616,7 +653,8 @@
                     ctx.finish();
                 }
                 
-                const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                // 截取正方形缩略图（取屏幕中间区域）
+                const dataUrl = captureSquareThumbnail(canvas, 512);
                 
                 if (dataUrl.length < 1000) {
                     console.warn('截图可能是空的');

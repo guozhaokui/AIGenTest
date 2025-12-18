@@ -2641,5 +2641,59 @@
     "createdAt": "2025-12-18T10:00:04.727Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/5ef714be-be33-4e60-9d35-3364ec684234/9d45838b-94db-425a-ad6a-427d3adf1d4f/thumbnail.jpg"
+  },
+  {
+    "id": "7cb3f086-707c-4b78-b373-6c35997cf69b",
+    "prompt": "",
+    "imagePath": "/modeldb/17b8dabe-dffa-4bd9-8f6e-fe4d1afdad3c/6f215cfb-bb1f-437a-9aa2-eea83cfe5698",
+    "imageUrls": [
+      "/imagedb/c0/75/c07555bcb616066191cb4af800205779.jpg"
+    ],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": ""
+    },
+    "duration": 63298,
+    "info3d": {
+      "modelDir": "/modeldb/17b8dabe-dffa-4bd9-8f6e-fe4d1afdad3c/6f215cfb-bb1f-437a-9aa2-eea83cfe5698",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-18T10:11:26.088Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/17b8dabe-dffa-4bd9-8f6e-fe4d1afdad3c/6f215cfb-bb1f-437a-9aa2-eea83cfe5698/thumbnail.jpg"
+  },
+  {
+    "id": "8407f4d8-9209-4b78-9fe0-9b41576b9fab",
+    "prompt": "",
+    "imagePath": "/modeldb/cb4b2a02-f468-4985-9bb2-fb2b4c718159/215941c7-c2d9-4965-ab0a-796d4b5a4da4",
+    "imageUrls": [
+      "/imagedb/86/72/8672cd91599c5a0fde2ec627fbda8d3f.jpg"
+    ],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": ""
+    },
+    "duration": 63512,
+    "info3d": {
+      "modelDir": "/modeldb/cb4b2a02-f468-4985-9bb2-fb2b4c718159/215941c7-c2d9-4965-ab0a-796d4b5a4da4",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-18T10:15:07.033Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/cb4b2a02-f468-4985-9bb2-fb2b4c718159/215941c7-c2d9-4965-ab0a-796d4b5a4da4/thumbnail.jpg"
   }
 ]

@@ -142,7 +142,8 @@ router.post('/', upload.any(), async (req, res, next) => {
           const ct = resp.headers.get('content-type') || 'image/png';
           inputImages.push({
             dataBase64: buf.toString('base64'),
-            mimeType: ct
+            mimeType: ct,
+            originalPath: raw  // 保存原始 URL
           });
           continue;
         }
@@ -167,7 +168,8 @@ router.post('/', upload.any(), async (req, res, next) => {
         const ext = (abs.split('.').pop() || 'png').toLowerCase();
         inputImages.push({
           dataBase64: buf.toString('base64'),
-          mimeType: extToMime(ext)
+          mimeType: extToMime(ext),
+          originalPath: `/${rel}`  // 保存相对路径（以 / 开头）
         });
       } catch (e) {
         // eslint-disable-next-line no-console

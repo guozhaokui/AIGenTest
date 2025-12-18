@@ -299,13 +299,23 @@ async function generate3D({ apiKey, model, prompt, images, config, dispatcher })
   // ========== 步骤 1: 构建任务参数 ==========
   let payload = {};
   let uploadedTokens = [];
+  let inputImages = []; // 保存输入图片信息
   
   if (hasImage) {
     // 上传所有图片
     console.log(`[tripo] 上传 ${images.length} 张图片...`);
-    for (const img of images) {
+    for (let i = 0; i < images.length; i++) {
+      const img = images[i];
       const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
       uploadedTokens.push(token);
+      // 保存图片信息（原始路径和 file_token）
+      inputImages.push({
+        index: i,
+        originalPath: img.originalPath || null,
+        mimeType: img.mimeType,
+        size: img.dataBase64.length,
+        fileToken: token
+      });
     }
     
     if (images.length > 1) {
@@ -410,6 +420,8 @@ async function generate3D({ apiKey, model, prompt, images, config, dispatcher })
     createdAt: getLocalTimeString(),
     taskType: payload.type,
     modelVersion: payload.model_version || 'default',
+    // 保存参考图片信息
+    inputImages: inputImages.length > 0 ? inputImages : null,
     parameters: {
       texture: payload.texture,
       pbr: payload.pbr,
