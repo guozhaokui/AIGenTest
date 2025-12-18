@@ -244,6 +244,23 @@ router.post('/', upload.any(), async (req, res, next) => {
         // 返回目录路径，文件结构固定为 pbr/mesh_textured_pbr.glb 和 rgb/mesh_textured.glb
         const modelDir = `/modeldb/${questionUuid}/${resultUuid}`;
         console.log(`[generate] 3D model extracted to ${modelDir}`);
+        
+        // 保存 meta.json 元数据文件（使用本地时间）
+        const metaData = {
+          generatedAt: getLocalTimeString(),
+          modelId: selected.id,
+          driver: selected.driver,
+          prompt: prompt || null,
+          inputImageCount: inputImages.length,
+          duration: duration,
+          usage: usage,
+          // 来自驱动的元数据
+          ...(out.meta || {})
+        };
+        
+        const metaPath = path.join(outputDir, 'meta.json');
+        await fs.writeFile(metaPath, JSON.stringify(metaData, null, 2), 'utf-8');
+        console.log(`[generate] Meta saved to ${modelDir}/meta.json`);
           
         return res.json({ 
           imagePath: modelDir,
@@ -270,13 +287,30 @@ router.post('/', upload.any(), async (req, res, next) => {
           
           await fs.mkdir(outputDir, { recursive: true });
           
-          // 保存 GLB 文件到 model.glb
-          const modelFilename = 'model.glb';
+          // 从驱动返回的 modelPath 获取模型文件名，默认为 model.glb
+          const modelFilename = out.modelPath || 'model.glb';
           const abs = path.join(outputDir, modelFilename);
           await fs.writeFile(abs, buf);
           
           const modelDir = `/modeldb/${questionUuid}/${resultUuid}`;
           console.log(`[generate] 3D model saved to ${modelDir}/${modelFilename}`);
+          
+          // 保存 meta.json 元数据文件（使用本地时间）
+          const metaData = {
+            generatedAt: getLocalTimeString(),
+            modelId: selected.id,
+            driver: selected.driver,
+            prompt: prompt || null,
+            inputImageCount: inputImages.length,
+            duration: duration,
+            usage: usage,
+            // 来自驱动的元数据（如 Tripo 的 traceId 等）
+            ...(out.meta || {})
+          };
+          
+          const metaPath = path.join(outputDir, 'meta.json');
+          await fs.writeFile(metaPath, JSON.stringify(metaData, null, 2), 'utf-8');
+          console.log(`[generate] Meta saved to ${modelDir}/meta.json`);
           
           return res.json({ 
             imagePath: modelDir,
@@ -284,7 +318,7 @@ router.post('/', upload.any(), async (req, res, next) => {
             info3d: { 
               modelDir,
               isSingleFile: true,  // 标记为单个文件，非 ZIP 解压
-              modelFile: modelFilename
+              modelPath: modelFilename  // 返回模型文件相对路径
             },
             usage
           });
@@ -339,6 +373,28 @@ function maskKey(key) {
   if (!key || typeof key !== 'string') return null;
   if (key.length <= 8) return `${'*'.repeat(Math.max(0, key.length - 2))}${key.slice(-2)}`;
   return `${key.slice(0, 2)}${'*'.repeat(key.length - 6)}${key.slice(-4)}`;
+}
+
+/**
+ * 获取本地时间字符串（带时区偏移）
+ */
+function getLocalTimeString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  const hours = String(now.getHours()).padStart(2, '0');
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const ms = String(now.getMilliseconds()).padStart(3, '0');
+  
+  // 计算时区偏移
+  const tzOffset = -now.getTimezoneOffset();
+  const tzSign = tzOffset >= 0 ? '+' : '-';
+  const tzHours = String(Math.floor(Math.abs(tzOffset) / 60)).padStart(2, '0');
+  const tzMinutes = String(Math.abs(tzOffset) % 60).padStart(2, '0');
+  
+  return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}${tzSign}${tzHours}:${tzMinutes}`;
 }
 
 function serializeError(err) {

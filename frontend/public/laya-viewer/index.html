@@ -113,18 +113,31 @@
         let ground = null;
         let modelOptions = [];
 
-        // 解析模型路径
-        const modelPath = getQueryParam('url');
-        if (modelPath) {
-            // 匹配两级 uuid: /modeldb/{questionUuid}/{resultUuid}
-            const uuidMatch = modelPath.match(/\/modeldb\/([^\/]+\/[^\/]+)/);
-            if (uuidMatch && uuidMatch[1]) {
-                const uuidPath = uuidMatch[1];
-                modelOptions = [
-                    { name: 'PBR模型', path: `${API_BASE}/modeldb/${uuidPath}/pbr/mesh_textured_pbr.glb` },
-                    { name: 'RGB模型', path: `${API_BASE}/modeldb/${uuidPath}/rgb/mesh_textured.glb` }
-                ];
+        // 解析模型列表
+        // 优先使用 models 参数（JSON 数组格式）
+        // 格式: models=[{"name":"模型名","path":"/path/to/model.glb"}, ...]
+        // 向后兼容: 也支持单个 url 参数
+        const modelsParam = getQueryParam('models');
+        const urlParam = getQueryParam('url');
+        
+        if (modelsParam) {
+            // 新格式：直接使用传入的模型列表
+            try {
+                const parsed = JSON.parse(modelsParam);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    modelOptions = parsed.map(item => ({
+                        name: item.name || '3D模型',
+                        path: item.path.startsWith('http') ? item.path : `${API_BASE}${item.path}`
+                    }));
+                }
+            } catch (e) {
+                console.error('解析 models 参数失败:', e);
             }
+        } else if (urlParam) {
+            // 向后兼容：单个 url 参数
+            modelOptions = [
+                { name: '3D模型', path: urlParam.startsWith('http') ? urlParam : `${API_BASE}${urlParam}` }
+            ];
         }
 
         // 填充模型选择下拉框

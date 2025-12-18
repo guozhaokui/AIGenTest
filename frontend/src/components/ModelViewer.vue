@@ -1,13 +1,5 @@
 <template>
   <div class="model-viewer-container">
-    <!-- 模型类型选择器 (仅对 ZIP 解压的模型显示) -->
-    <div class="model-controls" v-if="!isSingleFile">
-      <el-radio-group v-model="selectedType" size="small">
-        <el-radio-button value="pbr">PBR 模型</el-radio-button>
-        <el-radio-button value="rgb">RGB 模型</el-radio-button>
-      </el-radio-group>
-    </div>
-    
     <iframe 
       :src="viewerUrl" 
       frameborder="0" 
@@ -19,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps({
   info3d: {
@@ -34,36 +26,48 @@ const props = defineProps({
 
 const emit = defineEmits(['thumbnail']);
 
-// 当前选择的模型类型：pbr 或 rgb
-const selectedType = ref('pbr');
-
-// 是否为单个文件模式 (Tripo 等返回单个 GLB)
-const isSingleFile = computed(() => props.info3d?.isSingleFile === true);
-
-// 固定的文件路径结构
-const currentModelUrl = computed(() => {
-  const dir = props.info3d?.modelDir;
-  if (!dir) return '';
+// 根据 info3d 构建模型列表
+const modelList = computed(() => {
+  const info = props.info3d;
+  const dir = info?.modelDir;
+  if (!dir) return [];
   
-  // 单文件模式：直接使用 modelDir/modelFile
-  if (isSingleFile.value) {
-    const filename = props.info3d?.modelFile || 'model.glb';
-    return `${dir}/${filename}`;
+  // 单文件模式（如 Tripo）：只有一个模型
+  if (info.isSingleFile) {
+    const modelPath = info.modelPath || 'model.glb';
+    return [
+      { name: '3D模型', path: `${dir}/${modelPath}` }
+    ];
   }
   
-  // ZIP 解压模式：pbr/rgb 目录结构
-  return selectedType.value === 'pbr' 
-    ? `${dir}/pbr/mesh_textured_pbr.glb`
-    : `${dir}/rgb/mesh_textured.glb`;
+  // 多文件模式（如 Doubao ZIP 解压）：pbr/rgb 目录结构
+  // 也可以通过 info3d.models 自定义模型列表
+  if (info.models && Array.isArray(info.models)) {
+    return info.models.map(m => ({
+      name: m.name,
+      path: m.path.startsWith('/') ? m.path : `${dir}/${m.path}`
+    }));
+  }
+  
+  // 默认 pbr/rgb 结构
+  return [
+    { name: 'PBR模型', path: `${dir}/pbr/mesh_textured_pbr.glb` },
+    { name: 'RGB模型', path: `${dir}/rgb/mesh_textured.glb` }
+  ];
 });
 
 // 拼接 viewer 地址
 const viewerUrl = computed(() => {
-  if (!currentModelUrl.value) return '';
-  let url = `/laya-viewer/index.html?url=${encodeURIComponent(currentModelUrl.value)}`;
+  if (modelList.value.length === 0) return '';
+  
+  // 使用 models 参数传递模型列表
+  const modelsJson = JSON.stringify(modelList.value);
+  let url = `/laya-viewer/index.html?models=${encodeURIComponent(modelsJson)}`;
+  
   if (props.recordId) {
     url += `&id=${props.recordId}`;
   }
+  
   return url;
 });
 
@@ -91,15 +95,6 @@ onUnmounted(() => {
   border-radius: 4px;
   overflow: hidden;
   position: relative;
-}
-.model-controls {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 10;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 5px 10px;
-  border-radius: 4px;
 }
 .empty {
   color: #fff;

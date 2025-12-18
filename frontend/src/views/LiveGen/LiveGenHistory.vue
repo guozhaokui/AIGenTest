@@ -334,10 +334,35 @@ function is3DModel(row) {
 
 // 查看3D模型
 function handleView3D(row) {
-  const dir = row.info3d?.modelDir;
+  const info3d = row.info3d;
+  const dir = info3d?.modelDir;
   if (!dir) return;
-  const modelUrl = `${dir}/pbr/mesh_textured_pbr.glb`;
-  window.open(`/laya-viewer/index.html?url=${encodeURIComponent(modelUrl)}&id=${row.id}`, '_blank');
+  
+  // 构建模型列表
+  let modelList = [];
+  
+  if (info3d.isSingleFile) {
+    // 单文件模式（如 Tripo）
+    const modelPath = info3d.modelPath || 'model.glb';
+    modelList = [
+      { name: '3D模型', path: `${dir}/${modelPath}` }
+    ];
+  } else if (info3d.models && Array.isArray(info3d.models)) {
+    // 自定义模型列表
+    modelList = info3d.models.map(m => ({
+      name: m.name,
+      path: m.path.startsWith('/') ? m.path : `${dir}/${m.path}`
+    }));
+  } else {
+    // 默认 pbr/rgb 结构（如 Doubao ZIP 解压）
+    modelList = [
+      { name: 'PBR模型', path: `${dir}/pbr/mesh_textured_pbr.glb` },
+      { name: 'RGB模型', path: `${dir}/rgb/mesh_textured.glb` }
+    ];
+  }
+  
+  const modelsJson = JSON.stringify(modelList);
+  window.open(`/laya-viewer/index.html?models=${encodeURIComponent(modelsJson)}&id=${row.id}`, '_blank');
 }
 </script>
 

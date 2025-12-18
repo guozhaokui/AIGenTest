@@ -2562,6 +2562,57 @@
     },
     "usage": null,
     "createdAt": "2025-12-18T06:58:45.441Z",
-    "dimensionScores": {}
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/c7d161fc-b3e8-457b-beb4-b23cf3827098/f2846f58-d369-4547-9b8c-c0d0509a8cd7/thumbnail.jpg"
+  },
+  {
+    "id": "5f40b522-44d7-410e-875b-e4b929d06ca4",
+    "prompt": "一个巨石上面的中式亭子",
+    "imagePath": "/modeldb/1e3256fc-aed1-4bc8-867a-8098ef1c2003/c638a9c6-0b97-43ee-a5fc-1309c8b0f8ab",
+    "imageUrls": [],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": ""
+    },
+    "duration": 72315,
+    "info3d": {
+      "modelDir": "/modeldb/1e3256fc-aed1-4bc8-867a-8098ef1c2003/c638a9c6-0b97-43ee-a5fc-1309c8b0f8ab",
+      "isSingleFile": true,
+      "modelFile": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-18T07:45:21.655Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/1e3256fc-aed1-4bc8-867a-8098ef1c2003/c638a9c6-0b97-43ee-a5fc-1309c8b0f8ab/thumbnail.jpg"
+  },
+  {
+    "id": "f9ca085c-e16e-40fb-a4f6-ffebfe9f1c6f",
+    "prompt": "一个巨石上面的中式亭子",
+    "imagePath": "/modeldb/40cabaf2-eaa9-454e-a026-448191c44d61/c23b4ae1-aa48-413a-a95a-507ee59be90d",
+    "imageUrls": [],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": ""
+    },
+    "duration": 72274,
+    "info3d": {
+      "modelDir": "/modeldb/40cabaf2-eaa9-454e-a026-448191c44d61/c23b4ae1-aa48-413a-a95a-507ee59be90d",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-18T08:05:29.629Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/40cabaf2-eaa9-454e-a026-448191c44d61/c23b4ae1-aa48-413a-a95a-507ee59be90d/thumbnail.jpg"
   }
 ]
