@@ -43,7 +43,7 @@ async function downloadContent(url, dispatcher, apiKey) {
 
 // Helper function for polling task status
 async function pollTask(taskId, apiKey, dispatcher) {
-  const pollUrl = `https://api.tripo3d.ai/v2/openapi/task/${taskId}`;
+  const pollUrl = `https://api.tripo3d.com/v2/openapi/task/${taskId}`;
   const maxAttempts = 120; // 120 attempts (20 minutes with 10s interval)
   const intervalMs = 10000; // 10 seconds
 
@@ -90,7 +90,7 @@ async function pollTask(taskId, apiKey, dispatcher) {
 
 // Upload image and get file token
 async function uploadImage(imageBase64, mimeType, apiKey, dispatcher) {
-  const uploadUrl = 'https://api.tripo3d.ai/v2/openapi/upload';
+  const uploadUrl = 'https://api.tripo3d.com/v2/openapi/upload';
   
   // Convert base64 to binary buffer
   const buffer = Buffer.from(imageBase64, 'base64');
@@ -155,7 +155,7 @@ async function generate({ apiKey, model, prompt, images, config }) {
 
 // 3D generation function
 async function generate3D({ apiKey, model, prompt, images, config, dispatcher }) {
-  const apiUrl = 'https://api.tripo3d.ai/v2/openapi/task';
+  const apiUrl = 'https://api.tripo3d.com/v2/openapi/task';
   
   const hasImage = images && images.length > 0;
   const hasPrompt = prompt && prompt.trim();
@@ -250,8 +250,9 @@ async function generate3D({ apiKey, model, prompt, images, config, dispatcher })
 
   try {
     // First, check account balance (optional debug)
+    console.log('检查账户余额')
     try {
-      const balanceResp = await fetch('https://api.tripo3d.ai/v2/openapi/user/balance', {
+      const balanceResp = await fetch('https://api.tripo3d.com/v2/openapi/user/balance', {
         method: 'GET',
         headers: { 'Authorization': `Bearer ${apiKey}` },
         dispatcher

@@ -2539,5 +2539,29 @@
     "usage": null,
     "createdAt": "2025-12-17T12:15:51.907Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "a6a7b5d3-388e-4056-ad63-ccd9ef5c3208",
+    "prompt": "一个巨石上面的中式亭子",
+    "imagePath": "/modeldb/c7d161fc-b3e8-457b-beb4-b23cf3827098/f2846f58-d369-4547-9b8c-c0d0509a8cd7",
+    "imageUrls": [],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": ""
+    },
+    "duration": 153700,
+    "info3d": {
+      "modelDir": "/modeldb/c7d161fc-b3e8-457b-beb4-b23cf3827098/f2846f58-d369-4547-9b8c-c0d0509a8cd7",
+      "isSingleFile": true,
+      "modelFile": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-18T06:58:45.441Z",
+    "dimensionScores": {}
   }
 ]

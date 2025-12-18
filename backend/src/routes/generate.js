@@ -183,6 +183,8 @@ router.post('/', upload.any(), async (req, res, next) => {
         apiKey = process.env.ARK_API_KEY;
       } else if (selected.driver === 'tripo') {
         apiKey = process.env.TRIPO_API_KEY;
+      } else if (selected.driver === 'meshy') {
+        apiKey = process.env.MESHY_API_KEY;
       }
 
       const startT = Date.now();

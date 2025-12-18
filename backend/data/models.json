@@ -371,5 +371,180 @@
         "step": 1000
       }
     ]
+  },
+  {
+    "id": "meshy_image_to_3d",
+    "name": "Meshy Image to 3D",
+    "driver": "meshy",
+    "inputMode": "image",
+    "options": {
+      "useProxy": false,
+      "enablePbr": true,
+      "shouldRemesh": true,
+      "shouldTexture": true
+    },
+    "parameters": [
+      {
+        "name": "enablePbr",
+        "label": "PBR材质",
+        "type": "select",
+        "default": "true",
+        "options": [
+          { "label": "启用", "value": "true" },
+          { "label": "禁用", "value": "false" }
+        ],
+        "description": "启用物理渲染材质"
+      },
+      {
+        "name": "shouldRemesh",
+        "label": "重建网格",
+        "type": "select",
+        "default": "true",
+        "options": [
+          { "label": "是", "value": "true" },
+          { "label": "否", "value": "false" }
+        ]
+      },
+      {
+        "name": "shouldTexture",
+        "label": "生成纹理",
+        "type": "select",
+        "default": "true",
+        "options": [
+          { "label": "是", "value": "true" },
+          { "label": "否", "value": "false" }
+        ]
+      },
+      {
+        "name": "topology",
+        "label": "网格拓扑",
+        "type": "select",
+        "default": "",
+        "options": [
+          { "label": "自动", "value": "" },
+          { "label": "四边形", "value": "quad" },
+          { "label": "三角形", "value": "triangle" }
+        ]
+      },
+      {
+        "name": "targetPolycount",
+        "label": "目标面数",
+        "type": "number",
+        "default": 30000,
+        "min": 1000,
+        "max": 200000,
+        "step": 1000,
+        "description": "输出模型的目标多边形数量"
+      }
+    ]
+  },
+  {
+    "id": "meshy_text_to_3d",
+    "name": "Meshy Text to 3D",
+    "driver": "meshy",
+    "inputMode": "prompt",
+    "options": {
+      "useProxy": false,
+      "mode": "preview"
+    },
+    "parameters": [
+      {
+        "name": "mode",
+        "label": "生成模式",
+        "type": "select",
+        "default": "full",
+        "options": [
+          { "label": "完整 (自动预览+精细)", "value": "full" },
+          { "label": "仅预览 (快速，无纹理)", "value": "preview" },
+          { "label": "仅精细 (需要预览任务ID)", "value": "refine" }
+        ],
+        "description": "完整模式自动执行预览→精细两个阶段"
+      },
+      {
+        "name": "textureRichness",
+        "label": "纹理丰富度",
+        "type": "select",
+        "default": "medium",
+        "options": [
+          { "label": "低", "value": "low" },
+          { "label": "中", "value": "medium" },
+          { "label": "高", "value": "high" }
+        ],
+        "description": "精细模式的纹理细节程度"
+      },
+      {
+        "name": "artStyle",
+        "label": "艺术风格",
+        "type": "select",
+        "default": "",
+        "options": [
+          { "label": "自动", "value": "" },
+          { "label": "写实", "value": "realistic" },
+          { "label": "卡通", "value": "cartoon" },
+          { "label": "低多边形", "value": "low-poly" },
+          { "label": "雕塑", "value": "sculpture" },
+          { "label": "PBR", "value": "pbr" }
+        ]
+      },
+      {
+        "name": "negativePrompt",
+        "label": "负面提示词",
+        "type": "text",
+        "default": "",
+        "description": "不希望出现的内容"
+      },
+      {
+        "name": "topology",
+        "label": "网格拓扑",
+        "type": "select",
+        "default": "",
+        "options": [
+          { "label": "自动", "value": "" },
+          { "label": "四边形", "value": "quad" },
+          { "label": "三角形", "value": "triangle" }
+        ]
+      },
+      {
+        "name": "targetPolycount",
+        "label": "目标面数",
+        "type": "number",
+        "default": 30000,
+        "min": 1000,
+        "max": 200000,
+        "step": 1000
+      }
+    ]
+  },
+  {
+    "id": "meshy_multi_image_to_3d",
+    "name": "Meshy Multi-Image to 3D",
+    "driver": "meshy",
+    "inputMode": "image",
+    "options": {
+      "useProxy": false
+    },
+    "parameters": [
+      {
+        "name": "topology",
+        "label": "网格拓扑",
+        "type": "select",
+        "default": "",
+        "options": [
+          { "label": "自动", "value": "" },
+          { "label": "四边形", "value": "quad" },
+          { "label": "三角形", "value": "triangle" }
+        ]
+      },
+      {
+        "name": "targetPolycount",
+        "label": "目标面数",
+        "type": "number",
+        "default": 30000,
+        "min": 1000,
+        "max": 200000,
+        "step": 1000,
+        "description": "上传1-4张不同角度的图片以获得更精确的3D模型"
+      }
+    ]
   }]
 
