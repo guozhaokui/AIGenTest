@@ -546,5 +546,54 @@
         "description": "上传1-4张不同角度的图片以获得更精确的3D模型"
       }
     ]
+  },
+  {
+    "id": "trellis2_image_to_3d",
+    "name": "TRELLIS.2 (Local 3D)",
+    "driver": "trellis",
+    "inputMode": "image",
+    "options": {
+      "url": "http://localhost:8000",
+      "simplifyFaces": 16777216,
+      "decimationTarget": 1000000,
+      "textureSize": 4096,
+      "remesh": true
+    },
+    "parameters": [
+      {
+        "name": "decimationTarget",
+        "label": "目标面数",
+        "type": "number",
+        "default": 1000000,
+        "min": 10000,
+        "max": 5000000,
+        "step": 10000,
+        "description": "最终模型的目标多边形数量"
+      },
+      {
+        "name": "textureSize",
+        "label": "纹理大小",
+        "type": "select",
+        "default": "4096",
+        "options": [
+          { "label": "1024", "value": "1024" },
+          { "label": "2048", "value": "2048" },
+          { "label": "4096", "value": "4096" },
+          { "label": "8192", "value": "8192" }
+        ],
+        "description": "纹理贴图分辨率"
+      },
+      {
+        "name": "remesh",
+        "label": "重建网格",
+        "type": "select",
+        "default": "true",
+        "options": [
+          { "label": "是", "value": "true" },
+          { "label": "否", "value": "false" }
+        ],
+        "description": "是否重新网格化以优化拓扑"
+      }
+    ]
   }]
 

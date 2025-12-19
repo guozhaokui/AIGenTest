@@ -2481,26 +2481,6 @@
     "dimensionScores": {}
   },
   {
-    "id": "0a9cbab0-a026-40a3-85d1-27916a21ffed",
-    "prompt": "猴子",
-    "imagePath": "/imagedb/e1/44/e144592c8ce6759ffec336bb02e923bd.png",
-    "imageUrls": [],
-    "modelId": "z_image_local",
-    "modelName": "",
-    "params": {
-      "width": 1024,
-      "height": 1024,
-      "num_inference_steps": 9,
-      "guidance_scale": 0,
-      "seed": 42
-    },
-    "duration": 5405,
-    "info3d": null,
-    "usage": null,
-    "createdAt": "2025-12-17T10:34:23.449Z",
-    "dimensionScores": {}
-  },
-  {
     "id": "effb8ad7-47bd-40ce-9778-b8443381da4e",
     "prompt": "黑猩猩扔石头",
     "imagePath": "/imagedb/71/3a/713a4cd6d78b19371ae3cb82ce2e3c92.png",
@@ -2518,26 +2498,6 @@
     "info3d": null,
     "usage": null,
     "createdAt": "2025-12-17T11:50:33.880Z",
-    "dimensionScores": {}
-  },
-  {
-    "id": "413e6802-031f-43f1-9a32-93642acf0962",
-    "prompt": "青蛙",
-    "imagePath": "/imagedb/5c/f0/5cf0e87e237485cf258b0c3df48342c1.png",
-    "imageUrls": [],
-    "modelId": "z_image_local",
-    "modelName": "",
-    "params": {
-      "width": 1024,
-      "height": 1024,
-      "num_inference_steps": 9,
-      "guidance_scale": 0,
-      "seed": 42
-    },
-    "duration": 5444,
-    "info3d": null,
-    "usage": null,
-    "createdAt": "2025-12-17T12:15:51.907Z",
     "dimensionScores": {}
   },
   {
@@ -2695,5 +2655,126 @@
     "createdAt": "2025-12-18T10:15:07.033Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/cb4b2a02-f468-4985-9bb2-fb2b4c718159/215941c7-c2d9-4965-ab0a-796d4b5a4da4/thumbnail.jpg"
+  },
+  {
+    "id": "2ba48d13-7b97-4833-ad85-1d75fb6e6986",
+    "prompt": "把这个二次元角色转换成真人，真实照片，身体比例保持",
+    "imagePath": "/imagedb/48/54/48548a7ebf86b8bcd4e99a4282d97ecb.jpg",
+    "imageUrls": [
+      "/imagedb/b1/52/b152a0c2a1e36f0d119b7e28554c7b0e.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "9:16",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ALL",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 126369,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 274,
+      "candidatesTokenCount": 1285,
+      "totalTokenCount": 1726,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 16
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 167
+    },
+    "createdAt": "2025-12-18T14:52:08.226Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "4aaa763f-081b-44d9-8afe-27ef25afbf10",
+    "prompt": "中式四合院",
+    "imagePath": "/modeldb/4cfe604f-7444-4858-a9f9-143a1df0db2b/7d8e8724-0bc7-4995-a5fb-993244172017",
+    "imageUrls": [],
+    "modelId": "meshy_text_to_3d",
+    "modelName": "",
+    "params": {
+      "mode": "preview",
+      "textureRichness": "medium",
+      "artStyle": "realistic",
+      "negativePrompt": "",
+      "topology": "triangle",
+      "targetPolycount": 30000
+    },
+    "duration": 307492,
+    "info3d": {
+      "modelDir": "/modeldb/4cfe604f-7444-4858-a9f9-143a1df0db2b/7d8e8724-0bc7-4995-a5fb-993244172017",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-18T14:59:25.329Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/4cfe604f-7444-4858-a9f9-143a1df0db2b/7d8e8724-0bc7-4995-a5fb-993244172017/thumbnail.jpg"
+  },
+  {
+    "id": "47ed0694-fdf5-441a-8391-8c6c681f07db",
+    "prompt": "中式四合院",
+    "imagePath": "/modeldb/99e8ae0c-6e20-4e4b-8e39-1dfcf9ce2599/02b42327-d0ce-49ff-b0c5-765180473473",
+    "imageUrls": [
+      "/imagedb/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "meshy_image_to_3d",
+    "modelName": "",
+    "params": {
+      "enablePbr": "true",
+      "shouldRemesh": "true",
+      "shouldTexture": "true",
+      "topology": "",
+      "targetPolycount": 30000
+    },
+    "duration": 267459,
+    "info3d": {
+      "modelDir": "/modeldb/99e8ae0c-6e20-4e4b-8e39-1dfcf9ce2599/02b42327-d0ce-49ff-b0c5-765180473473",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-19T08:48:41.064Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/99e8ae0c-6e20-4e4b-8e39-1dfcf9ce2599/02b42327-d0ce-49ff-b0c5-765180473473/thumbnail.jpg"
+  },
+  {
+    "id": "743bc691-77e0-411a-ae44-f40d5773ca32",
+    "prompt": "中式四合院",
+    "imagePath": "/modeldb/9cd8d2ea-d78e-485c-8bb8-60c16bbe84e8/eeebdc06-412e-45bf-8e69-2a971ea2f34b",
+    "imageUrls": [
+      "/imagedb/b1/52/b152a0c2a1e36f0d119b7e28554c7b0e.jpg"
+    ],
+    "modelId": "trellis2_image_to_3d",
+    "modelName": "",
+    "params": {
+      "decimationTarget": 1000000,
+      "textureSize": "4096",
+      "remesh": "true"
+    },
+    "duration": 168503,
+    "info3d": {
+      "modelDir": "/modeldb/9cd8d2ea-d78e-485c-8bb8-60c16bbe84e8/eeebdc06-412e-45bf-8e69-2a971ea2f34b",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-19T08:52:43.441Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/9cd8d2ea-d78e-485c-8bb8-60c16bbe84e8/eeebdc06-412e-45bf-8e69-2a971ea2f34b/thumbnail.jpg"
   }
 ]

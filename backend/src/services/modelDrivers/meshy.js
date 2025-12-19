@@ -2,13 +2,15 @@
 
 /**
  * Meshy Driver
- * API for Meshy 3D generation (Text to 3D, Image to 3D, Multi-Image to 3D)
+ * Meshy 3D 生成 API (文本转3D, 图片转3D, 多图转3D)
  * 文档: https://docs.meshy.ai/en
  */
 
+const axios = require('axios');
+
 const BASE_URL = 'https://api.meshy.ai';
 
-// Helper function to handle proxy settings
+// 辅助函数：处理代理设置
 function getDispatcher(config) {
   let dispatcher = undefined;
   if (config.useProxy === false || config.useProxy === 'false') {
@@ -22,16 +24,49 @@ function getDispatcher(config) {
   return dispatcher;
 }
 
-// Helper function to download content from URL
-async function downloadContent(url, dispatcher) {
-  const resp = await fetch(url, { dispatcher });
-  if (!resp.ok) {
-    throw new Error(`Failed to download from URL: ${resp.status}`);
+// 辅助函数：使用 axios 下载内容（支持超时和重试）
+async function downloadContent(url, maxRetries = 3) {
+  let lastError;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`[meshy-3d] 下载尝试 ${attempt}/${maxRetries}...`);
+      
+      const response = await axios.get(url, {
+        responseType: 'arraybuffer',
+        timeout: 600000, // 10 分钟超时
+        maxContentLength: Infinity,
+        maxBodyLength: Infinity,
+        proxy: false, // 禁用代理，避免 HTTP/HTTPS 问题
+        headers: {
+          'Accept': '*/*',
+          'User-Agent': 'AIGenTest/1.0'
+        }
+      });
+      
+      const buffer = Buffer.from(response.data);
+      const contentType = response.headers['content-type'];
+      
+      console.log(`[meshy-3d] 下载成功，大小: ${buffer.length} 字节`);
+      return { buffer, contentType };
+      
+    } catch (error) {
+      lastError = error;
+      console.error(`[meshy-3d] 下载尝试 ${attempt} 失败:`, error.message);
+      
+      // 如果是最后一次尝试，直接抛出错误
+      if (attempt === maxRetries) {
+        break;
+      }
+      
+      // 等待一段时间后重试（指数退避）
+      const waitTime = Math.min(1000 * Math.pow(2, attempt - 1), 10000);
+      console.log(`[meshy-3d] ${waitTime}ms 后重试...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
   }
-  const arrayBuffer = await resp.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-  const contentType = resp.headers.get('content-type');
-  return { buffer, contentType };
+  
+  throw new Error(`下载失败 (${maxRetries} 次尝试): ${lastError?.message || 'Unknown error'}`);
 }
 
 // Helper function for polling task status
@@ -399,44 +434,61 @@ async function generate({ apiKey, model, prompt, images, config }) {
     throw new Error(`Meshy API returned no model URL. Available output: ${JSON.stringify(taskResult)}`);
   }
   
-  console.log(`[meshy-3d] 3D generation succeeded, model URL: ${modelUrl}`);
+  console.log(`[meshy-3d] 3D 生成成功, 模型 URL: ${modelUrl}`);
   
-  // Download 3D model
-  console.log('[meshy-3d] Downloading model...');
+  // 下载 3D 模型（带重试机制）
+  console.log('[meshy-3d] 开始下载模型...');
   const startDownload = Date.now();
-  const { buffer, contentType } = await downloadContent(modelUrl, dispatcher);
-  console.log(`[meshy-3d] Download completed in ${Date.now() - startDownload}ms, size: ${buffer.length} bytes`);
+  const { buffer, contentType } = await downloadContent(modelUrl, 3); // 最多重试 3 次
+  console.log(`[meshy-3d] 下载完成，耗时 ${Date.now() - startDownload}ms，大小: ${buffer.length} 字节`);
   
   const base64 = buffer.toString('base64');
   
-  // Determine mime type based on URL or content type
+  // 根据 URL 或 content-type 确定 MIME 类型
   let mimeType = contentType || 'model/gltf-binary';
-  if (modelUrl.endsWith('.glb')) {
+  let modelPath = 'model.glb'; // 默认模型文件名
+  
+  if (modelUrl.includes('.glb')) {
     mimeType = 'model/gltf-binary';
-  } else if (modelUrl.endsWith('.fbx')) {
+    modelPath = 'model.glb';
+  } else if (modelUrl.includes('.fbx')) {
     mimeType = 'application/octet-stream';
-  } else if (modelUrl.endsWith('.obj')) {
+    modelPath = 'model.fbx';
+  } else if (modelUrl.includes('.obj')) {
     mimeType = 'text/plain';
+    modelPath = 'model.obj';
   }
   
-  // Extract usage info if available
+  // 提取 usage 信息
   const usage = taskResult.credits !== undefined ? {
     credits_used: taskResult.credits,
-    total_tokens: taskResult.credits * 1000 // Approximate token equivalent
+    total_tokens: taskResult.credits * 1000 // 近似 token 计算
   } : null;
+  
+  // 构建元数据
+  const meta = {
+    taskId: taskId,
+    taskType: taskType,
+    createdAt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
+    meshyResult: {
+      modelUrls: taskResult.model_urls,
+      textureUrls: taskResult.texture_urls,
+      thumbnailUrl: taskResult.thumbnail_url
+    },
+    inputImages: images ? images.map((img, index) => ({
+      index: index,
+      originalPath: img.originalPath || null,
+      mimeType: img.mimeType,
+      size: Buffer.from(img.dataBase64, 'base64').length
+    })) : []
+  };
   
   return {
     dataBase64: base64,
     mimeType: mimeType,
+    modelPath: modelPath, // 返回模型文件名，供前端使用
     usage,
-    // Additional metadata that might be useful
-    metadata: {
-      taskId: taskId,
-      taskType: taskType,
-      modelUrls: taskResult.model_urls,
-      textureUrls: taskResult.texture_urls,
-      thumbnailUrl: taskResult.thumbnail_url
-    }
+    meta // 返回元数据，保存到 meta.json
   };
 }
 
