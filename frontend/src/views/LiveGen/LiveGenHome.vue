@@ -188,7 +188,9 @@
           <div class="score-content">
             <ScoreInput 
               :catalog="dimensions" 
-              :initial-dimension-ids="[]"
+              :initial-dimension-ids="existingDimensionIds"
+              :initial-scores="result?.dimensionScores || {}"
+              :initial-comment="result?.comment || ''"
               :allow-add="true"
               @submit="handleScoreSubmit" 
             />
@@ -233,6 +235,14 @@ const currentModel = computed(() => {
 
 // 输入模式配置
 const inputMode = computed(() => currentModel.value?.inputMode || 'both');
+
+// 已有评分的维度 ID 列表（用于编辑历史记录时显示）
+const existingDimensionIds = computed(() => {
+  if (result.value?.dimensionScores) {
+    return Object.keys(result.value.dimensionScores);
+  }
+  return [];
+});
 const showPrompt = computed(() => {
   const mode = inputMode.value;
   if (mode === 'image') return false;
@@ -342,8 +352,15 @@ onMounted(async () => {
           params: data.params || {},
           duration: data.duration || 0,
           info3d: data.info3d || null,
-          usage: data.usage || null
+          usage: data.usage || null,
+          dimensionScores: data.dimensionScores || {}, // 恢复评分信息
+          comment: data.comment || '' // 恢复主观评价
         };
+        
+        // 如果有评分或主观评价，自动展开评分面板
+        if ((data.dimensionScores && Object.keys(data.dimensionScores).length > 0) || data.comment) {
+          showScore.value = true;
+        }
       }
     }
 

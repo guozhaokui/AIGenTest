@@ -76,21 +76,28 @@
         </template>
       </el-table-column>
       
-      <el-table-column label="评分" width="150">
+      <el-table-column label="评分" width="200">
         <template #default="{ row }">
-           <div v-if="row.dimensionScores && Object.keys(row.dimensionScores).length > 0">
+           <div v-if="hasAnyScore(row)">
+              <!-- 维度评分 -->
               <div v-for="(score, dimId) in row.dimensionScores" :key="dimId" style="font-size: 12px;">
                  {{ getDimName(dimId) }}: {{ score }}
+              </div>
+              <!-- 主观评价 -->
+              <div v-if="row.comment" class="comment-text" :title="row.comment">
+                 <el-icon style="vertical-align: middle;"><ChatDotRound /></el-icon>
+                 {{ row.comment }}
               </div>
            </div>
            <span v-else style="color: #999;">未评分</span>
         </template>
       </el-table-column>
 
-      <el-table-column label="操作" width="280">
+      <el-table-column label="操作" width="380">
         <template #default="{ row }">
           <el-button size="small" @click="handleReEdit(row)">编辑</el-button>
           <el-button size="small" style="margin-left: 12px;" @click="handleExport(row)">导出</el-button>
+          <el-button size="small" style="margin-left: 12px;" @click="handleAddToQuestions(row)">加到问题集</el-button>
           <el-dropdown trigger="click" style="margin-left: 12px;" @command="(cmd) => handleCommand(cmd, row)">
              <el-button size="small" type="danger">
                删除<el-icon class="el-icon--right"><ArrowDown /></el-icon>
@@ -102,7 +109,6 @@
                </el-dropdown-menu>
              </template>
           </el-dropdown>
-          <el-button size="small" style="margin-left: 12px;" @click="handleAddToQuestions(row)">加到问题集</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -123,7 +129,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Search, ArrowDown, Box } from '@element-plus/icons-vue';
+import { Search, ArrowDown, Box, ChatDotRound } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { listDimensions, listModels, createQuestion } from '../../services/api';
 
@@ -196,6 +202,13 @@ function normalizeUrl(p) {
 
 function getDimName(id) {
   return dimMap.value[id] || id;
+}
+
+// 判断是否有任何评分或评价
+function hasAnyScore(row) {
+  const hasScores = row.dimensionScores && Object.keys(row.dimensionScores).length > 0;
+  const hasComment = row.comment && row.comment.trim();
+  return hasScores || hasComment;
 }
 
 function getModelName(row) {
@@ -314,7 +327,8 @@ function handleReEdit(row) {
     imagePath: row.imagePath || null,
     duration: row.duration || 0,
     usage: row.usage || null,
-    dimensionScores: row.dimensionScores || {}
+    dimensionScores: row.dimensionScores || {},
+    comment: row.comment || '' // 传递主观评价
   }));
   
   router.push({
@@ -422,6 +436,19 @@ function handleView3D(row) {
   font-size: 12px;
   font-weight: bold;
   margin-top: 4px;
+}
+.comment-text {
+  font-size: 12px;
+  color: #606266;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed #e4e7ed;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-all;
 }
 </style>
 

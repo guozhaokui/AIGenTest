@@ -2723,7 +2723,8 @@
     "usage": null,
     "createdAt": "2025-12-18T14:59:25.329Z",
     "dimensionScores": {},
-    "thumbnailPath": "/modeldb/4cfe604f-7444-4858-a9f9-143a1df0db2b/7d8e8724-0bc7-4995-a5fb-993244172017/thumbnail.jpg"
+    "thumbnailPath": "/modeldb/4cfe604f-7444-4858-a9f9-143a1df0db2b/7d8e8724-0bc7-4995-a5fb-993244172017/thumbnail.jpg",
+    "comment": "这也不是四合院啊"
   },
   {
     "id": "47ed0694-fdf5-441a-8391-8c6c681f07db",
@@ -2774,9 +2775,8 @@
     },
     "usage": null,
     "createdAt": "2025-12-19T08:52:43.441Z",
-    "dimensionScores": {
-      "comment": "看来不擅长处理二次元"
-    },
+    "dimensionScores": {},
+    "comment": "看来不擅长处理二次元",
     "thumbnailPath": "/modeldb/9cd8d2ea-d78e-485c-8bb8-60c16bbe84e8/eeebdc06-412e-45bf-8e69-2a971ea2f34b/thumbnail.jpg"
   },
   {
@@ -2801,9 +2801,8 @@
     },
     "usage": null,
     "createdAt": "2025-12-19T09:23:16.040Z",
-    "dimensionScores": {
-      "comment": "屁股上有个空洞"
-    },
+    "dimensionScores": {},
+    "comment": "屁股上有个空洞",
     "thumbnailPath": "/modeldb/0d41e59b-0434-4f9c-a8af-77078ad4f852/7477a6ba-f2e9-43b2-a5d9-b18c7c79322c/thumbnail.jpg"
   },
   {
@@ -2829,9 +2828,9 @@
     "usage": null,
     "createdAt": "2025-12-19T09:28:04.571Z",
     "dimensionScores": {
-      "7757859e-0835-41d7-9814-514724460210": -1,
-      "comment": "认识线条 \n手是错的\n头前倾\n\n"
+      "7757859e-0835-41d7-9814-514724460210": -1
     },
+    "comment": "认识线条 \n手是错的\n头前倾\n\n",
     "thumbnailPath": "/modeldb/60f5b5d3-b5c2-4340-9595-6a99d0d06abd/8e433709-eabc-45e4-af8f-349e4ada55e8/thumbnail.jpg"
   }
 ]

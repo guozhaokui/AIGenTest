@@ -114,17 +114,23 @@ router.post('/', async (req, res, next) => {
 router.patch('/:id/score', async (req, res, next) => {
   try {
     const { id } = req.params;
-    const scores = req.body; // Expected { [dimId]: score }
+    const { comment, ...scores } = req.body; // 分离 comment 和维度评分
     
     const items = await readJson(DATA_FILE);
     const idx = items.findIndex(x => x.id === id);
     
     if (idx === -1) return res.status(404).json({ error: 'not_found' });
     
+    // 保存维度评分（不包含 comment）
     items[idx].dimensionScores = { 
         ...(items[idx].dimensionScores || {}),
         ...scores 
     };
+    
+    // 单独保存主观评价
+    if (comment !== undefined) {
+      items[idx].comment = comment;
+    }
     
     await writeJson(DATA_FILE, items);
     res.json(items[idx]);

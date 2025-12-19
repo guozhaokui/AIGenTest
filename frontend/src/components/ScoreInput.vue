@@ -59,12 +59,13 @@ const props = defineProps({
   catalog: { type: Array, default: () => [] },               // 维度目录（全部）
   initialDimensionIds: { type: Array, default: () => [] },   // 默认显示的维度ID（来自题目）
   initialScores: { type: Object, default: () => ({}) },      // 已有分数（来自历史或继续评估）
+  initialComment: { type: String, default: '' },             // 已有主观评价
   allowAdd: { type: Boolean, default: true }
 });
 const emit = defineEmits(['submit']);
 
 const scores = reactive({});
-const comment = ref('');
+const comment = ref(props.initialComment || '');
 const selectedIds = ref([]);     // base + extra（顺序不重要）
 const newDimId = ref('');
 
@@ -92,7 +93,7 @@ function onStarChange(id) {
 
 // 初始化/更新：仅在 props 变化时运行，保留用户添加的额外维度
 watch(
-  () => ({ dimIds: props.initialDimensionIds, initScores: props.initialScores }),
+  () => ({ dimIds: props.initialDimensionIds, initScores: props.initialScores, initComment: props.initialComment }),
   () => {
     const base = Array.isArray(props.initialDimensionIds) ? [...props.initialDimensionIds] : [];
     // 保留已添加的额外维度
@@ -104,6 +105,10 @@ watch(
       const n = Number.isFinite(init[id]) ? Number(init[id]) : 0;
       scores[id] = Math.max(-2, Math.min(2, n));
       starValues[id] = scoreToStars(scores[id]);
+    }
+    // 初始化主观评价
+    if (props.initialComment) {
+      comment.value = props.initialComment;
     }
   },
   { immediate: true, deep: true }
