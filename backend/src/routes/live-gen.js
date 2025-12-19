@@ -63,9 +63,32 @@ router.post('/', async (req, res, next) => {
     const { prompt, imagePath, imageUrls, modelId, modelName, params, duration, info3d, usage } = req.body;
     const now = new Date().toISOString();
     
+    // 根据模型的 inputMode 决定是否保存 prompt
+    // inputMode: "image" 表示只需要图片，不需要 prompt
+    // inputMode: "prompt" 表示只需要 prompt
+    // inputMode: "both" 表示都需要
+    // inputMode: "exclusive" 表示二选一
+    let effectivePrompt = prompt || '';
+    
+    if (modelId) {
+      try {
+        const MODELS_FILE = path.resolve(__dirname, '../../data/models.json');
+        const models = await readJson(MODELS_FILE);
+        const model = models.find(m => m.id === modelId);
+        
+        // 如果模型的 inputMode 是 "image"，则清空 prompt
+        if (model && model.inputMode === 'image') {
+          effectivePrompt = '';
+          console.log(`[live-gen] Model ${modelId} is image-only, clearing prompt`);
+        }
+      } catch (e) {
+        console.warn('[live-gen] Failed to read model config:', e.message);
+      }
+    }
+    
     const newItem = {
       id: randomUUID(),
-      prompt: prompt || '',
+      prompt: effectivePrompt,
       imagePath: imagePath || '',
       imageUrls: Array.isArray(imageUrls) ? imageUrls : [], // reference images
       modelId: modelId || '',

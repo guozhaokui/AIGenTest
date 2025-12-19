@@ -2774,7 +2774,64 @@
     },
     "usage": null,
     "createdAt": "2025-12-19T08:52:43.441Z",
-    "dimensionScores": {},
+    "dimensionScores": {
+      "comment": "看来不擅长处理二次元"
+    },
     "thumbnailPath": "/modeldb/9cd8d2ea-d78e-485c-8bb8-60c16bbe84e8/eeebdc06-412e-45bf-8e69-2a971ea2f34b/thumbnail.jpg"
+  },
+  {
+    "id": "6faa3710-75cb-483f-bf24-824ee865bc4a",
+    "prompt": "",
+    "imagePath": "/modeldb/0d41e59b-0434-4f9c-a8af-77078ad4f852/7477a6ba-f2e9-43b2-a5d9-b18c7c79322c",
+    "imageUrls": [
+      "/imagedb/50/5e/505e1394d81bed3a21862e85a6d6d584.png"
+    ],
+    "modelId": "trellis2_image_to_3d",
+    "modelName": "",
+    "params": {
+      "decimationTarget": 1000000,
+      "textureSize": "4096",
+      "remesh": "true"
+    },
+    "duration": 186700,
+    "info3d": {
+      "modelDir": "/modeldb/0d41e59b-0434-4f9c-a8af-77078ad4f852/7477a6ba-f2e9-43b2-a5d9-b18c7c79322c",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-19T09:23:16.040Z",
+    "dimensionScores": {
+      "comment": "屁股上有个空洞"
+    },
+    "thumbnailPath": "/modeldb/0d41e59b-0434-4f9c-a8af-77078ad4f852/7477a6ba-f2e9-43b2-a5d9-b18c7c79322c/thumbnail.jpg"
+  },
+  {
+    "id": "350c2ec3-412a-4418-bd48-9d0e4d03f3ea",
+    "prompt": "",
+    "imagePath": "/modeldb/60f5b5d3-b5c2-4340-9595-6a99d0d06abd/8e433709-eabc-45e4-af8f-349e4ada55e8",
+    "imageUrls": [
+      "/imagedb/70/03/7003db2be8df8da68ebb73e813cd1e6e.png"
+    ],
+    "modelId": "trellis2_image_to_3d",
+    "modelName": "",
+    "params": {
+      "decimationTarget": 1000000,
+      "textureSize": "4096",
+      "remesh": "true"
+    },
+    "duration": 130112,
+    "info3d": {
+      "modelDir": "/modeldb/60f5b5d3-b5c2-4340-9595-6a99d0d06abd/8e433709-eabc-45e4-af8f-349e4ada55e8",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-19T09:28:04.571Z",
+    "dimensionScores": {
+      "7757859e-0835-41d7-9814-514724460210": -1,
+      "comment": "认识线条 \n手是错的\n头前倾\n\n"
+    },
+    "thumbnailPath": "/modeldb/60f5b5d3-b5c2-4340-9595-6a99d0d06abd/8e433709-eabc-45e4-af8f-349e4ada55e8/thumbnail.jpg"
   }
 ]
