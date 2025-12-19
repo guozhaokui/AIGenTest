@@ -253,6 +253,9 @@
         });
 
         // 相机控制器
+        // 左键拖动：旋转视角
+        // 右键拖动：平移视角
+        // 滚轮：缩放
         class CameraController extends Laya.Script {
             constructor() {
                 super();
@@ -261,39 +264,113 @@
                 this.target = new Laya.Vector3(0, 0.5, 0);
                 this.lastMouseX = 0;
                 this.lastMouseY = 0;
-                this.isMouseDown = false;
+                this.isLeftMouseDown = false;
+                this.isRightMouseDown = false;
+                
+                // 模型相关参数（根据包围盒动态调整）
+                this.modelSize = 2;        // 模型尺寸（用于计算滚轮速度）
+                this.minDistance = 0.5;    // 最小距离
+                this.maxDistance = 50;     // 最大距离
+                this.wheelSpeed = 0.01;    // 滚轮速度系数
             }
-
-            onStart() {
-                Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.onMouseDown);
-                Laya.stage.on(Laya.Event.MOUSE_UP, this, this.onMouseUp);
-                Laya.stage.on(Laya.Event.MOUSE_OUT, this, this.onMouseUp);
-                Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.onMouseMove);
-                Laya.stage.on(Laya.Event.MOUSE_WHEEL, this, this.onMouseWheel);
+            
+            // 根据模型包围盒设置参数
+            setModelBounds(size) {
+                this.modelSize = size;
+                // 滚轮速度基于模型大小（模型越大，滚轮速度越快）
+                // 使用 0.02 作为基础系数，确保滚轮灵敏度足够
+                this.wheelSpeed = Math.max(0.01, size * 0.02);
+                // 最小距离为模型大小的 0.2 倍
+                this.minDistance = Math.max(0.1, size * 0.2);
+                // 最大距离为模型大小的 20 倍
+                this.maxDistance = Math.max(10, size * 20);
+                // 默认距离为模型大小的 2.5 倍
+                this.distance = Math.max(this.minDistance, Math.min(this.maxDistance, size * 2.5));
+                
+                console.log(`[CameraController] 模型大小: ${size.toFixed(2)}, 滚轮速度: ${this.wheelSpeed.toFixed(4)}, 距离范围: [${this.minDistance.toFixed(2)}, ${this.maxDistance.toFixed(2)}]`);
+                
                 this.updateCamera();
             }
 
-            onMouseDown(e) {
-                this.isMouseDown = true;
+            onStart() {
+                // 左键事件
+                Laya.stage.on(Laya.Event.MOUSE_DOWN, this, this.onLeftMouseDown);
+                Laya.stage.on(Laya.Event.MOUSE_UP, this, this.onLeftMouseUp);
+                
+                // 右键事件（LayaAir 专用事件）
+                Laya.stage.on(Laya.Event.RIGHT_MOUSE_DOWN, this, this.onRightMouseDown);
+                Laya.stage.on(Laya.Event.RIGHT_MOUSE_UP, this, this.onRightMouseUp);
+                
+                // 通用事件
+                Laya.stage.on(Laya.Event.MOUSE_OUT, this, this.onMouseOut);
+                Laya.stage.on(Laya.Event.MOUSE_MOVE, this, this.onMouseMove);
+                Laya.stage.on(Laya.Event.MOUSE_WHEEL, this, this.onMouseWheel);
+                
+                // 禁用右键菜单
+                document.addEventListener('contextmenu', (e) => e.preventDefault());
+                
+                this.updateCamera();
+            }
+
+            onLeftMouseDown(e) {
+                this.isLeftMouseDown = true;
                 this.lastMouseX = Laya.stage.mouseX;
                 this.lastMouseY = Laya.stage.mouseY;
             }
 
-            onMouseUp(e) {
-                this.isMouseDown = false;
+            onLeftMouseUp(e) {
+                this.isLeftMouseDown = false;
+            }
+
+            onRightMouseDown(e) {
+                this.isRightMouseDown = true;
+                this.lastMouseX = Laya.stage.mouseX;
+                this.lastMouseY = Laya.stage.mouseY;
+            }
+
+            onRightMouseUp(e) {
+                this.isRightMouseDown = false;
+            }
+
+            onMouseOut(e) {
+                this.isLeftMouseDown = false;
+                this.isRightMouseDown = false;
             }
 
             onMouseMove(e) {
-                if (!this.isMouseDown) return;
+                if (!this.isLeftMouseDown && !this.isRightMouseDown) return;
                 
                 const deltaX = Laya.stage.mouseX - this.lastMouseX;
                 const deltaY = Laya.stage.mouseY - this.lastMouseY;
                 
-                this.yawPitchRoll.y -= deltaX * 0.3;
-                this.yawPitchRoll.x += deltaY * 0.3;
-                
-                // 限制俯仰角
-                this.yawPitchRoll.x = Math.max(-89, Math.min(89, this.yawPitchRoll.x));
+                if (this.isLeftMouseDown) {
+                    // 左键：旋转视角
+                    this.yawPitchRoll.y -= deltaX * 0.3;
+                    this.yawPitchRoll.x += deltaY * 0.3;
+                    
+                    // 限制俯仰角
+                    this.yawPitchRoll.x = Math.max(-89, Math.min(89, this.yawPitchRoll.x));
+                } else if (this.isRightMouseDown) {
+                    // 右键：平移视角
+                    // 计算相机的右方向和上方向
+                    const pitch = this.yawPitchRoll.x * Math.PI / 180;
+                    const yaw = this.yawPitchRoll.y * Math.PI / 180;
+                    
+                    // 相机右方向（在 XZ 平面上）
+                    const rightX = Math.cos(yaw);
+                    const rightZ = -Math.sin(yaw);
+                    
+                    // 相机上方向（世界坐标系 Y 轴）
+                    const upY = 1;
+                    
+                    // 平移速度基于距离
+                    const panSpeed = this.distance * 0.002;
+                    
+                    // 移动目标点
+                    this.target.x -= deltaX * rightX * panSpeed;
+                    this.target.z -= deltaX * rightZ * panSpeed;
+                    this.target.y += deltaY * upY * panSpeed;
+                }
                 
                 this.lastMouseX = Laya.stage.mouseX;
                 this.lastMouseY = Laya.stage.mouseY;
@@ -302,8 +379,9 @@
             }
 
             onMouseWheel(e) {
-                this.distance += e.delta * 0.01;
-                this.distance = Math.max(1, Math.min(50, this.distance));
+                // 使用动态滚轮速度（基于模型大小）
+                this.distance += e.delta * this.wheelSpeed;
+                this.distance = Math.max(this.minDistance, Math.min(this.maxDistance, this.distance));
                 this.updateCamera();
             }
 
@@ -325,7 +403,8 @@
 
             resetView() {
                 this.yawPitchRoll = new Laya.Vector3(15, 0, 0);
-                this.distance = 5;
+                this.distance = this.modelSize * 2.5; // 根据模型大小设置默认距离
+                this.target = new Laya.Vector3(0, 0.5, 0); // 重置目标点
                 this.updateCamera();
             }
         }
@@ -622,6 +701,19 @@
                         -bounds.getMin().y * scale,
                         -center.z * scale
                     );
+                    
+                    // 缩放后的模型大小约为 2（因为 scale = 2 / maxSize）
+                    const scaledModelSize = 2;
+                    
+                    // 设置相机控制器参数（根据缩放后的模型大小）
+                    if (camera) {
+                        const controller = camera.getComponent(CameraController);
+                        if (controller) {
+                            controller.setModelBounds(scaledModelSize);
+                            // 重置目标点到模型中心（缩放后高度的一半）
+                            controller.target = new Laya.Vector3(0, scaledModelSize * 0.25, 0);
+                        }
+                    }
                     
                     // 在下一帧更新地面位置（确保 transform 已更新）
                     Laya.timer.frameOnce(1, null, () => {
