@@ -230,6 +230,8 @@
     "name": "Doubao Seed3D (3D Generation)",
     "driver": "doubao",
     "inputMode": "image",
+    "inputType": "image",
+    "outputType": "mesh",
     "options": {
       "model": "doubao-seed3d-1-0-250928",
       "useProxy": false,
@@ -255,6 +257,8 @@
     "driver": "tripo",
     "inputMode": "exclusive",
     "defaultInput": "image",
+    "inputType": "text_or_image",
+    "outputType": "mesh",
     "options": {
       "useProxy": false,
       "modelVersion": "default",
@@ -323,6 +327,8 @@
     "name": "Tripo3D Multiview (3D, Multi-image)",
     "driver": "tripo",
     "inputMode": "image",
+    "inputType": "multiview",
+    "outputType": "mesh",
     "imageSlots": [
       { "name": "front", "label": "正面", "required": true, "description": "正面视图（必需）" },
       { "name": "left", "label": "左侧", "required": false, "description": "左侧视图" },
@@ -383,6 +389,8 @@
     "name": "Meshy Image to 3D",
     "driver": "meshy",
     "inputMode": "image",
+    "inputType": "image",
+    "outputType": "mesh",
     "options": {
       "useProxy": false,
       "enablePbr": true,
@@ -449,6 +457,8 @@
     "name": "Meshy Text to 3D",
     "driver": "meshy",
     "inputMode": "prompt",
+    "inputType": "text",
+    "outputType": "mesh",
     "options": {
       "useProxy": false,
       "mode": "preview"
@@ -526,6 +536,8 @@
     "name": "Meshy Multi-Image to 3D",
     "driver": "meshy",
     "inputMode": "image",
+    "inputType": "images",
+    "outputType": "mesh",
     "options": {
       "useProxy": false
     },
@@ -558,6 +570,8 @@
     "name": "TRELLIS.2 (Local 3D)",
     "driver": "trellis",
     "inputMode": "image",
+    "inputType": "image",
+    "outputType": "mesh",
     "options": {
       "url": "http://localhost:8000",
       "simplifyFaces": 16777216,

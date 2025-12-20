@@ -84,8 +84,8 @@
                 <el-upload
                   ref="uploadRef"
                   drag
-                  multiple
-                  :limit="14"
+                  :multiple="!isSingleImageInput"
+                  :limit="imageUploadLimit"
                   list-type="picture-card"
                   action="/api/examples/upload"
                   v-model:file-list="fileList"
@@ -94,10 +94,11 @@
                   :on-preview="handlePreview"
                   accept="image/*"
                   class="ref-image-upload"
+                  :class="{ 'hide-upload-trigger': hasEnoughImages }"
                 >
                   <div class="upload-placeholder">
                     <el-icon class="upload-icon"><Plus /></el-icon>
-                    <span class="upload-hint">点击或拖拽上传，最多 14 张</span>
+                    <span class="upload-hint">{{ imageUploadHint }}</span>
                   </div>
                 </el-upload>
               </div>
@@ -274,6 +275,34 @@ const inputMode = computed(() => currentModel.value?.inputMode || 'both');
 // 是否有 imageSlots 配置（多槽位图片上传）
 const hasImageSlots = computed(() => {
   return currentModel.value?.imageSlots && currentModel.value.imageSlots.length > 0;
+});
+
+// 判断是否是单图输入模式（根据 inputType 配置）
+// inputType: "image" 或 "text_or_image" 都只允许单张图片
+const isSingleImageInput = computed(() => {
+  const model = currentModel.value;
+  const inputType = model?.inputType;
+  return inputType === 'image' || inputType === 'text_or_image';
+});
+
+// 图片上传数量限制
+const imageUploadLimit = computed(() => {
+  if (isSingleImageInput.value) return 1;
+  return 14;
+});
+
+// 图片上传提示文字
+const imageUploadHint = computed(() => {
+  if (isSingleImageInput.value) return '点击或拖拽上传 1 张图片';
+  return '点击或拖拽上传，最多 14 张';
+});
+
+// 判断是否已上传足够图片（单图模式下已有1张则隐藏上传框）
+const hasEnoughImages = computed(() => {
+  if (isSingleImageInput.value && fileList.value.length >= 1) {
+    return true;
+  }
+  return false;
 });
 
 // 已有评分的维度 ID 列表（用于编辑历史记录时显示）
@@ -965,6 +994,11 @@ async function handleThumbnail(dataUrl) {
   background: #fafafa;
   margin: 0;
   flex-shrink: 0;
+}
+
+/* 单图模式：已上传图片后隐藏上传触发器 */
+.ref-image-upload.hide-upload-trigger :deep(.el-upload--picture-card) {
+  display: none !important;
 }
 
 .upload-placeholder {

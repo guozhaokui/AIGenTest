@@ -3038,30 +3038,5 @@
     "createdAt": "2025-12-20T09:40:40.736Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/8a1c2117-a6c7-4b36-bed5-5aa61bf932bb/79c1c546-8876-43c1-990f-42ac6081c77c/thumbnail.jpg"
-  },
-  {
-    "id": "fd8fd5b4-2f9d-4fae-b26c-0614ae8b1f16",
-    "prompt": "",
-    "imagePath": "/modeldb/03c528f3-9432-40c9-9d23-b30a8511ae22/d14bcfb7-af45-4948-ab6a-b86b9ebe8454",
-    "imageUrls": [
-      "imagedb/0c/17/0c17a124cca6cc6d1008dee34402ae17.png"
-    ],
-    "modelId": "trellis2_image_to_3d",
-    "modelName": "",
-    "params": {
-      "decimationTarget": 100000,
-      "textureSize": "2048",
-      "remesh": "true"
-    },
-    "duration": 64989,
-    "info3d": {
-      "modelDir": "/modeldb/03c528f3-9432-40c9-9d23-b30a8511ae22/d14bcfb7-af45-4948-ab6a-b86b9ebe8454",
-      "isSingleFile": true,
-      "modelPath": "model.glb"
-    },
-    "usage": null,
-    "createdAt": "2025-12-20T09:43:23.435Z",
-    "dimensionScores": {},
-    "thumbnailPath": "/modeldb/03c528f3-9432-40c9-9d23-b30a8511ae22/d14bcfb7-af45-4948-ab6a-b86b9ebe8454/thumbnail.jpg"
   }
 ]
