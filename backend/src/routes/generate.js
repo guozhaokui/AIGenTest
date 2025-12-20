@@ -46,29 +46,42 @@ router.post('/', upload.any(), async (req, res, next) => {
       selectedModel = models.find(m => m.id === req.body.modelId);
     }
     
-    // 根据 inputMode 判断是否需要 prompt：
-    // - "prompt": 必须有 prompt
-    // - "image": 不需要 prompt，需要图片
-    // - "both": prompt 和图片都可以有
-    // - "exclusive": prompt 或图片二选一
-    const inputMode = selectedModel?.inputMode || 'both';
+    // 根据新的 input 配置判断是否需要 prompt/image：
+    // input.types: ["text"] / ["image"] / ["text", "image"]
+    // input.mode: "single" (仅一种) | "combined" (可组合) | "exclusive" (二选一) | "multiple" (多图) | "multiview" (多视图)
+    const inputConfig = selectedModel?.input || { types: ['text', 'image'], mode: 'combined' };
+    const inputTypes = inputConfig.types || ['text', 'image'];
+    const inputMode = inputConfig.mode || 'combined';
     const hasImages = (req.files && req.files.length > 0) || imagePath || imagePaths;
     
-    // 只有 inputMode 为 "prompt" 或 "both" 且没有图片时，才要求必须有 prompt
-    const requiresPrompt = inputMode === 'prompt' || (inputMode === 'both' && !hasImages);
+    const supportsText = inputTypes.includes('text');
+    const supportsImage = inputTypes.includes('image');
     
-    if (!prompt && requiresPrompt) {
-      console.log('[generate] ERROR: Missing prompt for model with inputMode:', inputMode);
-      return res.status(400).json({ error: 'missing_prompt' });
+    // 仅支持文本输入时，必须有 prompt
+    if (supportsText && !supportsImage && !prompt) {
+      console.log('[generate] ERROR: Missing prompt for text-only model');
+      return res.status(400).json({ error: 'missing_prompt', message: '该模型需要提示词' });
     }
     
-    // 对于 exclusive 模式，需要至少有 prompt 或 image
+    // 仅支持图片输入时，必须有图片
+    if (supportsImage && !supportsText && !hasImages) {
+      console.log('[generate] ERROR: Missing image for image-only model');
+      return res.status(400).json({ error: 'missing_image', message: '该模型需要参考图' });
+    }
+    
+    // exclusive 模式，需要至少有 prompt 或 image
     if (inputMode === 'exclusive' && !prompt && !hasImages) {
       console.log('[generate] ERROR: Missing prompt or image for exclusive mode');
-      return res.status(400).json({ error: 'missing_prompt_or_image' });
+      return res.status(400).json({ error: 'missing_prompt_or_image', message: '请输入提示词或上传参考图' });
     }
     
-    console.log('[generate] Input mode:', inputMode, 'hasPrompt:', !!prompt, 'hasImages:', !!hasImages);
+    // combined 模式，同时支持 text 和 image 时，至少需要一个
+    if (inputMode === 'combined' && supportsText && supportsImage && !prompt && !hasImages) {
+      console.log('[generate] ERROR: Missing prompt or image for combined mode');
+      return res.status(400).json({ error: 'missing_input', message: '请输入提示词或上传参考图' });
+    }
+    
+    console.log('[generate] Input config:', inputConfig, 'hasPrompt:', !!prompt, 'hasImages:', !!hasImages);
     
     if (!GOOGLE_API_KEY) {
       console.log('[generate] ERROR: Missing API key, returning 500');
@@ -205,12 +218,22 @@ router.post('/', upload.any(), async (req, res, next) => {
       }
 
       const startT = Date.now();
+      // 合并 imageSlots：优先使用前端传递的（带有实际 path），否则使用配置中的定义
+      const frontendSlots = req.body?.imageSlots;
+      const configSlots = selected.input?.imageSlots || [];
+      // 如果前端传递了 imageSlots（带有 path），直接使用；否则使用配置定义
+      const mergedImageSlots = (frontendSlots && frontendSlots.length > 0) ? frontendSlots : configSlots;
+      
       const out = await driver.generate({
         apiKey,
         model: selected.options?.model,
         prompt,
         images: inputImages,
-        config: { ...(selected.options || {}), ...(req.body || {}) }
+        config: { 
+          ...(selected.options || {}), 
+          ...(req.body || {}),
+          imageSlots: mergedImageSlots
+        }
       });
       const duration = Date.now() - startT;
 

@@ -3038,5 +3038,167 @@
     "createdAt": "2025-12-20T09:40:40.736Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/8a1c2117-a6c7-4b36-bed5-5aa61bf932bb/79c1c546-8876-43c1-990f-42ac6081c77c/thumbnail.jpg"
+  },
+  {
+    "id": "8f02e560-7473-41ee-88a3-1543bffca021",
+    "prompt": "金刚大战变形金刚",
+    "imagePath": "/imagedb/52/9a/529a45d01a7cb3fe2874d63cb7b407f0.png",
+    "imageUrls": [],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png"
+    },
+    "duration": 29771,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 7,
+      "candidatesTokenCount": 1305,
+      "totalTokenCount": 1312,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 7
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1290
+        }
+      ]
+    },
+    "createdAt": "2025-12-20T10:51:00.993Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "bc7f6645-032d-4a13-9e65-2c533a62804d",
+    "prompt": "金刚大战变形金刚",
+    "imagePath": "/imagedb/46/aa/46aa59663188e74a3be302e89cdf954c.png",
+    "imageUrls": [],
+    "modelId": "z_image_local",
+    "modelName": "",
+    "params": {
+      "width": 1024,
+      "height": 1024,
+      "num_inference_steps": 9,
+      "guidance_scale": 0,
+      "seed": 42
+    },
+    "duration": 6211,
+    "info3d": null,
+    "usage": null,
+    "createdAt": "2025-12-20T10:52:06.478Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "df5b6c10-8de4-4f64-a77d-d08b87efa4c1",
+    "prompt": "金刚大战变形金刚",
+    "imagePath": "/modeldb/db8f1202-27e6-42df-a6b8-b22319d3bb82/b9aeb7a0-7988-4cfe-b028-81771c90ad64",
+    "imageUrls": [
+      "imagedb/8d/fa/8dfa25ea335f08d74535dff4539bad7c.png"
+    ],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": ""
+    },
+    "duration": 63391,
+    "info3d": {
+      "modelDir": "/modeldb/db8f1202-27e6-42df-a6b8-b22319d3bb82/b9aeb7a0-7988-4cfe-b028-81771c90ad64",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T10:53:41.392Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/db8f1202-27e6-42df-a6b8-b22319d3bb82/b9aeb7a0-7988-4cfe-b028-81771c90ad64/thumbnail.jpg"
+  },
+  {
+    "id": "96036ab1-4485-4517-9f90-dc1e9f25502e",
+    "prompt": "金刚大战变形金刚",
+    "imagePath": "/modeldb/471ef2cb-034b-4153-bebc-968a4711fca5/5ac02208-b502-4712-95f2-d08c688acd6d",
+    "imageUrls": [],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": ""
+    },
+    "duration": 62167,
+    "info3d": {
+      "modelDir": "/modeldb/471ef2cb-034b-4153-bebc-968a4711fca5/5ac02208-b502-4712-95f2-d08c688acd6d",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T11:15:34.440Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/471ef2cb-034b-4153-bebc-968a4711fca5/5ac02208-b502-4712-95f2-d08c688acd6d/thumbnail.jpg"
+  },
+  {
+    "id": "192d88ab-f6b8-4b94-ad15-fd1744f0ee9b",
+    "prompt": "",
+    "imagePath": "/modeldb/98aa3a54-bdaa-4fdf-b9e1-1e5953d36dfb/645c4bb7-51b3-4bd0-a0de-0fdab19ac6cf",
+    "imageUrls": [
+      "imagedb/8d/fa/8dfa25ea335f08d74535dff4539bad7c.png",
+      "imagedb/e0/7b/e07b780f6cfa585814a04ae56c229fba.png",
+      "imagedb/b9/22/b9227efe932594ef0f881aa1e207acae.png"
+    ],
+    "modelId": "tripo_3d_multiview",
+    "modelName": "",
+    "params": {
+      "modelVersion": "v3.0-20250812",
+      "texture": "false",
+      "pbr": "false",
+      "faceLimit": 5000
+    },
+    "duration": 84157,
+    "info3d": {
+      "modelDir": "/modeldb/98aa3a54-bdaa-4fdf-b9e1-1e5953d36dfb/645c4bb7-51b3-4bd0-a0de-0fdab19ac6cf",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T11:23:24.011Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/98aa3a54-bdaa-4fdf-b9e1-1e5953d36dfb/645c4bb7-51b3-4bd0-a0de-0fdab19ac6cf/thumbnail.jpg"
+  },
+  {
+    "id": "ab9398a5-8d05-427e-b4a4-0d377fadd502",
+    "prompt": "",
+    "imagePath": "/modeldb/7886cf4b-4503-4ab6-91c7-e9cc65ad2228/fedc47b7-1cf8-467f-a02b-2022c999ba77",
+    "imageUrls": [
+      "imagedb/b1/52/b152a0c2a1e36f0d119b7e28554c7b0e.jpg"
+    ],
+    "modelId": "meshy_image_to_3d",
+    "modelName": "",
+    "params": {
+      "enablePbr": "true",
+      "shouldRemesh": "true",
+      "shouldTexture": "true",
+      "topology": "triangle",
+      "targetPolycount": 30000
+    },
+    "duration": 209403,
+    "info3d": {
+      "modelDir": "/modeldb/7886cf4b-4503-4ab6-91c7-e9cc65ad2228/fedc47b7-1cf8-467f-a02b-2022c999ba77",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T11:27:58.252Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/7886cf4b-4503-4ab6-91c7-e9cc65ad2228/fedc47b7-1cf8-467f-a02b-2022c999ba77/thumbnail.jpg"
   }
 ]

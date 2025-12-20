@@ -63,11 +63,10 @@ router.post('/', async (req, res, next) => {
     const { prompt, imagePath, imageUrls, modelId, modelName, params, duration, info3d, usage } = req.body;
     const now = new Date().toISOString();
     
-    // 根据模型的 inputMode 决定是否保存 prompt
-    // inputMode: "image" 表示只需要图片，不需要 prompt
-    // inputMode: "prompt" 表示只需要 prompt
-    // inputMode: "both" 表示都需要
-    // inputMode: "exclusive" 表示二选一
+    // 根据模型的 input 配置决定是否保存 prompt
+    // input.types: ["image"] 表示只需要图片，不需要 prompt
+    // input.types: ["text"] 表示只需要 prompt
+    // input.types: ["text", "image"] 表示支持文本和图片
     let effectivePrompt = prompt || '';
     
     if (modelId) {
@@ -76,10 +75,14 @@ router.post('/', async (req, res, next) => {
         const models = await readJson(MODELS_FILE);
         const model = models.find(m => m.id === modelId);
         
-        // 如果模型的 inputMode 是 "image"，则清空 prompt
-        if (model && model.inputMode === 'image') {
-          effectivePrompt = '';
-          console.log(`[live-gen] Model ${modelId} is image-only, clearing prompt`);
+        // 如果模型只支持图片输入（不支持文本），则清空 prompt
+        if (model && model.input) {
+          const types = model.input.types || [];
+          const supportsText = types.includes('text');
+          if (!supportsText) {
+            effectivePrompt = '';
+            console.log(`[live-gen] Model ${modelId} is image-only, clearing prompt`);
+          }
         }
       } catch (e) {
         console.warn('[live-gen] Failed to read model config:', e.message);

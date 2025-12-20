@@ -51,7 +51,7 @@
             <el-form-item v-if="showImage && hasImageSlots" label="参考图">
               <div class="image-slots-container">
                 <div 
-                  v-for="(slot, index) in currentModel.imageSlots" 
+                  v-for="(slot, index) in imageSlots" 
                   :key="slot.name" 
                   class="image-slot"
                 >
@@ -269,20 +269,33 @@ const currentModel = computed(() => {
   return models.value.find(m => m.id === form.value.modelId);
 });
 
-// 输入模式配置
-const inputMode = computed(() => currentModel.value?.inputMode || 'both');
+// 输入配置（新结构）
+const inputConfig = computed(() => currentModel.value?.input || { types: ['text', 'image'], mode: 'combined' });
+const inputTypes = computed(() => inputConfig.value.types || ['text', 'image']);
+const inputMode = computed(() => inputConfig.value.mode || 'combined');
+
+// 是否支持文本/图片输入
+const supportsText = computed(() => inputTypes.value.includes('text'));
+const supportsImage = computed(() => inputTypes.value.includes('image'));
 
 // 是否有 imageSlots 配置（多槽位图片上传）
 const hasImageSlots = computed(() => {
-  return currentModel.value?.imageSlots && currentModel.value.imageSlots.length > 0;
+  const slots = inputConfig.value.imageSlots;
+  return slots && slots.length > 0;
 });
 
-// 判断是否是单图输入模式（根据 inputType 配置）
-// inputType: "image" 或 "text_or_image" 都只允许单张图片
+// 获取 imageSlots 配置
+const imageSlots = computed(() => inputConfig.value.imageSlots || []);
+
+// 判断是否是单图输入模式
+// mode: "single" 表示单图，或者 types 只包含 "image" 且 mode 是 "exclusive"
 const isSingleImageInput = computed(() => {
-  const model = currentModel.value;
-  const inputType = model?.inputType;
-  return inputType === 'image' || inputType === 'text_or_image';
+  const mode = inputMode.value;
+  // single 模式且只支持图片
+  if (mode === 'single' && supportsImage.value && !supportsText.value) return true;
+  // exclusive 模式（文本或图片二选一，选图片时只能一张）
+  if (mode === 'exclusive') return true;
+  return false;
 });
 
 // 图片上传数量限制
@@ -313,16 +326,14 @@ const existingDimensionIds = computed(() => {
   return [];
 });
 const showPrompt = computed(() => {
-  const mode = inputMode.value;
-  if (mode === 'image') return false;
-  if (mode === 'exclusive') return activeInput.value === 'prompt';
-  return true; // both 或 prompt
+  if (!supportsText.value) return false;
+  if (inputMode.value === 'exclusive') return activeInput.value === 'prompt';
+  return true;
 });
 const showImage = computed(() => {
-  const mode = inputMode.value;
-  if (mode === 'prompt') return false;
-  if (mode === 'exclusive') return activeInput.value === 'image';
-  return true; // both 或 image
+  if (!supportsImage.value) return false;
+  if (inputMode.value === 'exclusive') return activeInput.value === 'image';
+  return true;
 });
 const isExclusiveMode = computed(() => inputMode.value === 'exclusive');
 
@@ -357,8 +368,8 @@ watch(() => form.value.modelId, (newVal) => {
   }
   
   // 重置互斥模式的默认输入类型
-  if (model?.inputMode === 'exclusive') {
-    activeInput.value = model.defaultInput || 'image';
+  if (model?.input?.mode === 'exclusive') {
+    activeInput.value = model.input.default || 'image';
   }
 });
 
@@ -497,7 +508,7 @@ function onSlotRemove(slotName, file, list) {
 function getSlotImagePaths() {
   if (!hasImageSlots.value) return [];
   
-  const slots = currentModel.value.imageSlots;
+  const slots = imageSlots.value;
   const paths = [];
   
   for (const slot of slots) {
@@ -518,7 +529,7 @@ function getSlotImagePaths() {
 function validateSlotImages() {
   if (!hasImageSlots.value) return { valid: true };
   
-  const slots = currentModel.value.imageSlots;
+  const slots = imageSlots.value;
   const missingRequired = [];
   let totalImages = 0;
   

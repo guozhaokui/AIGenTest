@@ -3,7 +3,12 @@
     "id": "google_gemini_image",
     "name": "Gemini 2.5 Flash",
     "driver": "google",
-    "inputMode": "both",
+    "input": {
+      "types": ["text", "image"],
+      "mode": "combined",
+      "default": "text"
+    },
+    "output": "image",
     "options": {
       "model": "gemini-2.5-flash-image",
       "useProxy": true
@@ -62,7 +67,12 @@
     "id": "google_gemini_image2",
     "name": "Gemini 3 Pro Image",
     "driver": "google",
-    "inputMode": "both",
+    "input": {
+      "types": ["text", "image"],
+      "mode": "combined",
+      "default": "text"
+    },
+    "output": "image",
     "options": {
       "model": "gemini-3-pro-image-preview",
       "useProxy": true
@@ -104,9 +114,9 @@
         "type": "select",
         "default": "ALLOW_ADULT",
         "options": [
-          { "label": "不生成儿童", "value": "ALLOW_ADULT" },
-          { "label": "不限制", "value": "ALLOW_ALL" },
-          { "label": "无人物", "value": "DONT_ALLOW" }
+          { "label": "允许成年人", "value": "ALLOW_ADULT" },
+          { "label": "允许所有人", "value": "ALLOW_ALL" },
+          { "label": "禁止", "value": "DONT_ALLOW" }
         ]
       },
       {
@@ -134,49 +144,54 @@
       }
     ]
   },
-
   {
     "id": "doubao_seedream_4_5",
     "name": "Doubao Seedream 4.5",
     "driver": "doubao",
-    "inputMode": "both",
+    "input": {
+      "types": ["text", "image"],
+      "mode": "combined",
+      "default": "text"
+    },
+    "output": "image",
     "options": {
       "model": "doubao-seedream-4-5-251128",
-      "size": "2K",
       "useProxy": false
     },
     "parameters": [
       {
         "name": "size",
-        "label": "Size",
+        "label": "尺寸",
         "type": "select",
         "default": "2K",
         "options": [
-          { "label": "2K (3104x1312 etc)", "value": "2K" },
+          { "label": "2K (3104x1312 等)", "value": "2K" },
           { "label": "4K", "value": "4K" }
         ]
       },
       {
         "name": "watermark",
-        "label": "Watermark",
+        "label": "水印",
         "type": "select",
         "default": "false",
         "options": [
-          { "label": "No", "value": "false" },
-          { "label": "Yes", "value": "true" }
+          { "label": "无", "value": "false" },
+          { "label": "有", "value": "true" }
         ]
       }
     ]
   },
   {
     "id": "z_image_local",
-    "name": "Z-Image (Local)",
+    "name": "Z-Image (本地)",
     "driver": "z_image",
-    "inputMode": "prompt",
+    "input": {
+      "types": ["text"],
+      "mode": "single"
+    },
+    "output": "image",
     "options": {
       "url": "http://192.168.0.100:6006/generate",
-      "width": 1024,
-      "height": 1024,
       "useProxy": false
     },
     "parameters": [
@@ -200,7 +215,7 @@
       },
       {
         "name": "num_inference_steps",
-        "label": "Steps",
+        "label": "推理步数",
         "type": "number",
         "default": 9,
         "min": 1,
@@ -209,7 +224,7 @@
       },
       {
         "name": "guidance_scale",
-        "label": "Guidance Scale",
+        "label": "引导系数",
         "type": "number",
         "default": 0,
         "min": 0.0,
@@ -218,52 +233,52 @@
       },
       {
         "name": "seed",
-        "label": "Seed",
+        "label": "随机种子",
         "type": "number",
         "default": 42,
-        "description": "-1 for random"
+        "description": "-1 表示随机"
       }
     ]
   },
   {
     "id": "doubao_seed3d",
-    "name": "Doubao Seed3D (3D Generation)",
+    "name": "Doubao Seed3D (3D生成)",
     "driver": "doubao",
-    "inputMode": "image",
-    "inputType": "image",
-    "outputType": "mesh",
+    "input": {
+      "types": ["image"],
+      "mode": "single"
+    },
+    "output": "mesh",
     "options": {
       "model": "doubao-seed3d-1-0-250928",
-      "useProxy": false,
-      "textParams": "--subdivisionlevel medium --fileformat glb"
+      "useProxy": false
     },
     "parameters": [
       {
         "name": "textParams",
-        "label": "3D Parameters",
+        "label": "质量等级",
         "type": "select",
         "default": "--subdivisionlevel medium --fileformat glb",
         "options": [
-          { "label": "Medium Quality (GLB)", "value": "--subdivisionlevel medium --fileformat glb" },
-          { "label": "High Quality (GLB)", "value": "--subdivisionlevel high --fileformat glb" },
-          { "label": "Low Quality (GLB)", "value": "--subdivisionlevel low --fileformat glb" }
+          { "label": "中等质量 (GLB)", "value": "--subdivisionlevel medium --fileformat glb" },
+          { "label": "高质量 (GLB)", "value": "--subdivisionlevel high --fileformat glb" },
+          { "label": "低质量 (GLB)", "value": "--subdivisionlevel low --fileformat glb" }
         ]
       }
     ]
   },
   {
     "id": "tripo_3d",
-    "name": "Tripo3D (3D Generation)",
+    "name": "Tripo3D (3D生成)",
     "driver": "tripo",
-    "inputMode": "exclusive",
-    "defaultInput": "image",
-    "inputType": "text_or_image",
-    "outputType": "mesh",
+    "input": {
+      "types": ["text", "image"],
+      "mode": "exclusive",
+      "default": "image"
+    },
+    "output": "mesh",
     "options": {
-      "useProxy": false,
-      "modelVersion": "default",
-      "texture": true,
-      "pbr": true
+      "useProxy": false
     },
     "parameters": [
       {
@@ -272,7 +287,7 @@
         "type": "select",
         "default": "default",
         "options": [
-          { "label": "Default (Latest 3.0)", "value": "default" },
+          { "label": "最新版 (3.0)", "value": "default" },
           { "label": "v2.5", "value": "v2.5-20241101" },
           { "label": "v2.0", "value": "v2.0-20240919" },
           { "label": "v1.4", "value": "v1.4-20240625" }
@@ -284,8 +299,8 @@
         "type": "select",
         "default": "true",
         "options": [
-          { "label": "Yes", "value": "true" },
-          { "label": "No", "value": "false" }
+          { "label": "启用", "value": "true" },
+          { "label": "禁用", "value": "false" }
         ]
       },
       {
@@ -294,61 +309,60 @@
         "type": "select",
         "default": "true",
         "options": [
-          { "label": "Yes", "value": "true" },
-          { "label": "No", "value": "false" }
+          { "label": "启用", "value": "true" },
+          { "label": "禁用", "value": "false" }
         ]
       },
       {
         "name": "faceLimit",
-        "label": "面数",
+        "label": "面数限制",
         "type": "number",
         "default": 50000,
         "min": 1000,
         "max": 500000,
         "step": 1000,
-        "description": "Maximum number of faces in output mesh"
+        "description": "输出网格的最大面数"
       },
       {
         "name": "orientation",
-        "label": "Orientation (3.0)",
+        "label": "朝向控制 (3.0)",
         "type": "select",
         "default": "",
         "options": [
-          { "label": "Auto", "value": "" },
-          { "label": "Align to Image", "value": "align_image" },
-          { "label": "None", "value": "none" }
+          { "label": "自动", "value": "" },
+          { "label": "对齐图片", "value": "align_image" },
+          { "label": "无", "value": "none" }
         ],
-        "description": "Model orientation control"
+        "description": "模型朝向控制"
       }
     ]
   },
   {
     "id": "tripo_3d_multiview",
-    "name": "Tripo3D Multiview (3D, Multi-image)",
+    "name": "Tripo3D 多视图 (3D生成)",
     "driver": "tripo",
-    "inputMode": "image",
-    "inputType": "multiview",
-    "outputType": "mesh",
-    "imageSlots": [
-      { "name": "front", "label": "正面", "required": true, "description": "正面视图（必需）" },
-      { "name": "left", "label": "左侧", "required": false, "description": "左侧视图" },
-      { "name": "back", "label": "背面", "required": false, "description": "背面视图" },
-      { "name": "right", "label": "右侧", "required": false, "description": "右侧视图" }
-    ],
+    "input": {
+      "types": ["image"],
+      "mode": "multiview",
+      "imageSlots": [
+        { "name": "front", "label": "正面", "required": true, "description": "正面视图（必需）" },
+        { "name": "left", "label": "左侧", "required": false, "description": "左侧视图" },
+        { "name": "back", "label": "背面", "required": false, "description": "背面视图" },
+        { "name": "right", "label": "右侧", "required": false, "description": "右侧视图" }
+      ]
+    },
+    "output": "mesh",
     "options": {
-      "useProxy": false,
-      "modelVersion": "v3.0-20250812",
-      "texture": true,
-      "pbr": true
+      "useProxy": false
     },
     "parameters": [
       {
         "name": "modelVersion",
-        "label": "Model Version",
+        "label": "版本",
         "type": "select",
-        "default": "default",
+        "default": "v3.0-20250812",
         "options": [
-          { "label": "Default (Latest 3.0)", "value": "default" },
+          { "label": "最新版 (3.0)", "value": "v3.0-20250812" },
           { "label": "v2.5", "value": "v2.5-20241101" },
           { "label": "v2.0", "value": "v2.0-20240919" }
         ]
@@ -359,8 +373,8 @@
         "type": "select",
         "default": "true",
         "options": [
-          { "label": "Yes", "value": "true" },
-          { "label": "No", "value": "false" }
+          { "label": "启用", "value": "true" },
+          { "label": "禁用", "value": "false" }
         ]
       },
       {
@@ -369,13 +383,13 @@
         "type": "select",
         "default": "true",
         "options": [
-          { "label": "Yes", "value": "true" },
-          { "label": "No", "value": "false" }
+          { "label": "启用", "value": "true" },
+          { "label": "禁用", "value": "false" }
         ]
       },
       {
         "name": "faceLimit",
-        "label": "面数",
+        "label": "面数限制",
         "type": "number",
         "default": 50000,
         "min": 1000,
@@ -386,16 +400,15 @@
   },
   {
     "id": "meshy_image_to_3d",
-    "name": "Meshy Image to 3D",
+    "name": "Meshy 图片转3D",
     "driver": "meshy",
-    "inputMode": "image",
-    "inputType": "image",
-    "outputType": "mesh",
+    "input": {
+      "types": ["image"],
+      "mode": "single"
+    },
+    "output": "mesh",
     "options": {
-      "useProxy": false,
-      "enablePbr": true,
-      "shouldRemesh": true,
-      "shouldTexture": true
+      "useProxy": false
     },
     "parameters": [
       {
@@ -454,14 +467,15 @@
   },
   {
     "id": "meshy_text_to_3d",
-    "name": "Meshy Text to 3D",
+    "name": "Meshy 文字转3D",
     "driver": "meshy",
-    "inputMode": "prompt",
-    "inputType": "text",
-    "outputType": "mesh",
+    "input": {
+      "types": ["text"],
+      "mode": "single"
+    },
+    "output": "mesh",
     "options": {
-      "useProxy": false,
-      "mode": "preview"
+      "useProxy": false
     },
     "parameters": [
       {
@@ -533,11 +547,14 @@
   },
   {
     "id": "meshy_multi_image_to_3d",
-    "name": "Meshy Multi-Image to 3D",
+    "name": "Meshy 多图转3D",
     "driver": "meshy",
-    "inputMode": "image",
-    "inputType": "images",
-    "outputType": "mesh",
+    "input": {
+      "types": ["image"],
+      "mode": "multiple",
+      "maxImages": 4
+    },
+    "output": "mesh",
     "options": {
       "useProxy": false
     },
@@ -567,17 +584,15 @@
   },
   {
     "id": "trellis2_image_to_3d",
-    "name": "TRELLIS.2 (Local 3D)",
+    "name": "TRELLIS.2 (本地3D)",
     "driver": "trellis",
-    "inputMode": "image",
-    "inputType": "image",
-    "outputType": "mesh",
+    "input": {
+      "types": ["image"],
+      "mode": "single"
+    },
+    "output": "mesh",
     "options": {
-      "url": "http://localhost:8000",
-      "simplifyFaces": 16777216,
-      "decimationTarget": 1000000,
-      "textureSize": 4096,
-      "remesh": true
+      "url": "http://localhost:8000"
     },
     "parameters": [
       {
@@ -615,5 +630,5 @@
         "description": "是否重新网格化以优化拓扑"
       }
     ]
-  }]
-
+  }
+]
