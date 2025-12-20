@@ -334,6 +334,16 @@
           { "label": "无", "value": "none" }
         ],
         "description": "模型朝向控制"
+      },
+      {
+        "name": "modelSeed",
+        "label": "随机种子",
+        "type": "number",
+        "default": -1,
+        "min": -1,
+        "max": 2147483647,
+        "step": 1,
+        "description": "-1 表示随机，设置相同种子可生成相同模型 (v2.0+)"
       }
     ]
   },
@@ -395,6 +405,16 @@
         "min": 1000,
         "max": 500000,
         "step": 1000
+      },
+      {
+        "name": "modelSeed",
+        "label": "随机种子",
+        "type": "number",
+        "default": -1,
+        "min": -1,
+        "max": 2147483647,
+        "step": 1,
+        "description": "-1 表示随机，设置相同种子可生成相同模型 (v2.0+)"
       }
     ]
   },

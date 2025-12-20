@@ -436,6 +436,11 @@ async function generate3D({ apiKey, model, prompt, images, config, dispatcher })
     payload.orientation = config.orientation;
   }
   
+  // 随机种子（-1 表示随机，仅 v2.0+ 支持）
+  if (config.modelSeed !== undefined && config.modelSeed !== -1 && config.modelSeed !== '-1') {
+    payload.model_seed = parseInt(config.modelSeed);
+  }
+  
   // 文本模式专用参数
   if (payload.type === 'text_to_model') {
     if (config.style) {
