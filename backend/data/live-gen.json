@@ -2832,5 +2832,131 @@
     },
     "comment": "认识线条 \n手是错的\n头前倾\n\n",
     "thumbnailPath": "/modeldb/60f5b5d3-b5c2-4340-9595-6a99d0d06abd/8e433709-eabc-45e4-af8f-349e4ada55e8/thumbnail.jpg"
+  },
+  {
+    "id": "ff71dc87-a12c-47e2-86e7-1d7d916cddff",
+    "prompt": "",
+    "imagePath": "/modeldb/2c6d3993-5b05-497c-a6fb-9326994d607c/ca958edb-c3a5-4424-a2ff-1ceae5b7639d",
+    "imageUrls": [
+      "/imagedb/89/94/8994fbbd1943c814089d877fac2930ec.jpg"
+    ],
+    "modelId": "trellis2_image_to_3d",
+    "modelName": "",
+    "params": {
+      "decimationTarget": 100000,
+      "textureSize": "2048",
+      "remesh": "true"
+    },
+    "duration": 107361,
+    "info3d": {
+      "modelDir": "/modeldb/2c6d3993-5b05-497c-a6fb-9326994d607c/ca958edb-c3a5-4424-a2ff-1ceae5b7639d",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T08:12:55.950Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/2c6d3993-5b05-497c-a6fb-9326994d607c/ca958edb-c3a5-4424-a2ff-1ceae5b7639d/thumbnail.jpg",
+    "comment": "材质还可以\n脸崩了"
+  },
+  {
+    "id": "538e9ae0-09db-445f-b1a9-59a8cf028e74",
+    "prompt": "",
+    "imagePath": "/modeldb/35befc68-2c3b-4fb1-98fe-d8da52ddc27c/40d0bde6-d492-4c88-9f72-200eb4ab8094",
+    "imageUrls": [
+      "/imagedb/50/5e/505e1394d81bed3a21862e85a6d6d584.png"
+    ],
+    "modelId": "trellis2_image_to_3d",
+    "modelName": "",
+    "params": {
+      "decimationTarget": 100000,
+      "textureSize": "2048",
+      "remesh": "true"
+    },
+    "duration": 63233,
+    "info3d": {
+      "modelDir": "/modeldb/35befc68-2c3b-4fb1-98fe-d8da52ddc27c/40d0bde6-d492-4c88-9f72-200eb4ab8094",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T08:16:40.616Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/35befc68-2c3b-4fb1-98fe-d8da52ddc27c/40d0bde6-d492-4c88-9f72-200eb4ab8094/thumbnail.jpg"
+  },
+  {
+    "id": "43f58aca-88e6-4b04-9e9f-d0ee0947cf16",
+    "prompt": "",
+    "imagePath": "/modeldb/a9d4c040-2a15-4364-b29d-20e1f6335343/69eb67e5-2079-4e11-9725-46188bfe4a0f",
+    "imageUrls": [
+      "/imagedb/50/5e/505e1394d81bed3a21862e85a6d6d584.png"
+    ],
+    "modelId": "trellis2_image_to_3d",
+    "modelName": "",
+    "params": {
+      "decimationTarget": 10000,
+      "textureSize": "2048",
+      "remesh": "true"
+    },
+    "duration": 60597,
+    "info3d": {
+      "modelDir": "/modeldb/a9d4c040-2a15-4364-b29d-20e1f6335343/69eb67e5-2079-4e11-9725-46188bfe4a0f",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T08:17:59.357Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/a9d4c040-2a15-4364-b29d-20e1f6335343/69eb67e5-2079-4e11-9725-46188bfe4a0f/thumbnail.jpg"
+  },
+  {
+    "id": "d926b463-2beb-4d9e-8cb5-c11960e03f44",
+    "prompt": "",
+    "imagePath": "/modeldb/94b2e897-ef07-4bd8-bbd7-73f0a52d451e/833c5ff6-f1c1-45eb-8f01-c1fef41e8cee",
+    "imageUrls": [
+      "/imagedb/0c/17/0c17a124cca6cc6d1008dee34402ae17.png"
+    ],
+    "modelId": "trellis2_image_to_3d",
+    "modelName": "",
+    "params": {
+      "decimationTarget": 10000,
+      "textureSize": "2048",
+      "remesh": "true"
+    },
+    "duration": 42451,
+    "info3d": {
+      "modelDir": "/modeldb/94b2e897-ef07-4bd8-bbd7-73f0a52d451e/833c5ff6-f1c1-45eb-8f01-c1fef41e8cee",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T08:20:48.619Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/94b2e897-ef07-4bd8-bbd7-73f0a52d451e/833c5ff6-f1c1-45eb-8f01-c1fef41e8cee/thumbnail.jpg",
+    "comment": "成纸片了"
+  },
+  {
+    "id": "391e0a1f-9061-4d81-9e65-220044b81213",
+    "prompt": "",
+    "imagePath": "/modeldb/4d81409a-2b14-4167-b142-71889d9fee85/73237fca-d50e-4499-bf61-eca06e42f9e1",
+    "imageUrls": [
+      "/imagedb/0c/17/0c17a124cca6cc6d1008dee34402ae17.png"
+    ],
+    "modelId": "trellis2_image_to_3d",
+    "modelName": "",
+    "params": {
+      "decimationTarget": 100000,
+      "textureSize": "2048",
+      "remesh": "true"
+    },
+    "duration": 63309,
+    "info3d": {
+      "modelDir": "/modeldb/4d81409a-2b14-4167-b142-71889d9fee85/73237fca-d50e-4499-bf61-eca06e42f9e1",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T08:23:11.683Z",
+    "dimensionScores": {}
   }
 ]
