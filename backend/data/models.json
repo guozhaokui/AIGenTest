@@ -629,6 +629,69 @@
     ]
   },
   {
+    "id": "meshy_rigging",
+    "name": "Meshy 自动绑骨",
+    "description": "⚠️ 仅支持：带贴图的人形模型，且四肢清晰、姿势标准(T-pose/A-pose)",
+    "driver": "meshy",
+    "input": {
+      "types": ["file"],
+      "mode": "single",
+      "accept": ".glb",
+      "hint": "拖入或选择 GLB 模型文件（人形角色）"
+    },
+    "output": "mesh",
+    "options": {
+      "useProxy": false,
+      "taskType": "rigging"
+    },
+    "parameters": [
+      {
+        "name": "draftTaskId",
+        "label": "或选择已生成的模型",
+        "type": "model_select",
+        "default": "",
+        "driverFilter": "meshy",
+        "taskTypeFilter": ["image-to-3d", "text-to-3d", "multi-image-to-3d"],
+        "description": "也可以选择之前生成的 Meshy 模型"
+      },
+      {
+        "name": "heightMeters",
+        "label": "角色身高(米)",
+        "type": "number",
+        "default": 1.7,
+        "min": 0.5,
+        "max": 3.0,
+        "step": 0.1,
+        "description": "角色的大致身高，用于缩放和绑定精度"
+      }
+    ]
+  },
+  {
+    "id": "meshy_animation",
+    "name": "Meshy 自动动画",
+    "driver": "meshy",
+    "input": {
+      "types": [],
+      "mode": "params_only"
+    },
+    "output": "mesh",
+    "options": {
+      "useProxy": false,
+      "taskType": "animation"
+    },
+    "parameters": [
+      {
+        "name": "riggingTaskId",
+        "label": "选择已绑骨的模型",
+        "type": "model_select",
+        "default": "",
+        "driverFilter": "meshy",
+        "taskTypeFilter": ["rigging"],
+        "description": "选择之前 Meshy 完成绑骨的模型"
+      }
+    ]
+  },
+  {
     "id": "trellis2_image_to_3d",
     "name": "TRELLIS.2 (本地3D)",
     "driver": "trellis",

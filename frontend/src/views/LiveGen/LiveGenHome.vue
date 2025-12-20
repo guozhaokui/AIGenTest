@@ -87,27 +87,30 @@
               </div>
             </el-form-item>
             
-            <!-- 通用参考图上传 - 在提示词下方，用v-show保留状态 -->
-            <el-form-item v-else-if="showImage" label="参考图">
+            <!-- 通用参考图/文件上传 - 在提示词下方，用v-show保留状态 -->
+            <el-form-item v-else-if="showImage" :label="supportsFile ? '上传文件' : '参考图'">
               <div class="upload-zone">
                 <el-upload
                   ref="uploadRef"
                   drag
                   :multiple="!isSingleImageInput"
                   :limit="imageUploadLimit"
-                  list-type="picture-card"
+                  :list-type="supportsFile ? 'text' : 'picture-card'"
                   action="/api/examples/upload"
                   v-model:file-list="fileList"
                   :on-success="onUploadSuccess"
                   :on-remove="onRemove"
                   :on-preview="handlePreview"
-                  accept="image/*"
+                  :accept="supportsFile ? inputAccept : 'image/*'"
                   class="ref-image-upload"
-                  :class="{ 'hide-upload-trigger': hasEnoughImages }"
+                  :class="{ 
+                    'hide-upload-trigger': hasEnoughImages,
+                    'file-upload-mode': supportsFile
+                  }"
                 >
                   <div class="upload-placeholder">
                     <el-icon class="upload-icon"><Plus /></el-icon>
-                    <span class="upload-hint">{{ imageUploadHint }}</span>
+                    <span class="upload-hint">{{ inputHint || imageUploadHint }}</span>
                   </div>
                 </el-upload>
               </div>
@@ -319,9 +322,14 @@ const inputConfig = computed(() => currentModel.value?.input || { types: ['text'
 const inputTypes = computed(() => inputConfig.value.types || ['text', 'image']);
 const inputMode = computed(() => inputConfig.value.mode || 'combined');
 
-// 是否支持文本/图片输入
+// 是否支持文本/图片/文件输入
 const supportsText = computed(() => inputTypes.value.includes('text'));
 const supportsImage = computed(() => inputTypes.value.includes('image'));
+const supportsFile = computed(() => inputTypes.value.includes('file'));
+
+// 文件上传的 accept 类型和提示
+const inputAccept = computed(() => inputConfig.value.accept || 'image/*');
+const inputHint = computed(() => inputConfig.value.hint || '');
 
 // 是否有 imageSlots 配置（多槽位图片上传）
 const hasImageSlots = computed(() => {
@@ -381,7 +389,8 @@ const showPrompt = computed(() => {
 });
 const showImage = computed(() => {
   if (isParamsOnlyMode.value) return false;
-  if (!supportsImage.value) return false;
+  // 支持 image 或 file 类型
+  if (!supportsImage.value && !supportsFile.value) return false;
   if (inputMode.value === 'exclusive') return activeInput.value === 'image';
   return true;
 });
@@ -1128,6 +1137,46 @@ async function handleThumbnail(dataUrl) {
   font-size: 11px;
   color: #909399;
   text-align: center;
+}
+
+/* 文件上传模式（如 GLB 文件） */
+.ref-image-upload.file-upload-mode {
+  width: 100%;
+}
+
+.ref-image-upload.file-upload-mode :deep(.el-upload) {
+  width: 100%;
+}
+
+.ref-image-upload.file-upload-mode :deep(.el-upload-dragger) {
+  width: 100%;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #dcdfe6;
+  border-radius: 8px;
+  background: #fafafa;
+  transition: all 0.2s;
+}
+
+.ref-image-upload.file-upload-mode :deep(.el-upload-dragger:hover) {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.ref-image-upload.file-upload-mode :deep(.el-upload-list) {
+  margin-top: 10px;
+}
+
+.ref-image-upload.file-upload-mode :deep(.el-upload-list__item) {
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+  background: #f5f7fa;
+}
+
+.ref-image-upload.file-upload-mode.hide-upload-trigger :deep(.el-upload) {
+  display: none !important;
 }
 
 /* 下半部分：参数设置区域 */

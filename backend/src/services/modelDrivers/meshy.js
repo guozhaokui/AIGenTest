@@ -469,6 +469,7 @@ async function generate({ apiKey, model, prompt, images, config }) {
   const meta = {
     taskId: taskId,
     taskType: taskType,
+    driver: 'meshy',
     createdAt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
     meshyResult: {
       modelUrls: taskResult.model_urls,
@@ -492,12 +493,376 @@ async function generate({ apiKey, model, prompt, images, config }) {
   };
 }
 
+// ========== 绑定 API (Rigging) ==========
+
+/**
+ * 轮询绑定/动画任务状态
+ * @param {string} taskId - 任务 ID
+ * @param {string} taskType - 任务类型 ('rig' 或 'animate')
+ * @param {string} apiKey - API Key
+ * @param {object} dispatcher - 可选的 dispatcher
+ */
+async function pollRiggingTask(taskId, taskType, apiKey, dispatcher) {
+  const endpointMap = {
+    'rig': `/openapi/v1/rigging/${taskId}`,
+    'animate': `/openapi/v1/animations/${taskId}`
+  };
+  
+  const pollUrl = `${BASE_URL}${endpointMap[taskType]}`;
+  const maxAttempts = 120; // 120 attempts (20 分钟，10s 间隔)
+  const intervalMs = 10000; // 10 秒
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const response = await fetch(pollUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`
+      },
+      dispatcher
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Meshy ${taskType} API 轮询失败: ${response.status} ${response.statusText} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    const status = result.status;
+    const progress = result.progress || 0;
+    
+    console.log(`[meshy-${taskType}] 轮询 ${attempt + 1}/${maxAttempts}, 状态: ${status}, 进度: ${progress}%`);
+
+    if (status === 'SUCCEEDED') {
+      return result;
+    } else if (status === 'FAILED') {
+      const errorMsg = result.task_error?.message || result.message || 'Unknown error';
+      throw new Error(`${taskType} 任务失败: ${errorMsg}`);
+    } else if (status === 'CANCELED') {
+      throw new Error(`${taskType} 任务已取消`);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, intervalMs));
+  }
+
+  throw new Error(`${taskType} 任务超时`);
+}
+
+/**
+ * 创建绑定任务
+ * @param {object} params - 参数
+ * @param {string} params.apiKey - API Key
+ * @param {string} params.inputTaskId - 输入任务 ID（可选，与 modelUrl 二选一）
+ * @param {string} params.modelUrl - 模型 URL 或 Data URI（可选）
+ * @param {object} params.config - 配置
+ * @param {object} params.dispatcher - 可选的 dispatcher
+ */
+async function createRiggingTask({ apiKey, inputTaskId, modelUrl, config, dispatcher }) {
+  const apiUrl = `${BASE_URL}/openapi/v1/rigging`;
+  
+  const payload = {};
+  
+  // 设置输入来源（二选一）
+  if (inputTaskId) {
+    payload.input_task_id = inputTaskId;
+  } else if (modelUrl) {
+    payload.model_url = modelUrl;
+  } else {
+    throw new Error('绑定任务需要 input_task_id 或 model_url');
+  }
+  
+  // 可选：角色身高（米）
+  if (config.heightMeters !== undefined) {
+    payload.height_meters = parseFloat(config.heightMeters);
+  }
+  
+  // 可选：贴图 URL
+  if (config.textureImageUrl) {
+    payload.texture_image_url = config.textureImageUrl;
+  }
+
+  console.log('[meshy-rig] 创建绑定任务:', JSON.stringify(payload, null, 2));
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify(payload),
+    dispatcher
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    
+    // 解析常见错误并提供更友好的提示
+    let friendlyMessage = `绑定 API 失败: ${response.status} - ${errorText}`;
+    
+    if (response.status === 422) {
+      if (errorText.includes('Pose estimation failed')) {
+        friendlyMessage = '姿态估计失败：模型不符合绑骨要求。\n' +
+          '可能原因：\n' +
+          '1. 模型不是人形角色\n' +
+          '2. 模型姿势不标准（建议使用 T-pose 或 A-pose）\n' +
+          '3. 模型四肢或身体结构不清晰\n' +
+          '4. 模型没有贴图';
+      } else if (errorText.includes('not humanoid')) {
+        friendlyMessage = '模型不是人形角色，自动绑骨仅支持人形模型';
+      }
+    }
+    
+    throw new Error(friendlyMessage);
+  }
+
+  const result = await response.json();
+  const taskId = result.result;
+  
+  if (!taskId) {
+    throw new Error(`绑定 API 返回无效: ${JSON.stringify(result)}`);
+  }
+  
+  console.log(`[meshy-rig] 创建绑定任务成功，ID: ${taskId}`);
+  return taskId;
+}
+
+/**
+ * 创建动画任务
+ * @param {object} params - 参数
+ * @param {string} params.apiKey - API Key
+ * @param {string} params.inputTaskId - 绑定任务 ID（必填）
+ * @param {object} params.config - 配置
+ * @param {object} params.dispatcher - 可选的 dispatcher
+ */
+async function createAnimationTask({ apiKey, inputTaskId, config, dispatcher }) {
+  const apiUrl = `${BASE_URL}/openapi/v1/animations`;
+  
+  if (!inputTaskId) {
+    throw new Error('动画任务需要绑定任务的 input_task_id');
+  }
+  
+  const payload = {
+    input_task_id: inputTaskId
+  };
+  
+  // 可选：动画类型
+  if (config.animationType) {
+    payload.animation_type = config.animationType;
+  }
+  
+  // 可选：动画时长（秒）
+  if (config.duration !== undefined) {
+    payload.duration = parseFloat(config.duration);
+  }
+
+  console.log('[meshy-animate] 创建动画任务:', JSON.stringify(payload, null, 2));
+
+  const response = await fetch(apiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify(payload),
+    dispatcher
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`动画 API 失败: ${response.status} ${response.statusText} - ${errorText}`);
+  }
+
+  const result = await response.json();
+  const taskId = result.result;
+  
+  if (!taskId) {
+    throw new Error(`动画 API 返回无效: ${JSON.stringify(result)}`);
+  }
+  
+  console.log(`[meshy-animate] 创建动画任务成功，ID: ${taskId}`);
+  return taskId;
+}
+
+/**
+ * 执行绑定生成
+ * @param {object} params - 参数
+ */
+async function rigging({ apiKey, images, config }) {
+  if (!apiKey) {
+    throw new Error('需要设置 MESHY_API_KEY 环境变量');
+  }
+
+  const dispatcher = getDispatcher(config);
+  
+  // 确定输入来源
+  let inputTaskId = config.inputTaskId || config.draftTaskId;
+  let modelUrl = null;
+  
+  // 如果提供了文件（GLB 模型），转为 Data URI
+  if (!inputTaskId && images && images.length > 0) {
+    const file = images[0];
+    // 确保 mimeType 正确（GLB 文件可能被识别为 octet-stream）
+    let mimeType = file.mimeType;
+    if (mimeType === 'application/octet-stream' || !mimeType) {
+      // 如果原始路径以 .glb 结尾，使用正确的 mimeType
+      if (file.originalPath?.toLowerCase().endsWith('.glb')) {
+        mimeType = 'model/gltf-binary';
+      }
+    }
+    modelUrl = toDataUrl(file.dataBase64, mimeType);
+    console.log(`[meshy-rig] 使用上传的模型文件，类型: ${mimeType}, 大小: ${file.dataBase64.length} 字节 (base64)`);
+  }
+  
+  if (!inputTaskId && !modelUrl) {
+    throw new Error('绑定需要选择之前生成的模型或上传 GLB 文件');
+  }
+  
+  // 创建绑定任务
+  const taskId = await createRiggingTask({
+    apiKey,
+    inputTaskId,
+    modelUrl,
+    config,
+    dispatcher
+  });
+  
+  // 轮询等待完成
+  const result = await pollRiggingTask(taskId, 'rig', apiKey, dispatcher);
+  
+  console.log('[meshy-rig] 绑定完成，结果:', JSON.stringify(result, null, 2));
+  
+  // 提取输出 URL
+  const riggingResult = result.result || {};
+  
+  // 优先使用 GLB 格式
+  const modelUrlResult = riggingResult.rigged_character_glb_url || riggingResult.rigged_character_fbx_url;
+  
+  if (!modelUrlResult) {
+    throw new Error('绑定任务未返回模型 URL');
+  }
+  
+  // 下载模型
+  console.log('[meshy-rig] 开始下载绑定后的模型...');
+  const { buffer, contentType } = await downloadContent(modelUrlResult, 3);
+  
+  const base64 = buffer.toString('base64');
+  const isGlb = modelUrlResult.includes('.glb');
+  
+  // 构建元数据
+  const meta = {
+    taskId: taskId,
+    taskType: 'rigging',
+    driver: 'meshy',
+    createdAt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
+    inputTaskId: inputTaskId || null,
+    riggingResult: {
+      riggedCharacterGlbUrl: riggingResult.rigged_character_glb_url,
+      riggedCharacterFbxUrl: riggingResult.rigged_character_fbx_url,
+      basicAnimations: riggingResult.basic_animations
+    }
+  };
+  
+  return {
+    dataBase64: base64,
+    mimeType: isGlb ? 'model/gltf-binary' : 'application/octet-stream',
+    modelPath: isGlb ? 'rigged_model.glb' : 'rigged_model.fbx',
+    usage: null,
+    meta
+  };
+}
+
+/**
+ * 执行动画生成
+ * @param {object} params - 参数
+ */
+async function animate({ apiKey, config }) {
+  if (!apiKey) {
+    throw new Error('需要设置 MESHY_API_KEY 环境变量');
+  }
+
+  const dispatcher = getDispatcher(config);
+  
+  const inputTaskId = config.inputTaskId || config.riggingTaskId;
+  
+  if (!inputTaskId) {
+    throw new Error('动画生成需要选择之前的绑定任务');
+  }
+  
+  // 创建动画任务
+  const taskId = await createAnimationTask({
+    apiKey,
+    inputTaskId,
+    config,
+    dispatcher
+  });
+  
+  // 轮询等待完成
+  const result = await pollRiggingTask(taskId, 'animate', apiKey, dispatcher);
+  
+  console.log('[meshy-animate] 动画完成，结果:', JSON.stringify(result, null, 2));
+  
+  // 提取输出 URL
+  const animResult = result.result || {};
+  
+  // 优先使用 GLB 格式
+  const modelUrlResult = animResult.animation_glb_url || animResult.animation_fbx_url;
+  
+  if (!modelUrlResult) {
+    throw new Error('动画任务未返回模型 URL');
+  }
+  
+  // 下载模型
+  console.log('[meshy-animate] 开始下载动画模型...');
+  const { buffer, contentType } = await downloadContent(modelUrlResult, 3);
+  
+  const base64 = buffer.toString('base64');
+  const isGlb = modelUrlResult.includes('.glb');
+  
+  // 构建元数据
+  const meta = {
+    taskId: taskId,
+    taskType: 'animation',
+    driver: 'meshy',
+    createdAt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
+    inputTaskId: inputTaskId,
+    animationResult: {
+      animationGlbUrl: animResult.animation_glb_url,
+      animationFbxUrl: animResult.animation_fbx_url,
+      processedUsdzUrl: animResult.processed_usdz_url
+    }
+  };
+  
+  return {
+    dataBase64: base64,
+    mimeType: isGlb ? 'model/gltf-binary' : 'application/octet-stream',
+    modelPath: isGlb ? 'animated_model.glb' : 'animated_model.fbx',
+    usage: null,
+    meta
+  };
+}
+
+// 统一生成入口，根据 taskType 分发
+async function generateWithTaskType({ apiKey, model, prompt, images, config }) {
+  const taskType = config.taskType;
+  
+  if (taskType === 'rigging') {
+    return rigging({ apiKey, images, config });
+  } else if (taskType === 'animation') {
+    return animate({ apiKey, config });
+  } else {
+    // 默认使用原有的 3D 生成逻辑
+    return generate({ apiKey, model, prompt, images, config });
+  }
+}
+
 // Export additional functions for direct access if needed
 module.exports = { 
-  generate,
+  generate: generateWithTaskType, // 使用新的统一入口
   textTo3D,
   imageTo3D,
   multiImageTo3D,
-  pollTask
+  rigging,
+  animate,
+  pollTask,
+  pollRiggingTask
 };
 

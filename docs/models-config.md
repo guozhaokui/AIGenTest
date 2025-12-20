@@ -443,6 +443,8 @@
 | `meshy_image_to_3d` | Meshy 图片转3D | meshy | 图片 | mesh |
 | `meshy_text_to_3d` | Meshy 文字转3D | meshy | 文本 | mesh |
 | `meshy_multi_image_to_3d` | Meshy 多图转3D | meshy | 多图片 | mesh |
+| `meshy_rigging` | Meshy 自动绑骨 | meshy | GLB文件或选择模型 | mesh |
+| `meshy_animation` | Meshy 自动动画 | meshy | 仅参数 | mesh |
 | `trellis2_image_to_3d` | TRELLIS.2 (本地3D) | trellis | 图片 | mesh |
 
 ---

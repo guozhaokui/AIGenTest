@@ -3247,5 +3247,29 @@
     "createdAt": "2025-12-20T12:26:10.724Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/963d7009-b2e6-41e1-ab49-5c2d79ec6f9e/1cc5f2aa-eaf0-4e80-b103-693cd4c2d030/thumbnail.jpg"
+  },
+  {
+    "id": "2b3d4a65-f332-4849-8714-056dca319571",
+    "prompt": "",
+    "imagePath": "/modeldb/549fbfc8-eca1-4653-9d42-05790fe72e4c/e697d82e-0593-4237-9c0d-e86183174d87",
+    "imageUrls": [
+      "imagedb/9b/7a/9b7a6eb5a8f8df1406234a1174ef7ea5.glb"
+    ],
+    "modelId": "meshy_rigging",
+    "modelName": "",
+    "params": {
+      "draftTaskId": "",
+      "heightMeters": 1.7
+    },
+    "duration": 131956,
+    "info3d": {
+      "modelDir": "/modeldb/549fbfc8-eca1-4653-9d42-05790fe72e4c/e697d82e-0593-4237-9c0d-e86183174d87",
+      "isSingleFile": true,
+      "modelPath": "rigged_model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T12:48:17.550Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/549fbfc8-eca1-4653-9d42-05790fe72e4c/e697d82e-0593-4237-9c0d-e86183174d87/thumbnail.jpg"
   }
 ]

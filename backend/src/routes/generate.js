@@ -33,11 +33,19 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.post('/', upload.any(), async (req, res, next) => {
   try {
     console.log('[generate] ==== INCOMING REQUEST ====');
-    console.log('[generate] Request body:', JSON.stringify(req.body, null, 2));
+    // 只打印关键字段，避免打印 base64 等大数据
+    const { prompt, modelId, modelName, imagePath, imagePaths, ...otherParams } = req.body || {};
+    console.log('[generate] modelId:', modelId, '| prompt:', prompt?.slice(0, 100) || '(empty)');
+    console.log('[generate] imagePath:', imagePath, '| imagePaths:', imagePaths);
     console.log('[generate] Request files:', req.files ? req.files.length : 0);
+    // 打印其他参数（排除可能的大数据字段）
+    const safeParams = Object.keys(otherParams).filter(k => !['imageSlots'].includes(k));
+    if (safeParams.length > 0) {
+      console.log('[generate] Other params:', safeParams.join(', '));
+    }
     
-    const { prompt, modelName, count, numberOfImages, imagePath, imagePaths } = req.body || {};
-    console.log('[generate] Extracted prompt:', prompt);
+    const { count, numberOfImages } = req.body || {};
+    console.log('[generate] Extracted prompt:', prompt?.slice(0, 100) || '(empty)');
     
     // 读取模型配置，根据 inputMode 判断是否需要 prompt
     const models = await readJson(MODELS_FILE).catch(() => []);
