@@ -302,40 +302,104 @@ async function generate3D({ apiKey, model, prompt, images, config, dispatcher })
   let inputImages = []; // 保存输入图片信息
   
   if (hasImage) {
-    // 上传所有图片
-    console.log(`[tripo] 上传 ${images.length} 张图片...`);
-    for (let i = 0; i < images.length; i++) {
-      const img = images[i];
-      const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
-      uploadedTokens.push(token);
-      // 保存图片信息（原始路径和 file_token）
-      inputImages.push({
-        index: i,
-        originalPath: img.originalPath || null,
-        mimeType: img.mimeType,
-        size: img.dataBase64.length,
-        fileToken: token
-      });
-    }
+    // 检查是否有 imageSlots 配置（多视图模式）
+    const imageSlots = config.imageSlots;
+    const isMultiview = imageSlots && imageSlots.length > 0;
     
-    if (images.length > 1) {
-      // 多视图模式
+    if (isMultiview) {
+      // ========== 多视图模式（Tripo Multiview API） ==========
+      // API 要求：files 必须恰好包含 4 个项目，顺序为 [front, left, back, right]
+      // 可以省略 file_token 来跳过某个视角，但正面必须提供
+      
+      const slotOrder = ['front', 'left', 'back', 'right'];
+      const slotMap = {}; // slotName -> image
+      
+      // imageSlots 包含 4 个槽位信息，每个槽位有 slot 和 path
+      // images 数组只包含有图片的槽位（按 imageSlots 中非空 path 的顺序）
+      // 需要将 images 按照 imageSlots 中有 path 的槽位进行匹配
+      
+      const slotsWithPath = imageSlots.filter(s => s.path);
+      console.log(`[tripo] 有图片的槽位:`, slotsWithPath.map(s => s.slot));
+      console.log(`[tripo] 图片数量:`, images.length);
+      
+      // 按顺序将图片匹配到有 path 的槽位
+      for (let i = 0; i < slotsWithPath.length && i < images.length; i++) {
+        const slotInfo = slotsWithPath[i];
+        slotMap[slotInfo.slot] = images[i];
+      }
+      
+      console.log(`[tripo] 多视图模式，槽位映射:`, Object.keys(slotMap));
+      
+      // 上传有图片的槽位
+      const slotTokens = {}; // slotName -> token
+      for (const slotName of Object.keys(slotMap)) {
+        const img = slotMap[slotName];
+        console.log(`[tripo] 上传 ${slotName} 视角图片...`);
+        const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
+        slotTokens[slotName] = token;
+        inputImages.push({
+          slot: slotName,
+          originalPath: img.originalPath || null,
+          mimeType: img.mimeType,
+          size: img.dataBase64.length,
+          fileToken: token
+        });
+      }
+      
+      // 构建 files 数组（始终 4 个元素，按 [front, left, back, right] 顺序）
+      const files = slotOrder.map(slotName => {
+        const token = slotTokens[slotName];
+        if (token) {
+          return { type: 'image', file_token: token };
+        } else {
+          // 没有该视角的图片，返回空对象（不含 file_token）
+          return { type: 'image' };
+        }
+      });
+      
       payload = {
         type: 'multiview_to_model',
-        files: uploadedTokens.map(token => ({
-          type: 'image',
-          file_token: token
-        }))
+        files: files
       };
+      
+      console.log(`[tripo] 多视图 files 数组:`, files.map((f, i) => `${slotOrder[i]}: ${f.file_token ? '有' : '无'}`));
+      
     } else {
-      // 单图模式
-      payload = {
-        type: 'image_to_model',
-        file: {
-          type: 'image',
-          file_token: uploadedTokens[0]
-        }
-      };
+      // ========== 普通模式（单图或多图） ==========
+      console.log(`[tripo] 上传 ${images.length} 张图片...`);
+      for (let i = 0; i < images.length; i++) {
+        const img = images[i];
+        const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
+        uploadedTokens.push(token);
+        // 保存图片信息（原始路径和 file_token）
+        inputImages.push({
+          index: i,
+          originalPath: img.originalPath || null,
+          mimeType: img.mimeType,
+          size: img.dataBase64.length,
+          fileToken: token
+        });
+      }
+      
+      if (images.length > 1) {
+        // 多图模式（非结构化的多视图，按顺序传递）
+        payload = {
+          type: 'multiview_to_model',
+          files: uploadedTokens.map(token => ({
+            type: 'image',
+            file_token: token
+          }))
+        };
+      } else {
+        // 单图模式
+        payload = {
+          type: 'image_to_model',
+          file: {
+            type: 'image',
+            file_token: uploadedTokens[0]
+          }
+        };
+      }
     }
   } else {
     // 文本模式

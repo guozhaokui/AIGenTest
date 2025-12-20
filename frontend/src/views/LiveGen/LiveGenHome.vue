@@ -47,8 +47,39 @@
               />
             </el-form-item>
             
-            <!-- 参考图上传 - 在提示词下方，用v-show保留状态 -->
-            <el-form-item v-show="showImage" label="参考图">
+            <!-- 多槽位图片上传（如 Tripo Multiview） -->
+            <el-form-item v-if="showImage && hasImageSlots" label="参考图">
+              <div class="image-slots-container">
+                <div 
+                  v-for="(slot, index) in currentModel.imageSlots" 
+                  :key="slot.name" 
+                  class="image-slot"
+                >
+                  <div class="slot-label">
+                    {{ slot.label }}
+                    <span v-if="slot.required" class="required-mark">*</span>
+                  </div>
+                  <el-upload
+                    :ref="el => setSlotUploadRef(slot.name, el)"
+                    list-type="picture-card"
+                    action="/api/examples/upload"
+                    :limit="1"
+                    :file-list="slotFileLists[slot.name] || []"
+                    :on-success="(res, file, list) => onSlotUploadSuccess(slot.name, res, file, list)"
+                    :on-remove="(file, list) => onSlotRemove(slot.name, file, list)"
+                    :on-preview="handlePreview"
+                    accept="image/*"
+                    class="slot-upload"
+                  >
+                    <el-icon class="upload-icon"><Plus /></el-icon>
+                  </el-upload>
+                  <div class="slot-hint">{{ slot.description }}</div>
+                </div>
+              </div>
+            </el-form-item>
+            
+            <!-- 通用参考图上传 - 在提示词下方，用v-show保留状态 -->
+            <el-form-item v-else-if="showImage" label="参考图">
               <div class="upload-zone">
                 <el-upload
                   ref="uploadRef"
@@ -219,6 +250,10 @@ const result = ref(null);
 const returnState = ref(null);
 const showScore = ref(false); // 评分区域是否展开
 
+// 多槽位图片上传状态（用于 imageSlots 配置的模型）
+const slotFileLists = ref({}); // { slotName: fileList }
+const slotUploadRefs = ref({}); // { slotName: uploadRef }
+
 const form = ref({
   modelId: '',
   prompt: '',
@@ -235,6 +270,11 @@ const currentModel = computed(() => {
 
 // 输入模式配置
 const inputMode = computed(() => currentModel.value?.inputMode || 'both');
+
+// 是否有 imageSlots 配置（多槽位图片上传）
+const hasImageSlots = computed(() => {
+  return currentModel.value?.imageSlots && currentModel.value.imageSlots.length > 0;
+});
 
 // 已有评分的维度 ID 列表（用于编辑历史记录时显示）
 const existingDimensionIds = computed(() => {
@@ -404,6 +444,76 @@ function onUploadSuccess(res) {
   form.value.imageUrls.push(path);
 }
 
+// 多槽位上传相关方法
+function setSlotUploadRef(slotName, el) {
+  if (el) {
+    slotUploadRefs.value[slotName] = el;
+  }
+}
+
+function onSlotUploadSuccess(slotName, res, file, list) {
+  const path = res.path || res.url;
+  // 更新该槽位的文件列表
+  slotFileLists.value[slotName] = list.map(f => ({
+    ...f,
+    slotPath: f.response?.path || f.response?.url || path
+  }));
+}
+
+function onSlotRemove(slotName, file, list) {
+  slotFileLists.value[slotName] = list;
+}
+
+// 获取多槽位图片路径（按槽位顺序）
+function getSlotImagePaths() {
+  if (!hasImageSlots.value) return [];
+  
+  const slots = currentModel.value.imageSlots;
+  const paths = [];
+  
+  for (const slot of slots) {
+    const files = slotFileLists.value[slot.name] || [];
+    if (files.length > 0) {
+      const file = files[0];
+      const path = file.slotPath || file.response?.path || file.response?.url || file.url;
+      paths.push({ slot: slot.name, path: path || null });
+    } else {
+      paths.push({ slot: slot.name, path: null });
+    }
+  }
+  
+  return paths;
+}
+
+// 验证多槽位图片是否满足要求
+function validateSlotImages() {
+  if (!hasImageSlots.value) return { valid: true };
+  
+  const slots = currentModel.value.imageSlots;
+  const missingRequired = [];
+  let totalImages = 0;
+  
+  for (const slot of slots) {
+    const files = slotFileLists.value[slot.name] || [];
+    if (files.length > 0) {
+      totalImages++;
+    } else if (slot.required) {
+      missingRequired.push(slot.label);
+    }
+  }
+  
+  if (missingRequired.length > 0) {
+    return { valid: false, message: `请上传必需的图片: ${missingRequired.join(', ')}` };
+  }
+  
+  // Tripo 多视图要求至少 2 张图片
+  if (totalImages < 2) {
+    return { valid: false, message: '多视图生成至少需要 2 张图片' };
+  }
+  
+  return { valid: true };
+}
+
 // 增加一个 el-image-viewer 的引用状态
 const showViewer = ref(false);
 const previewUrlList = ref([]);
@@ -461,57 +571,87 @@ async function handleGenerate() {
   // 根据输入模式验证
   const mode = inputMode.value;
   const hasPrompt = form.value.prompt && form.value.prompt.trim();
-  const hasImages = fileList.value.length > 0;
   
-  if (mode === 'prompt' && !hasPrompt) {
-    ElMessage.warning('请输入提示词');
-    return;
-  }
-  if (mode === 'image' && !hasImages) {
-    ElMessage.warning('请上传参考图');
-    return;
-  }
-  if (mode === 'exclusive') {
-    if (activeInput.value === 'prompt' && !hasPrompt) {
+  // 检查是否有多槽位图片配置
+  if (hasImageSlots.value) {
+    const validation = validateSlotImages();
+    if (!validation.valid) {
+      ElMessage.warning(validation.message);
+      return;
+    }
+  } else {
+    // 通用图片验证
+    const hasImages = fileList.value.length > 0;
+    
+    if (mode === 'prompt' && !hasPrompt) {
       ElMessage.warning('请输入提示词');
       return;
     }
-    if (activeInput.value === 'image' && !hasImages) {
+    if (mode === 'image' && !hasImages) {
       ElMessage.warning('请上传参考图');
       return;
     }
-  }
-  if (mode === 'both' && !hasPrompt && !hasImages) {
-    ElMessage.warning('请输入提示词或上传图片');
-    return;
+    if (mode === 'exclusive') {
+      if (activeInput.value === 'prompt' && !hasPrompt) {
+        ElMessage.warning('请输入提示词');
+        return;
+      }
+      if (activeInput.value === 'image' && !hasImages) {
+        ElMessage.warning('请上传参考图');
+        return;
+      }
+    }
+    if (mode === 'both' && !hasPrompt && !hasImages) {
+      ElMessage.warning('请输入提示词或上传图片');
+      return;
+    }
   }
   
   loading.value = true;
   // 不再清空 result，保留旧结果直到新结果生成成功
   
   try {
-    // 整理图片路径
-    // el-upload 的 fileList 包含所有文件
-    const currentFiles = fileList.value;
-    const paths = currentFiles.map(f => {
-        if(f.response && f.response.path) return f.response.path;
-        return f.url; // 可能是回显的，或者是其他情况
-    }).filter(Boolean);
+    let cleanPaths = [];
+    let imageSlotData = null;
     
-    // 确保路径格式正确（移除开头可能多余的 /）
-    const cleanPaths = paths.map(p => {
-      // 如果是回显的 url (如 /uploads/examples/...), 需要转回相对路径或保持原样供后端处理
-      // 后端 generate.js 会尝试加上 uploads/ 前缀，所以这里如果已经是 /uploads 开头，可以去掉开头的 /
-      let s = String(p);
-      if (s.startsWith('/')) s = s.slice(1);
-      console.log('cleanPaths', s);
-      return s;
-    });
+    if (hasImageSlots.value) {
+      // 多槽位图片模式
+      const slotPaths = getSlotImagePaths();
+      imageSlotData = slotPaths; // 传递完整的槽位信息给后端
+      
+      // 也提取非空路径用于兼容
+      cleanPaths = slotPaths
+        .filter(s => s.path)
+        .map(s => {
+          let p = String(s.path);
+          if (p.startsWith('/')) p = p.slice(1);
+          return p;
+        });
+      
+      console.log('Slot image paths:', slotPaths);
+    } else {
+      // 通用多图上传模式
+      const currentFiles = fileList.value;
+      const paths = currentFiles.map(f => {
+          if(f.response && f.response.path) return f.response.path;
+          return f.url; // 可能是回显的，或者是其他情况
+      }).filter(Boolean);
+      
+      // 确保路径格式正确（移除开头可能多余的 /）
+      cleanPaths = paths.map(p => {
+        let s = String(p);
+        if (s.startsWith('/')) s = s.slice(1);
+        console.log('cleanPaths', s);
+        return s;
+      });
+    }
 
     const payload = {
       modelId: form.value.modelId,
       prompt: form.value.prompt,
       imagePaths: cleanPaths,
+      // 多槽位图片数据（包含槽位名称和路径）
+      ...(imageSlotData ? { imageSlots: imageSlotData } : {}),
       // 如果是再次生成同一问题，传递 questionId
       ...(form.value.questionId ? { questionId: form.value.questionId } : {}),
       ...dynamicParams.value
@@ -528,7 +668,7 @@ async function handleGenerate() {
     result.value = {
       imagePath: res.imagePath,
       prompt: form.value.prompt,
-      imageUrls: paths,
+      imageUrls: cleanPaths,
       modelId: form.value.modelId,
       params: { ...dynamicParams.value },
       duration: res.duration || 0, // Store generation time
@@ -700,6 +840,83 @@ async function handleThumbnail(dataUrl) {
 
 .upload-zone:hover {
   border-color: #409eff;
+}
+
+/* 多槽位图片上传（如 Tripo Multiview） */
+.image-slots-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #fafbfc;
+  border: 2px dashed #dcdfe6;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.image-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100px;
+}
+
+.slot-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.required-mark {
+  color: #f56c6c;
+  margin-left: 2px;
+}
+
+.slot-upload {
+  width: 80px;
+}
+
+.slot-upload :deep(.el-upload--picture-card) {
+  width: 80px;
+  height: 80px;
+  border-radius: 6px;
+  border: 2px dashed #dcdfe6;
+  background: #fff;
+}
+
+.slot-upload :deep(.el-upload-list--picture-card) {
+  display: flex;
+}
+
+.slot-upload :deep(.el-upload-list__item) {
+  width: 80px;
+  height: 80px;
+  margin: 0;
+  border-radius: 6px;
+}
+
+/* 隐藏上传成功的绿色对号标记 */
+.slot-upload :deep(.el-upload-list__item-status-label) {
+  display: none !important;
+}
+
+/* 只有一张图片时隐藏上传按钮 */
+.slot-upload :deep(.el-upload--picture-card) {
+  display: flex;
+}
+
+.slot-upload:has(.el-upload-list__item) :deep(.el-upload--picture-card) {
+  display: none;
+}
+
+.slot-hint {
+  font-size: 11px;
+  color: #909399;
+  margin-top: 4px;
+  text-align: center;
+  max-width: 100px;
+  word-break: break-all;
 }
 
 .ref-image-upload {

@@ -323,9 +323,15 @@
     "name": "Tripo3D Multiview (3D, Multi-image)",
     "driver": "tripo",
     "inputMode": "image",
+    "imageSlots": [
+      { "name": "front", "label": "正面", "required": true, "description": "正面视图（必需）" },
+      { "name": "left", "label": "左侧", "required": false, "description": "左侧视图" },
+      { "name": "back", "label": "背面", "required": false, "description": "背面视图" },
+      { "name": "right", "label": "右侧", "required": false, "description": "右侧视图" }
+    ],
     "options": {
       "useProxy": false,
-      "modelVersion": "default",
+      "modelVersion": "v3.0-20250812",
       "texture": true,
       "pbr": true
     },
