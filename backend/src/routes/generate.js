@@ -47,8 +47,8 @@ router.post('/', upload.any(), async (req, res, next) => {
     }
     
     // 根据新的 input 配置判断是否需要 prompt/image：
-    // input.types: ["text"] / ["image"] / ["text", "image"]
-    // input.mode: "single" (仅一种) | "combined" (可组合) | "exclusive" (二选一) | "multiple" (多图) | "multiview" (多视图)
+    // input.types: ["text"] / ["image"] / ["text", "image"] / []
+    // input.mode: "single" | "combined" | "exclusive" | "multiple" | "multiview" | "params_only"
     const inputConfig = selectedModel?.input || { types: ['text', 'image'], mode: 'combined' };
     const inputTypes = inputConfig.types || ['text', 'image'];
     const inputMode = inputConfig.mode || 'combined';
@@ -57,26 +57,27 @@ router.post('/', upload.any(), async (req, res, next) => {
     const supportsText = inputTypes.includes('text');
     const supportsImage = inputTypes.includes('image');
     
+    // params_only 模式：不需要图片或文本，只需要参数（如 Tripo Refine）
+    if (inputMode === 'params_only') {
+      console.log('[generate] params_only mode, skipping input validation');
+    }
     // 仅支持文本输入时，必须有 prompt
-    if (supportsText && !supportsImage && !prompt) {
+    else if (supportsText && !supportsImage && !prompt) {
       console.log('[generate] ERROR: Missing prompt for text-only model');
       return res.status(400).json({ error: 'missing_prompt', message: '该模型需要提示词' });
     }
-    
     // 仅支持图片输入时，必须有图片
-    if (supportsImage && !supportsText && !hasImages) {
+    else if (supportsImage && !supportsText && !hasImages) {
       console.log('[generate] ERROR: Missing image for image-only model');
       return res.status(400).json({ error: 'missing_image', message: '该模型需要参考图' });
     }
-    
     // exclusive 模式，需要至少有 prompt 或 image
-    if (inputMode === 'exclusive' && !prompt && !hasImages) {
+    else if (inputMode === 'exclusive' && !prompt && !hasImages) {
       console.log('[generate] ERROR: Missing prompt or image for exclusive mode');
       return res.status(400).json({ error: 'missing_prompt_or_image', message: '请输入提示词或上传参考图' });
     }
-    
     // combined 模式，同时支持 text 和 image 时，至少需要一个
-    if (inputMode === 'combined' && supportsText && supportsImage && !prompt && !hasImages) {
+    else if (inputMode === 'combined' && supportsText && supportsImage && !prompt && !hasImages) {
       console.log('[generate] ERROR: Missing prompt or image for combined mode');
       return res.status(400).json({ error: 'missing_input', message: '请输入提示词或上传参考图' });
     }

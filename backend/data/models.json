@@ -419,6 +419,32 @@
     ]
   },
   {
+    "id": "tripo_3d_refine",
+    "name": "Tripo3D 优化 (Refine)",
+    "driver": "tripo",
+    "input": {
+      "types": [],
+      "mode": "params_only"
+    },
+    "output": "mesh",
+    "options": {
+      "useProxy": false,
+      "taskType": "refine_model"
+    },
+    "parameters": [
+      {
+        "name": "draftTaskId",
+        "label": "选择要优化的模型",
+        "type": "model_select",
+        "default": "",
+        "driverFilter": "tripo",
+        "taskTypeFilter": ["image_to_model", "text_to_model", "multiview_to_model"],
+        "excludeModelVersions": ["v2.0", "v2.5", "v3.0", "default"],
+        "description": "只能优化 v1.4 及以下版本生成的草稿模型"
+      }
+    ]
+  },
+  {
     "id": "meshy_image_to_3d",
     "name": "Meshy 图片转3D",
     "driver": "meshy",

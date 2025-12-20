@@ -7,6 +7,15 @@
       :z-index="9999"
     />
     
+    <!-- 模型选择对话框 -->
+    <ModelSelectDialog
+      v-model="modelSelectDialogVisible"
+      :driver-filter="modelSelectCurrentParam?.driverFilter || ''"
+      :task-type-filter="modelSelectCurrentParam?.taskTypeFilter || []"
+      :exclude-versions="modelSelectCurrentParam?.excludeModelVersions || []"
+      @select="handleModelSelect"
+    />
+    
     <!-- 两栏布局：左侧输入 | 右侧结果 -->
     <div class="main-layout" :class="{ 'no-result': !result }">
       <!-- 左侧输入区域 -->
@@ -132,6 +141,36 @@
                   <el-option v-for="opt in param.options" :key="opt.value" :label="opt.label" :value="opt.value" />
                 </el-select>
               </template>
+              <template v-else-if="param.type === 'model_select'">
+                <!-- 模型选择器 -->
+                <div class="model-select-trigger">
+                  <div 
+                    v-if="selectedModelInfo[param.name]" 
+                    class="selected-model-preview"
+                    @click="openModelSelectDialog(param)"
+                  >
+                    <img 
+                      v-if="selectedModelInfo[param.name].thumbnail" 
+                      :src="selectedModelInfo[param.name].thumbnail" 
+                      class="preview-thumb"
+                    />
+                    <div v-else class="preview-placeholder">
+                      <el-icon><Picture /></el-icon>
+                    </div>
+                    <div class="preview-info">
+                      <div class="preview-type">{{ formatTaskType(selectedModelInfo[param.name].meta?.taskType) }}</div>
+                      <div class="preview-id">{{ truncateId(selectedModelInfo[param.name].meta?.taskId) }}</div>
+                    </div>
+                    <el-button size="small" type="danger" text @click.stop="clearModelSelect(param.name)">
+                      <el-icon><Close /></el-icon>
+                    </el-button>
+                  </div>
+                  <el-button v-else type="primary" plain @click="openModelSelectDialog(param)">
+                    <el-icon><FolderOpened /></el-icon>
+                    选择模型
+                  </el-button>
+                </div>
+              </template>
               <template v-else>
                 <el-input v-model="dynamicParams[param.name]" :placeholder="param.description" size="small" />
               </template>
@@ -235,10 +274,11 @@
 
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue';
-import { Plus, Star, Close, Picture } from '@element-plus/icons-vue';
+import { Plus, Star, Close, Picture, FolderOpened } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { listModels, generateImage, listDimensions, createQuestion, submitEvaluation } from '../../services/api';
 import ScoreInput from '../../components/ScoreInput.vue';
+import ModelSelectDialog from '../../components/ModelSelectDialog.vue';
 import ModelViewer from '../../components/ModelViewer.vue';
 import { useRouter } from 'vue-router';
 
@@ -264,6 +304,11 @@ const form = ref({
 });
 
 const dynamicParams = ref({});
+
+// 模型选择相关状态（用于 model_select 类型参数）
+const modelSelectDialogVisible = ref(false);
+const modelSelectCurrentParam = ref(null);
+const selectedModelInfo = ref({}); // { paramName: modelInfo }
 
 const currentModel = computed(() => {
   return models.value.find(m => m.id === form.value.modelId);
@@ -325,12 +370,17 @@ const existingDimensionIds = computed(() => {
   }
   return [];
 });
+// params_only 模式：不需要提示词或图片，只需要参数
+const isParamsOnlyMode = computed(() => inputMode.value === 'params_only');
+
 const showPrompt = computed(() => {
+  if (isParamsOnlyMode.value) return false;
   if (!supportsText.value) return false;
   if (inputMode.value === 'exclusive') return activeInput.value === 'prompt';
   return true;
 });
 const showImage = computed(() => {
+  if (isParamsOnlyMode.value) return false;
   if (!supportsImage.value) return false;
   if (inputMode.value === 'exclusive') return activeInput.value === 'image';
   return true;
@@ -578,6 +628,50 @@ function closeViewer() {
   showViewer.value = false;
 }
 
+// ========== 模型选择器相关方法（用于 model_select 类型参数） ==========
+function openModelSelectDialog(param) {
+  modelSelectCurrentParam.value = param;
+  modelSelectDialogVisible.value = true;
+}
+
+function handleModelSelect(model) {
+  if (!modelSelectCurrentParam.value) return;
+  
+  const paramName = modelSelectCurrentParam.value.name;
+  
+  // 保存选中的模型信息（用于显示）
+  selectedModelInfo.value[paramName] = model;
+  
+  // 将 taskId 设置到动态参数
+  if (model.meta?.taskId) {
+    dynamicParams.value[paramName] = model.meta.taskId;
+  }
+  
+  modelSelectDialogVisible.value = false;
+  modelSelectCurrentParam.value = null;
+}
+
+function clearModelSelect(paramName) {
+  delete selectedModelInfo.value[paramName];
+  dynamicParams.value[paramName] = '';
+}
+
+function formatTaskType(type) {
+  const typeMap = {
+    'image_to_model': '图片转3D',
+    'text_to_model': '文字转3D',
+    'multiview_to_model': '多视图3D',
+    'refine_model': '优化模型'
+  };
+  return typeMap[type] || type || '未知';
+}
+
+function truncateId(id) {
+  if (!id) return '-';
+  if (id.length <= 16) return id;
+  return id.slice(0, 8) + '...' + id.slice(-4);
+}
+
 // 将生成结果添加到参考图
 function addResultToRef() {
   if (!result.value || !result.value.imagePath) return;
@@ -612,8 +706,13 @@ async function handleGenerate() {
   const mode = inputMode.value;
   const hasPrompt = form.value.prompt && form.value.prompt.trim();
   
+  // params_only 模式：不需要验证图片或文本（如 Tripo Refine）
+  if (mode === 'params_only') {
+    // 跳过输入验证，直接进入生成流程
+    console.log('[generate] params_only mode, skipping input validation');
+  }
   // 检查是否有多槽位图片配置
-  if (hasImageSlots.value) {
+  else if (hasImageSlots.value) {
     const validation = validateSlotImages();
     if (!validation.valid) {
       ElMessage.warning(validation.message);
@@ -1232,6 +1331,63 @@ async function handleThumbnail(dataUrl) {
 
 .score-content :deep(.el-rate__icon) {
   font-size: 16px;
+}
+
+/* 模型选择器样式 */
+.model-select-trigger {
+  width: 100%;
+}
+
+.selected-model-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid #dcdfe6;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: #fafafa;
+}
+
+.selected-model-preview:hover {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.preview-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.preview-placeholder {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #e4e7ed;
+  border-radius: 4px;
+  color: #909399;
+}
+
+.preview-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.preview-type {
+  font-size: 13px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.preview-id {
+  font-size: 11px;
+  color: #909399;
+  font-family: monospace;
 }
 </style>
 

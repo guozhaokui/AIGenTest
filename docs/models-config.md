@@ -97,6 +97,7 @@
 | `exclusive` | 文本或图片二选一 | Tripo 文本/图片转3D |
 | `multiple` | 支持多张图片 | Meshy 多图转3D |
 | `multiview` | 多视图模式（需配置 imageSlots） | Tripo 多视图 |
+| `params_only` | 仅参数输入（无文本/图片） | Tripo 优化 (Refine) |
 
 ### `input.default` (可选)
 - **类型**: `string`
@@ -172,12 +173,13 @@
 |------|------|------|------|
 | `name` | string | ✅ | 参数标识符，传递给驱动 |
 | `label` | string | ✅ | 前端显示名称 |
-| `type` | string | ✅ | 参数类型：`select`、`number`、`text` |
+| `type` | string | ✅ | 参数类型：`select`、`number`、`text`、`model_select` |
 | `default` | any | ✅ | 默认值 |
 | `options` | array | 仅 select | 选项列表 |
 | `min` | number | 仅 number | 最小值 |
 | `max` | number | 仅 number | 最大值 |
 | `step` | number | 仅 number | 步进值 |
+| `driverFilter` | string | 仅 model_select | 过滤驱动类型（如 "tripo"） |
 | `description` | string | ❌ | 参数说明/提示 |
 
 ### 参数类型示例
@@ -220,6 +222,29 @@
   "description": "不希望出现的内容"
 }
 ```
+
+#### `model_select` 类型
+
+用于从已生成的 3D 模型中选择一个。前端会显示一个带缩略图的选择对话框。
+
+```json
+{
+  "name": "draftTaskId",
+  "label": "选择要优化的模型",
+  "type": "model_select",
+  "default": "",
+  "driverFilter": "tripo",
+  "description": "点击选择之前生成的 Tripo 草稿模型"
+}
+```
+
+**特殊字段**：
+- `driverFilter`：可选，过滤只显示特定驱动生成的模型（如 `"tripo"`、`"meshy"`）
+
+**工作原理**：
+1. 前端显示"选择模型"按钮
+2. 点击后弹出对话框，显示已生成模型的缩略图网格
+3. 选中后，自动从 `meta.json` 读取 `taskId` 并填入参数
 
 ---
 
@@ -362,6 +387,45 @@
 }
 ```
 
+### 仅参数输入模型（params_only）
+
+用于不需要文本或图片输入，仅需要参数的场景（如 Tripo 模型优化）。
+
+```json
+{
+  "id": "tripo_3d_refine",
+  "name": "Tripo3D 优化 (Refine)",
+  "driver": "tripo",
+  "input": {
+    "types": [],
+    "mode": "params_only"
+  },
+  "output": "mesh",
+  "options": {
+    "useProxy": false,
+    "taskType": "refine_model"
+  },
+  "parameters": [
+    {
+      "name": "draftTaskId",
+      "label": "选择要优化的模型",
+      "type": "model_select",
+      "default": "",
+      "driverFilter": "tripo",
+      "description": "点击选择之前生成的 Tripo 草稿模型"
+    }
+  ]
+}
+```
+
+**使用说明**：
+1. 选择 "Tripo3D 优化 (Refine)" 模型
+2. 点击"选择模型"按钮
+3. 在弹出的对话框中选择之前生成的 Tripo 模型（支持缩略图预览）
+4. 点击生成，等待约 2 分钟获得优化后的模型
+
+**注意**：不支持 `model_version >= v2.0-20240919` 的模型进行优化。
+
 ---
 
 ## 已配置模型列表
@@ -375,6 +439,7 @@
 | `doubao_seed3d` | Doubao Seed3D | doubao | 图片 | mesh |
 | `tripo_3d` | Tripo3D | tripo | 文本或图片 | mesh |
 | `tripo_3d_multiview` | Tripo3D 多视图 | tripo | 多视图图片 | mesh |
+| `tripo_3d_refine` | Tripo3D 优化 | tripo | 仅参数 | mesh |
 | `meshy_image_to_3d` | Meshy 图片转3D | meshy | 图片 | mesh |
 | `meshy_text_to_3d` | Meshy 文字转3D | meshy | 文本 | mesh |
 | `meshy_multi_image_to_3d` | Meshy 多图转3D | meshy | 多图片 | mesh |

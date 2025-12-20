@@ -289,6 +289,11 @@ async function generate({ apiKey, model, prompt, images, config }) {
  * 3D 生成主流程
  */
 async function generate3D({ apiKey, model, prompt, images, config, dispatcher }) {
+  // ========== 检查是否是 Refine 模式 ==========
+  if (config.taskType === 'refine_model') {
+    return refineModel({ apiKey, config, dispatcher });
+  }
+  
   const hasImage = images && images.length > 0;
   const hasPrompt = prompt && prompt.trim();
   
@@ -499,6 +504,86 @@ async function generate3D({ apiKey, model, prompt, images, config, dispatcher })
       style: payload.style,
       negativePrompt: payload.negative_prompt
     },
+    taskResult: {
+      status: taskResult.status,
+      progress: taskResult.progress,
+      output: output
+    }
+  };
+  
+  return {
+    dataBase64: buffer.toString('base64'),
+    mimeType: contentType || 'model/gltf-binary',
+    usage,
+    meta,
+    modelPath: 'model.glb'
+  };
+}
+
+/**
+ * 优化模型（Refine Model）
+ * 对已生成的草稿模型进行优化，提高质量
+ * 注意：不支持 model_version>=v2.0-20240919 的模型
+ */
+async function refineModel({ apiKey, config, dispatcher }) {
+  const draftTaskId = config.draftTaskId;
+  
+  if (!draftTaskId || !draftTaskId.trim()) {
+    throw new Error('请输入要优化的草稿任务 ID');
+  }
+  
+  console.log(`[tripo] 开始优化模型，草稿任务 ID: ${draftTaskId}`);
+  
+  // ========== 步骤 1: 创建 refine 任务 ==========
+  const payload = {
+    type: 'refine_model',
+    draft_model_task_id: draftTaskId.trim()
+  };
+  
+  const { taskId, traceId } = await createTask(payload, apiKey, dispatcher);
+  console.log(`[tripo] Refine 任务创建成功, taskId: ${taskId}`);
+  
+  // ========== 步骤 2: 轮询结果（refine 通常需要约 2 分钟） ==========
+  const taskResult = await pollTask(taskId, apiKey, dispatcher, 180, 5000); // 最多 15 分钟，每 5 秒查询
+  console.log('[tripo] Refine 任务完成:', JSON.stringify(taskResult, null, 2));
+  
+  // ========== 步骤 3: 提取模型 URL ==========
+  let modelUrl = null;
+  const output = taskResult.output || {};
+  
+  if (output.pbr_model) {
+    modelUrl = output.pbr_model;
+  } else if (output.model) {
+    modelUrl = output.model;
+  } else if (output.base_model) {
+    modelUrl = output.base_model;
+  }
+  
+  if (!modelUrl) {
+    console.error('[tripo] Refine 任务输出:', JSON.stringify(output, null, 2));
+    throw new Error('Refine 任务未返回模型 URL');
+  }
+  
+  console.log(`[tripo] 优化后模型 URL: ${modelUrl}`);
+  
+  // ========== 步骤 4: 下载模型 ==========
+  console.log('[tripo] 下载优化后的模型...');
+  const startDownload = Date.now();
+  const { buffer, contentType } = await downloadContent(modelUrl, dispatcher, null);
+  console.log(`[tripo] 下载完成, 耗时 ${Date.now() - startDownload}ms, 大小 ${buffer.length} 字节`);
+  
+  // ========== 步骤 5: 构建返回结果 ==========
+  const usage = taskResult.running_left_credits !== undefined ? {
+    credits_used: taskResult.running_left_credits,
+    total_tokens: taskResult.running_left_credits * 1000
+  } : null;
+  
+  const meta = {
+    traceId: traceId || null,
+    taskId: taskId,
+    createdAt: getLocalTimeString(),
+    taskType: 'refine_model',
+    draftTaskId: draftTaskId,
     taskResult: {
       status: taskResult.status,
       progress: taskResult.progress,

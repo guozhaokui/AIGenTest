@@ -3200,5 +3200,52 @@
     "createdAt": "2025-12-20T11:27:58.252Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/7886cf4b-4503-4ab6-91c7-e9cc65ad2228/fedc47b7-1cf8-467f-a02b-2022c999ba77/thumbnail.jpg"
+  },
+  {
+    "id": "f7878d81-0e9f-4315-bf76-07cae75b73cd",
+    "prompt": "海狮顶着个金属球",
+    "imagePath": "/modeldb/dfdb099a-fe3f-430f-af5c-414fa8337d19/acdb0db0-3023-433b-a34b-d9229f741586",
+    "imageUrls": [],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "v1.4-20240625",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": "",
+      "modelSeed": -1
+    },
+    "duration": 32010,
+    "info3d": {
+      "modelDir": "/modeldb/dfdb099a-fe3f-430f-af5c-414fa8337d19/acdb0db0-3023-433b-a34b-d9229f741586",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T12:23:20.006Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/dfdb099a-fe3f-430f-af5c-414fa8337d19/acdb0db0-3023-433b-a34b-d9229f741586/thumbnail.jpg"
+  },
+  {
+    "id": "23c8d1ad-64f0-4380-9f02-ad7113506505",
+    "prompt": "",
+    "imagePath": "/modeldb/963d7009-b2e6-41e1-ab49-5c2d79ec6f9e/1cc5f2aa-eaf0-4e80-b103-693cd4c2d030",
+    "imageUrls": [],
+    "modelId": "tripo_3d_refine",
+    "modelName": "",
+    "params": {
+      "draftTaskId": "d5f49f68-f050-47f9-9f07-b7f1d2e0bdc4"
+    },
+    "duration": 121434,
+    "info3d": {
+      "modelDir": "/modeldb/963d7009-b2e6-41e1-ab49-5c2d79ec6f9e/1cc5f2aa-eaf0-4e80-b103-693cd4c2d030",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-20T12:26:10.724Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/963d7009-b2e6-41e1-ab49-5c2d79ec6f9e/1cc5f2aa-eaf0-4e80-b103-693cd4c2d030/thumbnail.jpg"
   }
 ]
