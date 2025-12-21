@@ -12,6 +12,12 @@ const LiveGenIndex = () => import('../views/LiveGen/index.vue');
 const LiveGenHome = () => import('../views/LiveGen/LiveGenHome.vue');
 const LiveGenHistory = () => import('../views/LiveGen/LiveGenHistory.vue');
 
+// 图片管理
+const ImageMgrIndex = () => import('../views/ImageMgr/index.vue');
+const ImageList = () => import('../views/ImageMgr/ImageList.vue');
+const ImageSearch = () => import('../views/ImageMgr/ImageSearch.vue');
+const ImageUpload = () => import('../views/ImageMgr/ImageUpload.vue');
+
 const routes = [
   { path: '/', redirect: '/admin' },
   {
@@ -41,6 +47,16 @@ const routes = [
       { path: '', redirect: '/live/generate' },
       { path: 'generate', name: 'LiveGenHome', component: LiveGenHome },
       { path: 'history', name: 'LiveGenHistory', component: LiveGenHistory }
+    ]
+  },
+  {
+    path: '/imagemgr',
+    component: ImageMgrIndex,
+    children: [
+      { path: '', redirect: '/imagemgr/list' },
+      { path: 'list', name: 'ImageList', component: ImageList },
+      { path: 'search', name: 'ImageSearch', component: ImageSearch },
+      { path: 'upload', name: 'ImageUpload', component: ImageUpload }
     ]
   }
 ];
