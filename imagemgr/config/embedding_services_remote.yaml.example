@@ -1,0 +1,50 @@
+# 嵌入服务配置文件 - 远程服务器版本
+# 将此文件复制为 embedding_services.yaml 并修改 SERVER_IP
+#
+# 使用方法:
+#   1. 复制此文件: cp embedding_services_remote.yaml.example embedding_services.yaml
+#   2. 将 SERVER_IP 替换为实际的服务器 IP 地址
+#   3. 重启图片管理服务
+
+services:
+  # === SigLIP2 图片嵌入（远程 GPU 服务器） ===
+  siglip2_remote:
+    model_name: siglip2-so400m-patch16-512
+    model_version: "1.0"
+    service_type: remote
+    endpoint: http://SERVER_IP:6010    # ← 修改为服务器 IP
+    dimension: 1152
+    priority: 1
+    timeout: 60                         # 远程调用增加超时时间
+    is_enabled: true
+
+  # === Qwen3-4B 文本嵌入（远程 GPU 服务器） ===
+  qwen3_embed_remote:
+    model_name: Qwen3-4B
+    model_version: "1.0"
+    service_type: remote
+    endpoint: http://SERVER_IP:6011    # ← 修改为服务器 IP
+    dimension: 2560
+    priority: 1
+    timeout: 30                         # 远程调用增加超时时间
+    is_enabled: true
+
+# 索引与模型的绑定关系
+indexes:
+  siglip2_image_v1:
+    model_name: siglip2-so400m-patch16-512
+    model_version: "1.0"
+    dimension: 1152
+    description: 图片视觉嵌入索引
+
+  qwen3_text_v1:
+    model_name: Qwen3-4B
+    model_version: "1.0"
+    dimension: 2560
+    description: 文本描述嵌入索引
+
+# 默认服务映射
+defaults:
+  image_embedding: siglip2_remote
+  text_embedding: qwen3_embed_remote
+

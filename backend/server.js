@@ -1,11 +1,72 @@
 'use strict';
 
+const { spawn } = require('child_process');
+const path = require('path');
 const app = require('./src/app');
 
+// ==================== 启动 Python imagemgr 服务 ====================
+let imagemgrProcess = null;
+
+function startImagemgr() {
+  const imagemgrPath = path.resolve(__dirname, '../imagemgr/src');
+  const logPath = path.resolve(__dirname, '../imagemgr/logs');
+  
+  // 创建日志目录
+  require('fs').mkdirSync(logPath, { recursive: true });
+  
+  console.log('[imagemgr] Starting Python image manager service...');
+  
+  // 启动 Python 服务
+  imagemgrProcess = spawn('python', ['api_server.py'], {
+    cwd: imagemgrPath,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env }
+  });
+  
+  imagemgrProcess.stdout.on('data', (data) => {
+    console.log(`[imagemgr] ${data.toString().trim()}`);
+  });
+  
+  imagemgrProcess.stderr.on('data', (data) => {
+    console.error(`[imagemgr] ${data.toString().trim()}`);
+  });
+  
+  imagemgrProcess.on('close', (code) => {
+    console.log(`[imagemgr] Process exited with code ${code}`);
+    imagemgrProcess = null;
+  });
+  
+  imagemgrProcess.on('error', (err) => {
+    console.error('[imagemgr] Failed to start:', err.message);
+  });
+}
+
+// 优雅关闭
+function cleanup() {
+  if (imagemgrProcess) {
+    console.log('[imagemgr] Stopping Python service...');
+    imagemgrProcess.kill('SIGTERM');
+  }
+}
+
+process.on('SIGINT', () => {
+  cleanup();
+  process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+  cleanup();
+  process.exit(0);
+});
+
+// 启动 imagemgr
+startImagemgr();
+
+// ==================== 启动 Express 服务 ====================
 const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
   /* eslint-disable no-console */
-  console.log(`Backend listening on http://localhost:${PORT}`);
+  console.log(`[backend] Listening on http://localhost:${PORT}`);
 });
 
 // 设置超时时间为 30 分钟 (1800000 ms)，3D模型生成需要较长时间
