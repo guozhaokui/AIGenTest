@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+*.egg
+.eggs/
+
+# 虚拟环境
+venv/
+.venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 数据目录（忽略内容但保留目录）
+/storage/*
+!/storage/.gitkeep
+/data/*
+!/data/.gitkeep
+/vector_index/*
+!/vector_index/.gitkeep
+/logs/*
+!/logs/.gitkeep
+
+# 临时文件
+*.tmp
+*.temp
+*.bak
