@@ -141,7 +141,7 @@ check_local() {
     fi
 }
 
-check_local "图片管理服务" 6020
+check_local "图片管理服务" 6060
 check_local "Node.js 后端" 3000 "/api/health"
 
 if lsof -i:5173 > /dev/null 2>&1; then

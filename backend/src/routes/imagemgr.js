@@ -14,7 +14,8 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 50 * 1024 * 1024 } });
 
 // 图片管理服务地址
-const IMAGEMGR_API = process.env.IMAGEMGR_API || 'http://localhost:6020';
+const IMAGEMGR_API = process.env.IMAGEMGR_API || 'http://127.0.0.1:6060';
+console.log('[imagemgr] IMAGEMGR_API =', IMAGEMGR_API);
 
 // 创建 axios 实例
 const imagemgrClient = axios.create({

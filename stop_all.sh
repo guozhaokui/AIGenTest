@@ -66,7 +66,7 @@ check_port() {
 
 check_port 5173 "前端"
 check_port 3000 "后端"
-check_port 6020 "图片管理"
+check_port 6060 "图片管理"
 check_port 6010 "图片嵌入"
 check_port 6011 "文本嵌入"
 

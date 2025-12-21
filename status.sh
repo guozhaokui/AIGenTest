@@ -37,7 +37,7 @@ check_service() {
 echo -e "${YELLOW}Python 服务:${NC}"
 check_service "图片嵌入服务" 6010
 check_service "文本嵌入服务" 6011
-check_service "图片管理服务" 6020
+check_service "图片管理服务" 6060
 
 echo ""
 echo -e "${YELLOW}Node.js 服务:${NC}"

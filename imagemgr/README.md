@@ -32,7 +32,7 @@ cd ../aiserver/embedding
 
 ## API 文档
 
-服务启动后访问: http://localhost:6020/docs
+服务启动后访问: http://localhost:6060/docs
 
 ### 主要接口
 
@@ -55,7 +55,7 @@ cd ../aiserver/embedding
 ### 上传图片
 
 ```bash
-curl -X POST http://localhost:6020/api/images \
+curl -X POST http://localhost:6060/api/images \
   -F "file=@image.jpg" \
   -F "source=test"
 ```
@@ -76,7 +76,7 @@ curl -X POST http://localhost:6020/api/images \
 ### 文本搜索
 
 ```bash
-curl -X POST http://localhost:6020/api/search/text \
+curl -X POST http://localhost:6060/api/search/text \
   -H "Content-Type: application/json" \
   -d '{"query": "一只猫在晒太阳", "top_k": 10}'
 ```
@@ -101,7 +101,7 @@ curl -X POST http://localhost:6020/api/search/text \
 ### 以图搜图
 
 ```bash
-curl -X POST http://localhost:6020/api/search/image \
+curl -X POST http://localhost:6060/api/search/image \
   -F "file=@query.jpg" \
   -F "top_k=10"
 ```
@@ -109,7 +109,7 @@ curl -X POST http://localhost:6020/api/search/image \
 ### 添加描述
 
 ```bash
-curl -X POST http://localhost:6020/api/images/a1b2c3d4.../descriptions \
+curl -X POST http://localhost:6060/api/images/a1b2c3d4.../descriptions \
   -H "Content-Type: application/json" \
   -d '{"method": "human", "content": "我家的橘猫"}'
 ```
@@ -122,7 +122,7 @@ import requests
 # 上传图片
 with open("image.jpg", "rb") as f:
     response = requests.post(
-        "http://localhost:6020/api/images",
+        "http://localhost:6060/api/images",
         files={"file": f},
         data={"source": "my_album"}
     )
@@ -131,13 +131,13 @@ with open("image.jpg", "rb") as f:
 
 # 文本搜索
 response = requests.post(
-    "http://localhost:6020/api/search/text",
+    "http://localhost:6060/api/search/text",
     json={"query": "风景照片", "top_k": 10}
 )
 results = response.json()["results"]
 
 # 获取缩略图
-response = requests.get(f"http://localhost:6020/api/images/{sha256}/thumbnail")
+response = requests.get(f"http://localhost:6060/api/images/{sha256}/thumbnail")
 with open("thumb.jpg", "wb") as f:
     f.write(response.content)
 ```
@@ -172,13 +172,16 @@ imagemgr/
 
 | 服务 | 端口 | 说明 |
 |------|------|------|
-| 图片管理服务 | 6020 | 主服务 |
+| 图片管理服务 | 6060 | 主服务 |
 | 图片嵌入服务 | 6010 | SigLIP2 |
 | 文本嵌入服务 | 6011 | Qwen3-4B |
 
 ## 依赖服务
 
 图片管理服务依赖嵌入服务，请确保先启动：
+
+cd imagemgr/src
+pip install fastapi uvicorn pillow numpy pyyaml aiohttp aiofiles python-multipart
 
 ```bash
 cd ../aiserver/embedding

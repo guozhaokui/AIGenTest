@@ -36,14 +36,14 @@ class EmbeddingClient:
                 "siglip2_local": {
                     "model_name": "siglip2-so400m-patch16-512",
                     "model_version": "1.0",
-                    "endpoint": "http://localhost:6010",
+                    "endpoint": "http://192.168.0.100:6010",
                     "dimension": 1152,
                     "timeout": 30
                 },
                 "qwen3_embed_local": {
                     "model_name": "Qwen3-4B",
                     "model_version": "1.0",
-                    "endpoint": "http://localhost:6011",
+                    "endpoint": "http://192.168.0.100:6011",
                     "dimension": 2560,
                     "timeout": 10
                 }
@@ -71,7 +71,9 @@ class EmbeddingClient:
             嵌入向量
         """
         service = self._get_service_config(self.image_service)
-        endpoint = service.get("endpoint", "http://localhost:6010")
+        endpoint = service.get("endpoint")
+        if not endpoint:
+            raise ValueError(f"服务 {self.image_service} 缺少 endpoint 配置")
         timeout = service.get("timeout", 30)
         
         try:
@@ -113,7 +115,9 @@ class EmbeddingClient:
             嵌入向量
         """
         service = self._get_service_config(self.text_service)
-        endpoint = service.get("endpoint", "http://localhost:6011")
+        endpoint = service.get("endpoint")
+        if not endpoint:
+            raise ValueError(f"服务 {self.text_service} 缺少 endpoint 配置")
         timeout = service.get("timeout", 10)
         
         try:
@@ -141,7 +145,9 @@ class EmbeddingClient:
             嵌入向量矩阵 (N, dimension)
         """
         service = self._get_service_config(self.text_service)
-        endpoint = service.get("endpoint", "http://localhost:6011")
+        endpoint = service.get("endpoint")
+        if not endpoint:
+            raise ValueError(f"服务 {self.text_service} 缺少 endpoint 配置")
         timeout = service.get("timeout", 10) * len(texts)  # 根据数量增加超时
         
         try:
@@ -161,10 +167,12 @@ class EmbeddingClient:
     def check_image_service(self) -> bool:
         """检查图片嵌入服务是否可用"""
         service = self._get_service_config(self.image_service)
-        endpoint = service.get("endpoint", "http://localhost:6010")
+        endpoint = service.get("endpoint")
+        if not endpoint:
+            return False
         
         try:
-            response = requests.get(f"{endpoint}/health", timeout=5)
+            response = requests.get(f"{endpoint}/health", timeout=(2, 3))
             return response.status_code == 200
         except:
             return False
@@ -172,10 +180,12 @@ class EmbeddingClient:
     def check_text_service(self) -> bool:
         """检查文本嵌入服务是否可用"""
         service = self._get_service_config(self.text_service)
-        endpoint = service.get("endpoint", "http://localhost:6011")
+        endpoint = service.get("endpoint")
+        if not endpoint:
+            return False
         
         try:
-            response = requests.get(f"{endpoint}/health", timeout=5)
+            response = requests.get(f"{endpoint}/health", timeout=(2, 3))
             return response.status_code == 200
         except:
             return False
