@@ -8,7 +8,7 @@ services:
     model_version: "1.0"
     model_path: /mnt/hdd/models/siglip2-so400m-patch16-512
     service_type: local
-    endpoint: http://localhost:6010/embed/image
+    endpoint: http://localhost:6010
     dimension: 1152
     priority: 1
     timeout: 30
@@ -20,7 +20,7 @@ services:
     model_version: "1.0"
     model_path: /mnt/hdd/models/Z-Image-Turbo
     service_type: local
-    endpoint: http://localhost:6011/embed/text
+    endpoint: http://localhost:6011
     dimension: 2560
     priority: 1
     timeout: 10
