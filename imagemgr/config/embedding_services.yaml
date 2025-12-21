@@ -1,0 +1,48 @@
+# 嵌入服务配置文件
+# 用于图片管理系统的向量嵌入服务
+
+services:
+  # === SigLIP2 图片嵌入（本地服务，1.14B 最强版本） ===
+  siglip2_local:
+    model_name: siglip2-so400m-patch16-512
+    model_version: "1.0"
+    model_path: /mnt/hdd/models/siglip2-so400m-patch16-512
+    service_type: local
+    endpoint: http://localhost:6010/embed/image
+    dimension: 1152
+    priority: 1
+    timeout: 30
+    is_enabled: true
+
+  # === Qwen3-4B 文本嵌入（复用 ZImage-Turbo 的 text_encoder） ===
+  qwen3_embed_local:
+    model_name: Qwen3-4B
+    model_version: "1.0"
+    model_path: /mnt/hdd/models/Z-Image-Turbo
+    service_type: local
+    endpoint: http://localhost:6011/embed/text
+    dimension: 2560
+    priority: 1
+    timeout: 10
+    is_enabled: true
+    # 注：使用倒数第二层 hidden_states[-2] 作为嵌入
+
+# 索引与模型的绑定关系
+indexes:
+  siglip2_image_v1:
+    model_name: siglip2-so400m-patch16-512
+    model_version: "1.0"
+    dimension: 1152
+    description: 图片视觉嵌入索引
+
+  qwen3_text_v1:
+    model_name: Qwen3-4B
+    model_version: "1.0"
+    dimension: 2560
+    description: 文本描述嵌入索引
+
+# 默认服务映射
+defaults:
+  image_embedding: siglip2_local
+  text_embedding: qwen3_embed_local
+
