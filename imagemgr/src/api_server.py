@@ -10,6 +10,8 @@ from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import threading
 
 from database import Database
 from storage import StorageManager
@@ -1280,58 +1282,27 @@ def batch_import_directory_stream(req: BatchImportRequest):
     )
 
 
-@app.post("/api/batch/generate-captions")
-def batch_generate_captions(
-    source: Optional[str] = None,
-    method: str = "vlm",
-    overwrite: bool = False,
-    limit: int = Query(100, ge=1, le=1000),
-    prompt: Optional[str] = None,
-    vlm_service: Optional[str] = None
-):
-    """
-    批量为已有图片生成描述
+# 用于保护数据库和存储操作的锁
+_db_lock = threading.Lock()
+
+
+def _process_single_image(img: dict, method: str, prompt_name: Optional[str], vlm_service: Optional[str]):
+    """处理单张图片的描述生成（供并发调用）"""
+    sha256 = img["sha256"]
     
-    - source: 只处理指定来源的图片
-    - method: 描述方法标记（默认 vlm）
-    - overwrite: 是否覆盖已有描述
-    - limit: 最多处理数量
-    - prompt: 提示词名称（default/short/detailed/tags/objects）或自定义提示词
-    - vlm_service: VLM 服务名称（如 qwen3vl），不指定使用默认服务
-    """
-    # 获取需要处理的图片
-    images = db.list_images(offset=0, limit=limit, source=source, status="ready")
+    # 获取图片路径
+    image_path = storage.get_image_path(sha256)
+    if not image_path.exists():
+        return {"sha256": sha256, "status": "failed", "message": "图片文件不存在"}
     
-    processed = 0
-    skipped = 0
-    failed = 0
-    results = []
+    # 生成描述（这是最耗时的操作，可以并发）
+    caption = generate_caption_with_vlm(str(image_path), prompt_name=prompt_name, 
+                                        vlm_service=vlm_service)
+    if not caption:
+        return {"sha256": sha256, "status": "failed", "message": "VLM 服务失败"}
     
-    for img in images:
-        sha256 = img["sha256"]
-        
-        # 检查是否已有描述
-        if not overwrite:
-            existing = db.get_descriptions(sha256)
-            if any(d["method"] == method for d in existing):
-                skipped += 1
-                continue
-        
-        # 获取图片路径
-        image_path = storage.get_image_path(sha256)
-        if not image_path.exists():
-            failed += 1
-            results.append({"sha256": sha256, "status": "failed", "message": "图片文件不存在"})
-            continue
-        
-        # 生成描述
-        caption = generate_caption_with_vlm(str(image_path), prompt_name=prompt, 
-                                            vlm_service=vlm_service)
-        if not caption:
-            failed += 1
-            results.append({"sha256": sha256, "status": "failed", "message": "VLM 服务失败"})
-            continue
-        
+    # 数据库和存储操作需要加锁
+    with _db_lock:
         # 保存描述
         storage.save_description(sha256, method, caption)
         db.add_description(sha256, method, caption)
@@ -1361,18 +1332,78 @@ def batch_generate_captions(
                     pass  # 忽略重复记录
         
         db.update_description_embedding(sha256, method, True)
-        processed += 1
-        results.append({
-            "sha256": sha256, 
-            "status": "success", 
-            "caption": caption[:100] + "..." if len(caption) > 100 else caption
-        })
+    
+    return {
+        "sha256": sha256, 
+        "status": "success", 
+        "caption": caption[:100] + "..." if len(caption) > 100 else caption
+    }
+
+
+@app.post("/api/batch/generate-captions")
+def batch_generate_captions(
+    source: Optional[str] = None,
+    method: str = "vlm",
+    overwrite: bool = False,
+    limit: int = Query(100, ge=1, le=1000),
+    prompt: Optional[str] = None,
+    vlm_service: Optional[str] = None,
+    concurrency: int = Query(4, ge=1, le=16, description="并发数量")
+):
+    """
+    批量为已有图片生成描述（支持并发）
+    
+    - source: 只处理指定来源的图片
+    - method: 描述方法标记（默认 vlm）
+    - overwrite: 是否覆盖已有描述
+    - limit: 最多处理数量
+    - prompt: 提示词名称（default/short/detailed/tags/objects）或自定义提示词
+    - vlm_service: VLM 服务名称（如 qwen3vl），不指定使用默认服务
+    - concurrency: 并发请求数量（默认 4，建议设置为后端 VLM 实例数）
+    """
+    # 获取需要处理的图片
+    images = db.list_images(offset=0, limit=limit, source=source, status="ready")
+    
+    # 过滤已有描述的图片
+    images_to_process = []
+    skipped = 0
+    
+    for img in images:
+        sha256 = img["sha256"]
+        if not overwrite:
+            existing = db.get_descriptions(sha256)
+            if any(d["method"] == method for d in existing):
+                skipped += 1
+                continue
+        images_to_process.append(img)
+    
+    processed = 0
+    failed = 0
+    results = []
+    
+    # 使用线程池并发处理
+    with ThreadPoolExecutor(max_workers=concurrency) as executor:
+        # 提交所有任务
+        future_to_img = {
+            executor.submit(_process_single_image, img, method, prompt, vlm_service): img
+            for img in images_to_process
+        }
+        
+        # 收集结果
+        for future in as_completed(future_to_img):
+            result = future.result()
+            results.append(result)
+            if result["status"] == "success":
+                processed += 1
+            else:
+                failed += 1
     
     return {
         "total": len(images),
         "processed": processed,
         "skipped": skipped,
         "failed": failed,
+        "concurrency": concurrency,
         "results": results
     }
 
@@ -1490,107 +1521,126 @@ def batch_generate_captions_stream(
     overwrite: bool = False,
     limit: int = Query(100, ge=1, le=1000),
     prompt: Optional[str] = None,
-    vlm_service: Optional[str] = None
+    vlm_service: Optional[str] = None,
+    concurrency: int = Query(4, ge=1, le=16, description="并发数量")
 ):
-    """批量生成描述（流式响应，实时报告进度）"""
+    """批量生成描述（流式响应，支持并发，实时报告进度）"""
+    import queue
     
     def generate():
         images = db.list_images(offset=0, limit=limit, source=source, status="ready")
         total = len(images)
         
-        yield f"event: init\ndata: {json.dumps({'total': total})}\n\n"
+        yield f"event: init\ndata: {json.dumps({'total': total, 'concurrency': concurrency})}\n\n"
         
-        processed = 0
-        skipped = 0
-        failed = 0
-        start_time = time.time()
-        actual_processed = 0  # 实际处理的数量（不包括跳过的）
+        # 过滤已有描述的图片
+        images_to_process = []
+        skipped_images = []
         
-        for i, img in enumerate(images):
+        for img in images:
             sha256 = img["sha256"]
-            item_start = time.time()
-            item_status = "processing"
-            item_message = ""
-            
-            # 检查是否已有描述
             if not overwrite:
                 existing = db.get_descriptions(sha256)
                 if any(d["method"] == method for d in existing):
-                    skipped += 1
-                    item_status = "skipped"
-                    item_message = "已有描述"
-                else:
-                    actual_processed += 1
-            else:
-                actual_processed += 1
-            
-            if item_status != "skipped":
-                image_path = storage.get_image_path(sha256)
-                if not image_path.exists():
-                    failed += 1
-                    item_status = "failed"
-                    item_message = "图片文件不存在"
-                else:
-                    caption = generate_caption_with_vlm(str(image_path), prompt_name=prompt, 
-                                                        vlm_service=vlm_service)
-                    if not caption:
-                        failed += 1
-                        item_status = "failed"
-                        item_message = "VLM 服务失败"
-                    else:
-                        storage.save_description(sha256, method, caption)
-                        db.add_description(sha256, method, caption)
-                        
-                        all_embeddings = embedding_client.get_all_text_embeddings(caption)
-                        for service_name, emb_info in all_embeddings.items():
-                            emb = emb_info["embedding"]
-                            model_name = emb_info["model_name"]
-                            model_version = emb_info["model_version"]
-                            
-                            index_name = None
-                            for idx_name, idx_config in TEXT_INDEXES.items():
-                                if idx_config["service_name"] == service_name:
-                                    index_name = idx_name
-                                    break
-                            
-                            if index_name and index_name in text_indexes:
-                                emb_filename = f"{method}_{model_name.replace('-', '_')}"
-                                storage.save_embedding(sha256, emb_filename, emb)
-                                text_indexes[index_name].add(emb, sha256, method)
-                                try:
-                                    db.add_vector_entry(sha256, method, model_name, model_version, index_name)
-                                except:
-                                    pass
-                        
-                        db.update_description_embedding(sha256, method, True)
-                        processed += 1
-                        item_status = "success"
-                        item_message = caption[:50] + "..." if len(caption) > 50 else caption
-            
-            current = i + 1
-            elapsed = time.time() - start_time
-            speed = actual_processed / elapsed if elapsed > 0 and actual_processed > 0 else 0
-            remaining = total - current
-            eta = remaining / speed if speed > 0 else 0
-            
+                    skipped_images.append(img)
+                    continue
+            images_to_process.append(img)
+        
+        skipped = len(skipped_images)
+        processed = 0
+        failed = 0
+        start_time = time.time()
+        results_queue = queue.Queue()
+        
+        # 先报告跳过的图片
+        for i, img in enumerate(skipped_images):
+            sha256 = img["sha256"]
             progress_data = {
-                "current": current,
+                "current": i + 1,
                 "total": total,
-                "percent": round(current / total * 100, 1),
-                "processed": processed,
-                "skipped": skipped,
-                "failed": failed,
-                "speed": round(speed, 2),
-                "eta": round(eta, 1),
-                "elapsed": round(elapsed, 1),
+                "percent": round((i + 1) / total * 100, 1),
+                "processed": 0,
+                "skipped": i + 1,
+                "failed": 0,
+                "speed": 0,
+                "eta": 0,
+                "elapsed": round(time.time() - start_time, 1),
                 "item": {
                     "sha256": sha256[:16] + "...",
-                    "status": item_status,
-                    "message": item_message,
-                    "time": round(time.time() - item_start, 2)
+                    "status": "skipped",
+                    "message": "已有描述",
+                    "time": 0
                 }
             }
             yield f"event: progress\ndata: {json.dumps(progress_data)}\n\n"
+        
+        if not images_to_process:
+            complete_data = {
+                "total": total,
+                "processed": 0,
+                "skipped": skipped,
+                "failed": 0,
+                "elapsed": round(time.time() - start_time, 1),
+                "avg_speed": 0,
+                "concurrency": concurrency
+            }
+            yield f"event: complete\ndata: {json.dumps(complete_data)}\n\n"
+            return
+        
+        # 使用线程池并发处理
+        def worker(img, index):
+            sha256 = img["sha256"]
+            item_start = time.time()
+            result = _process_single_image(img, method, prompt, vlm_service)
+            result["index"] = index
+            result["time"] = round(time.time() - item_start, 2)
+            results_queue.put(result)
+        
+        with ThreadPoolExecutor(max_workers=concurrency) as executor:
+            # 提交所有任务
+            futures = []
+            for i, img in enumerate(images_to_process):
+                future = executor.submit(worker, img, skipped + i)
+                futures.append(future)
+            
+            # 收集结果并实时报告
+            completed = 0
+            while completed < len(images_to_process):
+                try:
+                    result = results_queue.get(timeout=0.5)
+                    completed += 1
+                    
+                    if result["status"] == "success":
+                        processed += 1
+                    else:
+                        failed += 1
+                    
+                    current = skipped + completed
+                    elapsed = time.time() - start_time
+                    speed = completed / elapsed if elapsed > 0 else 0
+                    remaining = len(images_to_process) - completed
+                    eta = remaining / speed if speed > 0 else 0
+                    
+                    progress_data = {
+                        "current": current,
+                        "total": total,
+                        "percent": round(current / total * 100, 1),
+                        "processed": processed,
+                        "skipped": skipped,
+                        "failed": failed,
+                        "speed": round(speed, 2),
+                        "eta": round(eta, 1),
+                        "elapsed": round(elapsed, 1),
+                        "item": {
+                            "sha256": result["sha256"][:16] + "...",
+                            "status": result["status"],
+                            "message": result.get("message", result.get("caption", ""))[:50],
+                            "time": result["time"]
+                        }
+                    }
+                    yield f"event: progress\ndata: {json.dumps(progress_data)}\n\n"
+                except queue.Empty:
+                    continue
         
         complete_data = {
             "total": total,
@@ -1598,7 +1648,8 @@ def batch_generate_captions_stream(
             "skipped": skipped,
             "failed": failed,
             "elapsed": round(time.time() - start_time, 1),
-            "avg_speed": round(actual_processed / (time.time() - start_time), 2) if actual_processed > 0 else 0
+            "avg_speed": round(len(images_to_process) / (time.time() - start_time), 2) if images_to_process else 0,
+            "concurrency": concurrency
         }
         yield f"event: complete\ndata: {json.dumps(complete_data)}\n\n"
     

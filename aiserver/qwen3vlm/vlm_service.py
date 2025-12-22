@@ -114,6 +114,13 @@ def load_model(model_path: str):
     
     processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
     
+    # 尝试使用 torch.compile 优化（PyTorch 2.0+）
+    try:
+        model = torch.compile(model, mode="reduce-overhead")
+        print("✅ 已启用 torch.compile 优化")
+    except Exception as e:
+        print(f"⚠️ torch.compile 不可用: {e}")
+    
     print(f"✅ 模型加载完成! 模型类型: {type(model).__name__}")
     return model, processor
 
