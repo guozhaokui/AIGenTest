@@ -301,4 +301,62 @@ class EmbeddingClient:
             if config.get("model_name") == model_name:
                 return name
         return None
+    
+    def rerank(self, query: str, documents: List[str], top_k: int = None) -> Optional[List[dict]]:
+        """
+        使用 LLM 重排序
+        
+        Args:
+            query: 用户查询
+            documents: 候选文档列表
+            top_k: 返回前 k 个结果
+        
+        Returns:
+            重排序后的结果列表 [{"document": str, "score": float, "original_index": int}, ...]
+        """
+        rerank_config = self.config.get("services", {}).get("qwen3_rerank", {})
+        if not rerank_config.get("is_enabled", False):
+            print("重排序服务未启用")
+            return None
+        
+        endpoint = rerank_config.get("endpoint")
+        if not endpoint:
+            print("重排序服务缺少 endpoint 配置")
+            return None
+        
+        timeout = rerank_config.get("timeout", 60)
+        
+        try:
+            payload = {"query": query, "documents": documents}
+            if top_k:
+                payload["top_k"] = top_k
+            
+            response = requests.post(
+                f"{endpoint}/rerank",
+                json=payload,
+                timeout=timeout
+            )
+            response.raise_for_status()
+            data = response.json()
+            return data.get("results", [])
+        
+        except Exception as e:
+            print(f"重排序失败: {e}")
+            return None
+    
+    def check_rerank_service(self) -> bool:
+        """检查重排序服务是否可用"""
+        rerank_config = self.config.get("services", {}).get("qwen3_rerank", {})
+        if not rerank_config.get("is_enabled", False):
+            return False
+        
+        endpoint = rerank_config.get("endpoint")
+        if not endpoint:
+            return False
+        
+        try:
+            response = requests.get(f"{endpoint}/health", timeout=(2, 3))
+            return response.status_code == 200
+        except:
+            return False
 

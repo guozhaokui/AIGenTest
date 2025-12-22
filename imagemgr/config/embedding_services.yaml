@@ -36,6 +36,15 @@ services:
     timeout: 30
     is_enabled: true
 
+  # === Qwen3 重排序服务（可选，更精确但较慢） ===
+  qwen3_rerank:
+    model_name: Qwen3-4B
+    model_version: "1.0"
+    service_type: remote
+    endpoint: http://192.168.0.100:6013
+    timeout: 60
+    is_enabled: true  # 已启用
+
 # 索引与模型的绑定关系
 indexes:
   siglip2_image_v1:

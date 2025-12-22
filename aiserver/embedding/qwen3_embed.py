@@ -1,6 +1,8 @@
 """
 Qwen3-4B 文本嵌入服务
 复用 Z-Image-Turbo 的 text_encoder，使用倒数第二层作为嵌入
+
+使用指令增强（Instruction-based Embedding）提升检索效果
 """
 import torch
 from transformers import AutoTokenizer, AutoModel
@@ -19,6 +21,10 @@ MODEL_PATH = "/mnt/hdd/models/Z-Image-Turbo"
 MODEL_NAME = "Qwen3-4B"
 MODEL_VERSION = "1.0"
 DIMENSION = 2560  # Qwen3-4B hidden_size
+
+# 指令前缀（提升检索效果）
+# 测试发现 "关于" 效果最好，区分度 0.147（比 "为了语义搜索" 的 0.117 高 25%）
+INSTRUCTION_PREFIX = "关于"
 
 # Global model and tokenizer
 model = None
@@ -132,7 +138,10 @@ async def embed_texts(req: TextsRequest):
 def compute_text_embedding(text: str) -> np.ndarray:
     """
     计算单个文本的嵌入向量
-    使用倒数第二层的隐藏状态，与 Z-Image 保持一致
+    使用倒数第二层的隐藏状态
+    
+    注意：添加指令前缀以提升检索效果
+    使用 last token pooling（对于 causal LM 更合适）
     
     Args:
         text: 输入文本
@@ -140,18 +149,12 @@ def compute_text_embedding(text: str) -> np.ndarray:
     Returns:
         归一化的嵌入向量
     """
-    # 使用 chat template 格式化（与 Z-Image 一致）
-    messages = [{"role": "user", "content": text}]
-    formatted_text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-        enable_thinking=True,
-    )
+    # 添加指令前缀
+    text_with_instruction = f"{INSTRUCTION_PREFIX}{text}"
     
-    # Tokenize
+    # 直接对文本编码
     inputs = tokenizer(
-        formatted_text,
+        text_with_instruction,
         return_tensors="pt",
         padding=True,
         truncation=True,
@@ -170,11 +173,11 @@ def compute_text_embedding(text: str) -> np.ndarray:
         # 取倒数第二层
         hidden_states = outputs.hidden_states[-2]
         
-        # Mean pooling（只对有效 token 进行）
-        mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size()).float()
-        sum_embeddings = torch.sum(hidden_states * mask_expanded, dim=1)
-        sum_mask = torch.clamp(mask_expanded.sum(dim=1), min=1e-9)
-        embedding = sum_embeddings / sum_mask
+        # Last token pooling（对于 causal LM，最后一个 token 包含整个序列的信息）
+        # 找到每个序列的最后一个有效 token 位置
+        sequence_lengths = attention_mask.sum(dim=1) - 1
+        batch_size = hidden_states.shape[0]
+        embedding = hidden_states[torch.arange(batch_size), sequence_lengths]
     
     # 归一化
     embedding = embedding[0].float().cpu().numpy()
@@ -187,27 +190,21 @@ def compute_text_embeddings_batch(texts: List[str]) -> np.ndarray:
     """
     批量计算文本的嵌入向量
     
+    注意：添加指令前缀以提升检索效果
+    使用 last token pooling
+    
     Args:
         texts: 输入文本列表
     
     Returns:
         归一化的嵌入向量矩阵 (N, dimension)
     """
-    # 使用 chat template 格式化
-    formatted_texts = []
-    for text in texts:
-        messages = [{"role": "user", "content": text}]
-        formatted_text = tokenizer.apply_chat_template(
-            messages,
-            tokenize=False,
-            add_generation_prompt=True,
-            enable_thinking=True,
-        )
-        formatted_texts.append(formatted_text)
+    # 添加指令前缀
+    texts_with_instruction = [f"{INSTRUCTION_PREFIX}{t}" for t in texts]
     
-    # Tokenize
+    # 直接对文本编码
     inputs = tokenizer(
-        formatted_texts,
+        texts_with_instruction,
         return_tensors="pt",
         padding=True,
         truncation=True,
@@ -225,11 +222,10 @@ def compute_text_embeddings_batch(texts: List[str]) -> np.ndarray:
         )
         hidden_states = outputs.hidden_states[-2]
         
-        # Mean pooling
-        mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size()).float()
-        sum_embeddings = torch.sum(hidden_states * mask_expanded, dim=1)
-        sum_mask = torch.clamp(mask_expanded.sum(dim=1), min=1e-9)
-        embeddings = sum_embeddings / sum_mask
+        # Last token pooling
+        sequence_lengths = attention_mask.sum(dim=1) - 1
+        batch_size = hidden_states.shape[0]
+        embeddings = hidden_states[torch.arange(batch_size), sequence_lengths]
     
     # 归一化
     embeddings = embeddings.float().cpu().numpy()
