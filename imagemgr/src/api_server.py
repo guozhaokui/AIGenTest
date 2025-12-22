@@ -65,8 +65,8 @@ for index_name, config in TEXT_INDEXES.items():
         index_name, config["dimension"], config["model_name"], config["model_version"]
     )
 
-# 兼容旧代码：默认文本索引
-text_index = text_indexes.get("qwen3_text_v1")
+# 兼容旧代码：默认文本索引（BGE 效果更好）
+text_index = text_indexes.get("bge_text_v1")
 
 # FastAPI 应用
 app = FastAPI(
