@@ -793,6 +793,9 @@ def get_stats():
 
 # ==================== 批量处理 ====================
 
+# 用于保护数据库和存储操作的锁（确保线程安全）
+_db_lock = threading.Lock()
+
 class BatchImportRequest(BaseModel):
     """批量导入请求"""
     directory: str
@@ -803,6 +806,7 @@ class BatchImportRequest(BaseModel):
     caption_prompt: Optional[str] = None  # 提示词名称或自定义提示词
     vlm_service: Optional[str] = None  # VLM 服务名称
     force_reimport: bool = False  # 强制重新导入（即使已存在也重新处理）
+    concurrency: int = 4  # 并发数量（1-16）
 
 
 class BatchImportResult(BaseModel):
@@ -1038,56 +1042,61 @@ def import_single_image(file_path: Path, source: str = None, generate_caption: b
             )
             result["message"] = "新导入"
         
-        # 计算图片嵌入
+        # 计算图片嵌入 (这是I/O密集型操作，不需要加锁)
         embedding = embedding_client.get_image_embedding(image_path=str(image_path))
         
-        if embedding is not None:
-            # 保存嵌入到文件
-            storage.save_embedding(sha256, "image", embedding)
-            
-            # 添加到向量索引
-            image_index.add(embedding, sha256, "image")
-            
-            # 记录到数据库
-            db.add_vector_entry(
-                sha256, "image", IMAGE_MODEL_NAME, IMAGE_MODEL_VERSION, IMAGE_INDEX_NAME
-            )
-            
-            db.update_image_status(sha256, "ready")
-        else:
-            db.update_image_status(sha256, "pending")
+        # 数据库和索引操作需要加锁
+        with _db_lock:
+            if embedding is not None:
+                # 保存嵌入到文件
+                storage.save_embedding(sha256, "image", embedding)
+                
+                # 添加到向量索引
+                image_index.add(embedding, sha256, "image")
+                
+                # 记录到数据库
+                db.add_vector_entry(
+                    sha256, "image", IMAGE_MODEL_NAME, IMAGE_MODEL_VERSION, IMAGE_INDEX_NAME
+                )
+                
+                db.update_image_status(sha256, "ready")
+            else:
+                db.update_image_status(sha256, "pending")
         
         # 可选：生成描述
         if generate_caption:
+            # VLM 调用不需要加锁（I/O密集型）
             caption = generate_caption_with_vlm(str(image_path), prompt_name=caption_prompt, 
                                                 vlm_service=vlm_service)
             if caption:
-                # 保存描述
-                storage.save_description(sha256, caption_method, caption)
-                db.add_description(sha256, caption_method, caption)
-                
-                # 计算文本嵌入
+                # 计算文本嵌入（I/O密集型）
                 all_embeddings = embedding_client.get_all_text_embeddings(caption)
                 
-                for service_name, emb_info in all_embeddings.items():
-                    emb = emb_info["embedding"]
-                    model_name = emb_info["model_name"]
-                    model_version = emb_info["model_version"]
+                # 数据库和索引操作需要加锁
+                with _db_lock:
+                    # 保存描述
+                    storage.save_description(sha256, caption_method, caption)
+                    db.add_description(sha256, caption_method, caption)
                     
-                    # 查找对应的索引
-                    index_name = None
-                    for idx_name, idx_config in TEXT_INDEXES.items():
-                        if idx_config["service_name"] == service_name:
-                            index_name = idx_name
-                            break
+                    for service_name, emb_info in all_embeddings.items():
+                        emb = emb_info["embedding"]
+                        model_name = emb_info["model_name"]
+                        model_version = emb_info["model_version"]
+                        
+                        # 查找对应的索引
+                        index_name = None
+                        for idx_name, idx_config in TEXT_INDEXES.items():
+                            if idx_config["service_name"] == service_name:
+                                index_name = idx_name
+                                break
+                        
+                        if index_name and index_name in text_indexes:
+                            emb_filename = f"{caption_method}_{model_name.replace('-', '_')}"
+                            storage.save_embedding(sha256, emb_filename, emb)
+                            text_indexes[index_name].add(emb, sha256, caption_method)
+                            db.add_vector_entry(sha256, caption_method, model_name, model_version, index_name)
                     
-                    if index_name and index_name in text_indexes:
-                        emb_filename = f"{caption_method}_{model_name.replace('-', '_')}"
-                        storage.save_embedding(sha256, emb_filename, emb)
-                        text_indexes[index_name].add(emb, sha256, caption_method)
-                        db.add_vector_entry(sha256, caption_method, model_name, model_version, index_name)
-                
-                db.update_description_embedding(sha256, caption_method, True)
+                    db.update_description_embedding(sha256, caption_method, True)
                 result["caption"] = caption[:100] + "..." if len(caption) > 100 else caption
         
         result["status"] = "imported"
@@ -1182,6 +1191,8 @@ def batch_import_directory_stream(req: BatchImportRequest):
     使用 SSE 返回实时进度：
     - event: progress - 每处理一个文件发送进度
     - event: complete - 处理完成发送汇总
+    
+    支持并发处理：通过 concurrency 参数控制并发数
     """
     dir_path = Path(req.directory)
     if not dir_path.exists():
@@ -1189,7 +1200,13 @@ def batch_import_directory_stream(req: BatchImportRequest):
     if not dir_path.is_dir():
         raise HTTPException(status_code=400, detail=f"路径不是目录: {req.directory}")
     
+    # 限制并发数范围
+    concurrency = max(1, min(16, req.concurrency))
+    
     def generate():
+        import queue
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        
         # 收集图片文件
         image_extensions = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
         image_files = []
@@ -1207,16 +1224,21 @@ def batch_import_directory_stream(req: BatchImportRequest):
         total = len(image_files)
         
         # 发送初始化事件
-        yield f"event: init\ndata: {json.dumps({'total': total})}\n\n"
+        yield f"event: init\ndata: {json.dumps({'total': total, 'concurrency': concurrency})}\n\n"
+        
+        if total == 0:
+            yield f"event: complete\ndata: {json.dumps({'total_files': 0, 'imported': 0, 'skipped': 0, 'failed': 0, 'elapsed': 0, 'avg_speed': 0})}\n\n"
+            return
         
         imported = 0
         skipped = 0
         failed = 0
         start_time = time.time()
+        completed_count = 0
         
-        for i, file_path in enumerate(image_files):
+        # 定义处理单个文件的函数
+        def process_file(file_path, index):
             item_start = time.time()
-            
             result = import_single_image(
                 file_path, 
                 source=req.source, 
@@ -1226,48 +1248,82 @@ def batch_import_directory_stream(req: BatchImportRequest):
                 vlm_service=req.vlm_service,
                 force_reimport=req.force_reimport
             )
-            
-            if result["status"] == "imported":
-                imported += 1
-            elif result["status"] == "skipped":
-                skipped += 1
-            else:
-                failed += 1
-            
-            # 计算进度和速度
-            current = i + 1
-            elapsed = time.time() - start_time
-            speed = current / elapsed if elapsed > 0 else 0
-            eta = (total - current) / speed if speed > 0 else 0
-            
-            progress_data = {
-                "current": current,
-                "total": total,
-                "percent": round(current / total * 100, 1),
-                "imported": imported,
-                "skipped": skipped,
-                "failed": failed,
-                "speed": round(speed, 2),  # 每秒处理数
-                "eta": round(eta, 1),  # 预计剩余秒数
-                "elapsed": round(elapsed, 1),
-                "item": {
-                    "file": str(file_path.name),
-                    "status": result["status"],
-                    "message": result.get("message", ""),
-                    "time": round(time.time() - item_start, 2)
-                }
+            return {
+                "index": index,
+                "file_path": file_path,
+                "result": result,
+                "time": round(time.time() - item_start, 2)
+            }
+        
+        # 使用线程池并发处理
+        with ThreadPoolExecutor(max_workers=concurrency) as executor:
+            # 提交所有任务
+            futures = {
+                executor.submit(process_file, file_path, i): i 
+                for i, file_path in enumerate(image_files)
             }
             
-            yield f"event: progress\ndata: {json.dumps(progress_data)}\n\n"
+            # 按完成顺序处理结果
+            for future in as_completed(futures):
+                try:
+                    res = future.result()
+                    result = res["result"]
+                    file_path = res["file_path"]
+                    item_time = res["time"]
+                    
+                    if result["status"] == "imported":
+                        imported += 1
+                    elif result["status"] == "skipped":
+                        skipped += 1
+                    else:
+                        failed += 1
+                    
+                    completed_count += 1
+                    
+                    # 计算进度和速度
+                    elapsed = time.time() - start_time
+                    speed = completed_count / elapsed if elapsed > 0 else 0
+                    eta = (total - completed_count) / speed if speed > 0 else 0
+                    
+                    progress_data = {
+                        "current": completed_count,
+                        "total": total,
+                        "percent": round(completed_count / total * 100, 1),
+                        "imported": imported,
+                        "skipped": skipped,
+                        "failed": failed,
+                        "speed": round(speed, 2),
+                        "eta": round(eta, 1),
+                        "elapsed": round(elapsed, 1),
+                        "item": {
+                            "file": str(file_path.name),
+                            "status": result["status"],
+                            "message": result.get("message", ""),
+                            "time": item_time
+                        }
+                    }
+                    
+                    yield f"event: progress\ndata: {json.dumps(progress_data)}\n\n"
+                except Exception as e:
+                    completed_count += 1
+                    failed += 1
+                    logger.error(f"处理文件时出错: {e}")
+                    
+                    elapsed = time.time() - start_time
+                    speed = completed_count / elapsed if elapsed > 0 else 0
+                    eta = (total - completed_count) / speed if speed > 0 else 0
+                    
+                    yield f"event: progress\ndata: {json.dumps({'current': completed_count, 'total': total, 'percent': round(completed_count / total * 100, 1), 'imported': imported, 'skipped': skipped, 'failed': failed, 'speed': round(speed, 2), 'eta': round(eta, 1), 'elapsed': round(elapsed, 1), 'item': {'file': 'unknown', 'status': 'error', 'message': str(e), 'time': 0}})}\n\n"
         
         # 发送完成事件
+        total_elapsed = time.time() - start_time
         complete_data = {
             "total_files": total,
             "imported": imported,
             "skipped": skipped,
             "failed": failed,
-            "elapsed": round(time.time() - start_time, 1),
-            "avg_speed": round(total / (time.time() - start_time), 2) if time.time() > start_time else 0
+            "elapsed": round(total_elapsed, 1),
+            "avg_speed": round(total / total_elapsed, 2) if total_elapsed > 0 else 0
         }
         yield f"event: complete\ndata: {json.dumps(complete_data)}\n\n"
     
@@ -1280,10 +1336,6 @@ def batch_import_directory_stream(req: BatchImportRequest):
             "X-Accel-Buffering": "no"
         }
     )
-
-
-# 用于保护数据库和存储操作的锁
-_db_lock = threading.Lock()
 
 
 def _process_single_image(img: dict, method: str, prompt_name: Optional[str], vlm_service: Optional[str]):
