@@ -254,6 +254,35 @@ router.post('/batch/recompute-embeddings', async (req, res, next) => {
   }
 });
 
+// ==================== VLM 配置 ====================
+
+router.get('/vlm/config', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.get('/api/vlm/config');
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/vlm/services', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.get('/api/vlm/services');
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/vlm/prompts', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.get('/api/vlm/prompts');
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ==================== 以图搜图 ====================
 
 router.post('/search/image', upload.single('file'), async (req, res, next) => {
