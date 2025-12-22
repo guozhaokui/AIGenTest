@@ -55,9 +55,18 @@ else
     echo -e "${GREEN}  ✓ PID: $!${NC}"
 fi
 
+# 启动 BGE 文本嵌入服务 (6012)
+if pgrep -f "bge_embed.py" > /dev/null; then
+    echo -e "${YELLOW}⚡ BGE 嵌入服务 (6012): 已在运行${NC}"
+else
+    echo -e "启动 BGE 嵌入服务 (端口 6012)..."
+    nohup python "$SCRIPT_DIR/bge_embed.py" > "$LOG_DIR/bge_embed.log" 2>&1 &
+    echo -e "${GREEN}  ✓ PID: $!${NC}"
+fi
+
 echo ""
-echo -e "${YELLOW}等待服务启动 (15秒)...${NC}"
-sleep 15
+echo -e "${YELLOW}等待服务启动 (20秒)...${NC}"
+sleep 20
 
 # 状态检查
 echo ""
@@ -74,8 +83,9 @@ check_service() {
     fi
 }
 
-check_service "图片嵌入服务" 6010
-check_service "文本嵌入服务" 6011
+check_service "图片嵌入服务 (SigLIP-2)" 6010
+check_service "文本嵌入服务 (Qwen3)" 6011
+check_service "文本嵌入服务 (BGE)" 6012
 
 # 显示连接信息
 SERVER_IP=$(hostname -I | awk '{print $1}')
@@ -83,8 +93,9 @@ echo ""
 echo -e "${CYAN}══════════════════════════════════════════${NC}"
 echo ""
 echo -e "${GREEN}远程连接信息:${NC}"
-echo "  图片嵌入: http://${SERVER_IP}:6010"
-echo "  文本嵌入: http://${SERVER_IP}:6011"
+echo "  图片嵌入 (SigLIP-2): http://${SERVER_IP}:6010"
+echo "  文本嵌入 (Qwen3):    http://${SERVER_IP}:6011"
+echo "  文本嵌入 (BGE):      http://${SERVER_IP}:6012"
 echo ""
 echo -e "${YELLOW}在客户端配置文件中使用以上地址${NC}"
 echo ""

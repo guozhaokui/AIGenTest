@@ -29,6 +29,15 @@ else
     echo "图片嵌入服务未运行"
 fi
 
+# 停止 BGE 嵌入服务
+if pgrep -f "bge_embed.py" > /dev/null; then
+    echo -e "${YELLOW}停止 BGE 嵌入服务...${NC}"
+    pkill -f "bge_embed.py"
+    echo -e "${GREEN}✓ 已停止${NC}"
+else
+    echo "BGE 嵌入服务未运行"
+fi
+
 echo ""
 echo "所有嵌入服务已停止"
 

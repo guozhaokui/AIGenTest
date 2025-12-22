@@ -15,7 +15,7 @@ services:
     endpoint: http://SERVER_IP:6010    # ← 修改为服务器 IP
     dimension: 1152
     priority: 1
-    timeout: 60                         # 远程调用增加超时时间
+    timeout: 60
     is_enabled: true
 
   # === Qwen3-4B 文本嵌入（远程 GPU 服务器） ===
@@ -26,7 +26,18 @@ services:
     endpoint: http://SERVER_IP:6011    # ← 修改为服务器 IP
     dimension: 2560
     priority: 1
-    timeout: 30                         # 远程调用增加超时时间
+    timeout: 30
+    is_enabled: true
+
+  # === BGE 文本嵌入（远程 GPU 服务器，更轻量） ===
+  bge_remote:
+    model_name: bge-large-zh
+    model_version: "1.0"
+    service_type: remote
+    endpoint: http://SERVER_IP:6012    # ← 修改为服务器 IP
+    dimension: 1024
+    priority: 2                         # 优先级低于 Qwen3
+    timeout: 30
     is_enabled: true
 
 # 索引与模型的绑定关系
@@ -41,10 +52,16 @@ indexes:
     model_name: Qwen3-4B
     model_version: "1.0"
     dimension: 2560
-    description: 文本描述嵌入索引
+    description: 文本描述嵌入索引（高精度）
+
+  bge_text_v1:
+    model_name: bge-large-zh
+    model_version: "1.0"
+    dimension: 1024
+    description: 文本描述嵌入索引（轻量）
 
 # 默认服务映射
 defaults:
   image_embedding: siglip2_remote
-  text_embedding: qwen3_embed_remote
+  text_embedding: qwen3_embed_remote    # 可改为 bge_remote
 

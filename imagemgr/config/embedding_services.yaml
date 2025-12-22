@@ -1,31 +1,40 @@
 # 嵌入服务配置文件
 # 用于图片管理系统的向量嵌入服务
+# GPU 服务器 IP: 192.168.0.100
 
 services:
-  # === SigLIP2 图片嵌入（本地服务，1.14B 最强版本） ===
+  # === SigLIP2 图片嵌入（远程 GPU 服务器） ===
   siglip2_local:
     model_name: siglip2-so400m-patch16-512
     model_version: "1.0"
-    model_path: /mnt/hdd/models/siglip2-so400m-patch16-512
-    service_type: local
+    service_type: remote
     endpoint: http://192.168.0.100:6010
     dimension: 1152
+    priority: 1
+    timeout: 60
+    is_enabled: true
+
+  # === Qwen3-4B 文本嵌入（远程 GPU 服务器，高精度） ===
+  qwen3_embed_local:
+    model_name: Qwen3-4B
+    model_version: "1.0"
+    service_type: remote
+    endpoint: http://192.168.0.100:6011
+    dimension: 2560
     priority: 1
     timeout: 30
     is_enabled: true
 
-  # === Qwen3-4B 文本嵌入（复用 ZImage-Turbo 的 text_encoder） ===
-  qwen3_embed_local:
-    model_name: Qwen3-4B
+  # === BGE 文本嵌入（远程 GPU 服务器，轻量） ===
+  bge_local:
+    model_name: bge-large-zh
     model_version: "1.0"
-    model_path: /mnt/hdd/models/Z-Image-Turbo
-    service_type: local
-    endpoint: http://192.168.0.100:6011
-    dimension: 2560
-    priority: 1
-    timeout: 10
+    service_type: remote
+    endpoint: http://192.168.0.100:6012
+    dimension: 1024
+    priority: 2
+    timeout: 30
     is_enabled: true
-    # 注：使用倒数第二层 hidden_states[-2] 作为嵌入
 
 # 索引与模型的绑定关系
 indexes:
@@ -39,10 +48,16 @@ indexes:
     model_name: Qwen3-4B
     model_version: "1.0"
     dimension: 2560
-    description: 文本描述嵌入索引
+    description: 文本描述嵌入索引（高精度）
+
+  bge_text_v1:
+    model_name: bge-large-zh
+    model_version: "1.0"
+    dimension: 1024
+    description: 文本描述嵌入索引（轻量）
 
 # 默认服务映射
 defaults:
   image_embedding: siglip2_local
-  text_embedding: qwen3_embed_local
+  text_embedding: qwen3_embed_local  # 可改为 bge_local 使用轻量模型
 
