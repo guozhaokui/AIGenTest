@@ -87,11 +87,15 @@ def load_model(model_path: str):
     
     print(f"🔄 正在加载模型: {model_path}")
     
-    from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor
+    from transformers import AutoModelForVision2Seq, AutoProcessor
+    
+    # 使用 AutoModelForVision2Seq 自动加载正确的模型类
+    # Qwen3-VL 使用 Qwen3VLForConditionalGeneration
+    # Qwen2.5-VL 使用 Qwen2_5_VLForConditionalGeneration
     
     # 尝试使用 flash_attention_2
     try:
-        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+        model = AutoModelForVision2Seq.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
             attn_implementation="flash_attention_2",
@@ -101,7 +105,7 @@ def load_model(model_path: str):
         print("✅ 使用 Flash Attention 2")
     except Exception as e:
         print(f"⚠️ Flash Attention 不可用，使用默认注意力: {e}")
-        model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
+        model = AutoModelForVision2Seq.from_pretrained(
             model_path,
             torch_dtype=torch.bfloat16,
             device_map="auto",
@@ -110,7 +114,7 @@ def load_model(model_path: str):
     
     processor = AutoProcessor.from_pretrained(model_path, trust_remote_code=True)
     
-    print("✅ 模型加载完成!")
+    print(f"✅ 模型加载完成! 模型类型: {type(model).__name__}")
     return model, processor
 
 
