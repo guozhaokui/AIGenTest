@@ -722,6 +722,58 @@ def search_by_image_base64(req: ImageSearchRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+# ==================== VLM 配置 ====================
+
+@app.get("/api/vlm/config")
+def get_vlm_config():
+    """获取 VLM 服务配置"""
+    return {
+        "services": [
+            {
+                "id": name,
+                "name": svc.get("name", name),
+                "description": svc.get("description", ""),
+                "is_enabled": svc.get("is_enabled", True)
+            }
+            for name, svc in VLM_SERVICES.items()
+        ],
+        "default_service": VLM_CONFIG.get("default_service", "default"),
+        "prompts": VLM_CONFIG.get("prompts", {}),
+        "default_prompt": VLM_CONFIG.get("default_prompt", "default")
+    }
+
+
+@app.get("/api/vlm/services")
+def get_vlm_services():
+    """获取可用的 VLM 服务列表"""
+    return {
+        "services": [
+            {
+                "id": name,
+                "name": svc.get("name", name),
+                "description": svc.get("description", ""),
+                "is_enabled": svc.get("is_enabled", True)
+            }
+            for name, svc in VLM_SERVICES.items()
+            if svc.get("is_enabled", True)
+        ],
+        "default": VLM_CONFIG.get("default_service", "default")
+    }
+
+
+@app.get("/api/vlm/prompts")
+def get_vlm_prompts():
+    """获取可用的提示词列表"""
+    prompts = VLM_CONFIG.get("prompts", {})
+    return {
+        "prompts": [
+            {"name": name, "text": text[:100] + "..." if len(text) > 100 else text}
+            for name, text in prompts.items()
+        ],
+        "default": VLM_CONFIG.get("default_prompt", "default")
+    }
+
+
 # ==================== 统计 ====================
 
 @app.get("/api/stats")
@@ -746,6 +798,8 @@ class BatchImportRequest(BaseModel):
     recursive: bool = False
     generate_caption: bool = False
     caption_method: str = "vlm"
+    caption_prompt: Optional[str] = None  # 提示词名称或自定义提示词
+    vlm_service: Optional[str] = None  # VLM 服务名称
 
 
 class BatchImportResult(BaseModel):
@@ -757,22 +811,138 @@ class BatchImportResult(BaseModel):
     details: List[dict]
 
 
-# VLM 服务配置
-VLM_ENDPOINT = os.environ.get("VLM_ENDPOINT", "http://192.168.0.100:6020")
+# ==================== VLM 服务配置 ====================
+
+def load_vlm_config():
+    """从配置文件加载 VLM 配置（支持多个 VLM 服务）"""
+    import yaml
+    
+    default_services = {
+        "default": {
+            "name": "Default VLM",
+            "endpoint": "http://localhost:6050",
+            "timeout": 60,
+            "is_enabled": True,
+            "description": "默认 VLM 服务"
+        }
+    }
+    
+    default_config = {
+        "default_service": "default",
+        "prompts": {
+            "default": "请详细描述这张图片的内容，包括主要物体、场景、颜色、风格等特征。"
+        },
+        "default_prompt": "default"
+    }
+    
+    if not CONFIG_PATH.exists():
+        return {"services": default_services, "config": default_config}
+    
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        
+        # 加载 VLM 服务列表
+        vlm_services = config.get("vlm_services", default_services)
+        
+        # 加载 VLM 全局配置
+        vlm_config = config.get("vlm", {})
+        for key, value in default_config.items():
+            if key not in vlm_config:
+                vlm_config[key] = value
+        
+        return {"services": vlm_services, "config": vlm_config}
+    except Exception as e:
+        print(f"加载 VLM 配置失败: {e}")
+        return {"services": default_services, "config": default_config}
 
 
-def generate_caption_with_vlm(image_path: str) -> Optional[str]:
+# 加载 VLM 配置
+VLM_DATA = load_vlm_config()
+VLM_SERVICES = VLM_DATA["services"]
+VLM_CONFIG = VLM_DATA["config"]
+
+
+def get_vlm_service(service_name: str = None) -> dict:
+    """
+    获取 VLM 服务配置
+    
+    Args:
+        service_name: VLM 服务名称，如果为 None 使用默认服务
+    
+    Returns:
+        服务配置字典
+    """
+    if service_name is None:
+        service_name = VLM_CONFIG.get("default_service", "default")
+    
+    if service_name in VLM_SERVICES:
+        return VLM_SERVICES[service_name]
+    
+    # 返回第一个启用的服务
+    for name, svc in VLM_SERVICES.items():
+        if svc.get("is_enabled", True):
+            return svc
+    
+    # 返回默认配置
+    return {
+        "name": "Default",
+        "endpoint": "http://localhost:6050",
+        "timeout": 60,
+        "is_enabled": True
+    }
+
+
+def get_vlm_prompt(prompt_name: str = None) -> str:
+    """
+    获取 VLM 提示词
+    
+    Args:
+        prompt_name: 提示词名称（default/short/detailed/tags/objects）
+                    如果为 None，使用配置中的 default_prompt
+    
+    Returns:
+        提示词文本
+    """
+    prompts = VLM_CONFIG.get("prompts", {})
+    
+    if prompt_name is None:
+        prompt_name = VLM_CONFIG.get("default_prompt", "default")
+    
+    # 如果是自定义提示词（不在预设中），直接返回
+    if prompt_name not in prompts and len(prompt_name) > 20:
+        return prompt_name
+    
+    return prompts.get(prompt_name, prompts.get("default", "请描述这张图片。"))
+
+
+def generate_caption_with_vlm(image_path: str, prompt_name: str = None, 
+                              vlm_service: str = None) -> Optional[str]:
     """
     使用 VLM 服务生成图片描述
     
     Args:
         image_path: 图片路径
+        prompt_name: 提示词名称或自定义提示词
+        vlm_service: VLM 服务名称，如果为 None 使用默认服务
     
     Returns:
         生成的描述文本，失败返回 None
     """
     import requests
     import base64
+    
+    # 获取 VLM 服务配置
+    service = get_vlm_service(vlm_service)
+    
+    # 检查服务是否启用
+    if not service.get("is_enabled", True):
+        print(f"VLM 服务 {service.get('name', 'unknown')} 未启用")
+        return None
+    
+    endpoint = service.get("endpoint", "http://localhost:6050")
+    timeout = service.get("timeout", 60)
+    prompt = get_vlm_prompt(prompt_name)
     
     try:
         # 读取图片并编码
@@ -781,12 +951,12 @@ def generate_caption_with_vlm(image_path: str) -> Optional[str]:
         
         # 调用 VLM 服务
         response = requests.post(
-            f"{VLM_ENDPOINT}/caption",
+            f"{endpoint}/caption",
             json={
                 "image_base64": image_base64,
-                "prompt": "请详细描述这张图片的内容，包括主要物体、场景、颜色、风格等特征。"
+                "prompt": prompt
             },
-            timeout=60
+            timeout=timeout
         )
         
         if response.status_code == 200:
@@ -802,7 +972,8 @@ def generate_caption_with_vlm(image_path: str) -> Optional[str]:
 
 
 def import_single_image(file_path: Path, source: str = None, generate_caption: bool = False, 
-                        caption_method: str = "vlm") -> dict:
+                        caption_method: str = "vlm", caption_prompt: str = None,
+                        vlm_service: str = None) -> dict:
     """
     导入单张图片
     
@@ -862,7 +1033,8 @@ def import_single_image(file_path: Path, source: str = None, generate_caption: b
         
         # 可选：生成描述
         if generate_caption:
-            caption = generate_caption_with_vlm(str(image_path))
+            caption = generate_caption_with_vlm(str(image_path), prompt_name=caption_prompt, 
+                                                vlm_service=vlm_service)
             if caption:
                 # 保存描述
                 storage.save_description(sha256, caption_method, caption)
@@ -948,7 +1120,9 @@ def batch_import_directory(req: BatchImportRequest):
             file_path, 
             source=req.source, 
             generate_caption=req.generate_caption,
-            caption_method=req.caption_method
+            caption_method=req.caption_method,
+            caption_prompt=req.caption_prompt,
+            vlm_service=req.vlm_service
         )
         details.append(result)
         
@@ -973,7 +1147,9 @@ def batch_generate_captions(
     source: Optional[str] = None,
     method: str = "vlm",
     overwrite: bool = False,
-    limit: int = Query(100, ge=1, le=1000)
+    limit: int = Query(100, ge=1, le=1000),
+    prompt: Optional[str] = None,
+    vlm_service: Optional[str] = None
 ):
     """
     批量为已有图片生成描述
@@ -982,6 +1158,8 @@ def batch_generate_captions(
     - method: 描述方法标记（默认 vlm）
     - overwrite: 是否覆盖已有描述
     - limit: 最多处理数量
+    - prompt: 提示词名称（default/short/detailed/tags/objects）或自定义提示词
+    - vlm_service: VLM 服务名称（如 qwen3vl），不指定使用默认服务
     """
     # 获取需要处理的图片
     images = db.list_images(offset=0, limit=limit, source=source, status="ready")
@@ -1009,7 +1187,8 @@ def batch_generate_captions(
             continue
         
         # 生成描述
-        caption = generate_caption_with_vlm(str(image_path))
+        caption = generate_caption_with_vlm(str(image_path), prompt_name=prompt, 
+                                            vlm_service=vlm_service)
         if not caption:
             failed += 1
             results.append({"sha256": sha256, "status": "failed", "message": "VLM 服务失败"})

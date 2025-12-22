@@ -181,6 +181,29 @@ export function searchByImage(file, topK = 20) {
   }).then(r => r.data);
 }
 
+// ==================== VLM 配置 ====================
+
+/**
+ * 获取 VLM 配置
+ */
+export function getVlmConfig() {
+  return imagemgrApi.get('/vlm/config').then(r => r.data);
+}
+
+/**
+ * 获取可用的 VLM 服务列表
+ */
+export function getVlmServices() {
+  return imagemgrApi.get('/vlm/services').then(r => r.data);
+}
+
+/**
+ * 获取 VLM 可用提示词列表
+ */
+export function getVlmPrompts() {
+  return imagemgrApi.get('/vlm/prompts').then(r => r.data);
+}
+
 // ==================== 统计 ====================
 
 /**

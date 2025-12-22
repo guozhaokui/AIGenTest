@@ -21,8 +21,36 @@
             <el-switch v-model="importForm.generate_caption" />
             <span class="form-tip">使用 VLM 自动生成图片描述</span>
           </el-form-item>
+          <el-form-item label="VLM 服务" v-if="importForm.generate_caption">
+            <el-select v-model="importForm.vlm_service" placeholder="选择 VLM 服务" clearable style="width: 200px;">
+              <el-option 
+                v-for="s in vlmServices" 
+                :key="s.id" 
+                :label="s.name" 
+                :value="s.id"
+              >
+                <span>{{ s.name }}</span>
+                <span class="service-desc">{{ s.description }}</span>
+              </el-option>
+            </el-select>
+            <span class="form-tip">留空使用默认服务</span>
+          </el-form-item>
           <el-form-item label="描述方法" v-if="importForm.generate_caption">
             <el-input v-model="importForm.caption_method" style="width: 200px;" />
+          </el-form-item>
+          <el-form-item label="提示词" v-if="importForm.generate_caption">
+            <el-select v-model="importForm.caption_prompt" placeholder="选择提示词模板" style="width: 200px;">
+              <el-option 
+                v-for="p in vlmPrompts" 
+                :key="p.name" 
+                :label="p.name" 
+                :value="p.name"
+              >
+                <span>{{ p.name }}</span>
+                <span class="prompt-preview">{{ p.text }}</span>
+              </el-option>
+            </el-select>
+            <span class="form-tip">或留空使用默认提示词</span>
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="handleImport" :loading="importing">
@@ -61,8 +89,36 @@
           <el-form-item label="来源筛选">
             <el-input v-model="captionForm.source" placeholder="只处理指定来源的图片（可选）" />
           </el-form-item>
+          <el-form-item label="VLM 服务">
+            <el-select v-model="captionForm.vlm_service" placeholder="选择 VLM 服务" clearable style="width: 200px;">
+              <el-option 
+                v-for="s in vlmServices" 
+                :key="s.id" 
+                :label="s.name" 
+                :value="s.id"
+              >
+                <span>{{ s.name }}</span>
+                <span class="service-desc">{{ s.description }}</span>
+              </el-option>
+            </el-select>
+            <span class="form-tip">留空使用默认服务</span>
+          </el-form-item>
           <el-form-item label="描述方法">
             <el-input v-model="captionForm.method" style="width: 200px;" />
+          </el-form-item>
+          <el-form-item label="提示词">
+            <el-select v-model="captionForm.prompt" placeholder="选择提示词模板" clearable style="width: 200px;">
+              <el-option 
+                v-for="p in vlmPrompts" 
+                :key="p.name" 
+                :label="p.name" 
+                :value="p.name"
+              >
+                <span>{{ p.name }}</span>
+                <span class="prompt-preview">{{ p.text }}</span>
+              </el-option>
+            </el-select>
+            <span class="form-tip">留空使用默认提示词</span>
           </el-form-item>
           <el-form-item label="覆盖已有">
             <el-switch v-model="captionForm.overwrite" />
@@ -128,11 +184,15 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { batchImport, batchGenerateCaptions, batchRecomputeEmbeddings } from '@/services/imagemgr';
+import { batchImport, batchGenerateCaptions, batchRecomputeEmbeddings, getVlmPrompts, getVlmServices } from '@/services/imagemgr';
 
 const activeTab = ref('import');
+
+// VLM 服务和提示词列表
+const vlmServices = ref([]);
+const vlmPrompts = ref([]);
 
 // 目录导入表单
 const importForm = reactive({
@@ -140,7 +200,9 @@ const importForm = reactive({
   source: '',
   recursive: false,
   generate_caption: false,
-  caption_method: 'vlm'
+  vlm_service: '',
+  caption_method: 'vlm',
+  caption_prompt: ''
 });
 const importing = ref(false);
 const importResult = ref(null);
@@ -148,9 +210,36 @@ const importResult = ref(null);
 // 批量生成描述表单
 const captionForm = reactive({
   source: '',
+  vlm_service: '',
   method: 'vlm',
+  prompt: '',
   overwrite: false,
   limit: 100
+});
+
+// 加载 VLM 服务列表
+async function loadVlmServices() {
+  try {
+    const data = await getVlmServices();
+    vlmServices.value = data.services || [];
+  } catch (e) {
+    console.warn('加载 VLM 服务列表失败:', e);
+  }
+}
+
+// 加载 VLM 提示词列表
+async function loadVlmPrompts() {
+  try {
+    const data = await getVlmPrompts();
+    vlmPrompts.value = data.prompts || [];
+  } catch (e) {
+    console.warn('加载 VLM 提示词失败:', e);
+  }
+}
+
+onMounted(() => {
+  loadVlmServices();
+  loadVlmPrompts();
 });
 const generatingCaptions = ref(false);
 const captionResult = ref(null);
@@ -249,6 +338,22 @@ async function handleRecomputeEmbeddings() {
 
 .import-result {
   margin-top: 24px;
+}
+
+.prompt-preview {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 12px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service-desc {
+  margin-left: 8px;
+  color: #909399;
+  font-size: 12px;
 }
 </style>
 
