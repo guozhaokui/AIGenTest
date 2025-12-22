@@ -394,8 +394,9 @@ def main():
     
     args = parser.parse_args()
     
-    # 设置 GPU
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+    # 设置 GPU（如果环境变量未设置则使用参数）
+    if "CUDA_VISIBLE_DEVICES" not in os.environ:
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
     os.environ["MODEL_PATH"] = args.model_path
     
     print("=" * 60)
