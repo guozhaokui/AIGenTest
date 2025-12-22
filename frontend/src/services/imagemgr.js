@@ -93,6 +93,17 @@ export function getDescriptions(sha256) {
   return imagemgrApi.get(`/images/${sha256}/descriptions`).then(r => r.data);
 }
 
+/**
+ * 重新计算嵌入
+ * @param {string} sha256 图片哈希
+ * @param {boolean} includeText 是否同时更新文本嵌入
+ */
+export function recomputeEmbedding(sha256, includeText = false) {
+  return imagemgrApi.post(`/images/${sha256}/recompute-embedding`, null, {
+    params: { include_text: includeText }
+  }).then(r => r.data);
+}
+
 // ==================== 搜索 ====================
 
 /**

@@ -309,6 +309,62 @@ router.post('/:id/export', async (req, res, next) => {
       }
     }
     
+    // Function to recursively copy a directory to exports
+    async function copyDirToExports(sourceDir, targetBaseDir) {
+      if (!sourceDir) return;
+      
+      let relPath = String(sourceDir);
+      
+      // Normalize path - remove leading slashes
+      if (relPath.startsWith('/')) {
+        relPath = relPath.slice(1);
+      }
+      
+      const sourceAbsPath = path.resolve(__dirname, '../../', relPath);
+      const targetAbsPath = path.resolve(targetBaseDir, relPath);
+      
+      try {
+        // Check if source exists and is a directory
+        const stat = await fs.stat(sourceAbsPath);
+        if (!stat.isDirectory()) {
+          // If it's a file, just copy it
+          await fs.mkdir(path.dirname(targetAbsPath), { recursive: true });
+          await fs.copyFile(sourceAbsPath, targetAbsPath);
+          console.log(`[live-gen] exported file: ${sourceAbsPath} -> ${targetAbsPath}`);
+          return;
+        }
+        
+        // Ensure target directory exists
+        await fs.mkdir(targetAbsPath, { recursive: true });
+        
+        // Read all files in source directory
+        const entries = await fs.readdir(sourceAbsPath, { withFileTypes: true });
+        
+        for (const entry of entries) {
+          const srcPath = path.join(sourceAbsPath, entry.name);
+          const dstPath = path.join(targetAbsPath, entry.name);
+          
+          if (entry.isDirectory()) {
+            // Recursively copy subdirectory
+            await copyDirToExports(path.join(relPath, entry.name), targetBaseDir);
+          } else {
+            // Copy file
+            await fs.copyFile(srcPath, dstPath);
+            console.log(`[live-gen] exported file: ${srcPath} -> ${dstPath}`);
+          }
+        }
+        
+        console.log(`[live-gen] exported directory: ${sourceAbsPath} -> ${targetAbsPath}`);
+      } catch (e) {
+        console.warn(`[live-gen] failed to export directory ${sourceAbsPath}:`, e.message);
+      }
+    }
+    
+    // Export 3D model directory if exists
+    if (targetItem.info3d && targetItem.info3d.modelDir) {
+      await copyDirToExports(targetItem.info3d.modelDir, exportsDir);
+    }
+    
     // Export generated image
     if (targetItem.imagePath) {
       await copyToExports(targetItem.imagePath);

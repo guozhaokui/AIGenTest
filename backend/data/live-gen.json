@@ -3271,5 +3271,29 @@
     "createdAt": "2025-12-20T12:48:17.550Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/549fbfc8-eca1-4653-9d42-05790fe72e4c/e697d82e-0593-4237-9c0d-e86183174d87/thumbnail.jpg"
+  },
+  {
+    "id": "528c74eb-b595-43be-b883-5886797904bc",
+    "prompt": "",
+    "imagePath": "/modeldb/00187b78-274b-4b5d-a25b-29dff2c84069/245ea0e4-909c-49e2-9079-16619e9a97ac",
+    "imageUrls": [
+      "imagedb/9b/7a/9b7a6eb5a8f8df1406234a1174ef7ea5.glb"
+    ],
+    "modelId": "meshy_rigging",
+    "modelName": "",
+    "params": {
+      "draftTaskId": "",
+      "heightMeters": 1.7
+    },
+    "duration": 133687,
+    "info3d": {
+      "modelDir": "/modeldb/00187b78-274b-4b5d-a25b-29dff2c84069/245ea0e4-909c-49e2-9079-16619e9a97ac",
+      "isSingleFile": true,
+      "modelPath": "rigged_model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-22T02:56:49.098Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/00187b78-274b-4b5d-a25b-29dff2c84069/245ea0e4-909c-49e2-9079-16619e9a97ac/thumbnail.jpg"
   }
 ]

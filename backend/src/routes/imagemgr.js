@@ -173,6 +173,28 @@ router.post('/images/:sha256/descriptions', async (req, res, next) => {
   }
 });
 
+// ==================== 重新计算嵌入 ====================
+
+router.post('/images/:sha256/recompute-embedding', async (req, res, next) => {
+  try {
+    const params = {};
+    if (req.query.include_text === 'true') {
+      params.include_text = true;
+    }
+    const response = await imagemgrClient.post(
+      `/api/images/${req.params.sha256}/recompute-embedding`,
+      null,
+      { params }
+    );
+    res.json(response.data);
+  } catch (err) {
+    if (err.response?.status === 404) {
+      return res.status(404).json({ error: 'Image not found' });
+    }
+    next(err);
+  }
+});
+
 // ==================== 文本搜索 ====================
 
 router.post('/search/text', async (req, res, next) => {
