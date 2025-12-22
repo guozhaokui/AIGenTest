@@ -104,6 +104,55 @@ export function recomputeEmbedding(sha256, includeText = false) {
   }).then(r => r.data);
 }
 
+// ==================== 批量处理 ====================
+
+/**
+ * 批量导入目录
+ * @param {object} options 导入选项
+ * @param {string} options.directory 目录路径
+ * @param {string} options.source 来源标记
+ * @param {boolean} options.recursive 是否递归
+ * @param {boolean} options.generate_caption 是否生成描述
+ * @param {string} options.caption_method 描述方法
+ */
+export function batchImport(options) {
+  return imagemgrApi.post('/batch/import', options, {
+    timeout: 600000
+  }).then(r => r.data);
+}
+
+/**
+ * 批量生成描述
+ * @param {object} params 参数
+ */
+export function batchGenerateCaptions(params = {}) {
+  return imagemgrApi.post('/batch/generate-captions', null, {
+    params,
+    timeout: 600000
+  }).then(r => r.data);
+}
+
+/**
+ * 获取待处理图片
+ * @param {number} limit 数量限制
+ */
+export function getPendingImages(limit = 100) {
+  return imagemgrApi.get('/batch/pending', {
+    params: { limit }
+  }).then(r => r.data);
+}
+
+/**
+ * 批量重新计算嵌入
+ * @param {object} params 参数
+ */
+export function batchRecomputeEmbeddings(params = {}) {
+  return imagemgrApi.post('/batch/recompute-embeddings', null, {
+    params,
+    timeout: 600000
+  }).then(r => r.data);
+}
+
 // ==================== 搜索 ====================
 
 /**

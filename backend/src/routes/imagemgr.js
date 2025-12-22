@@ -206,6 +206,54 @@ router.post('/search/text', async (req, res, next) => {
   }
 });
 
+// ==================== 批量处理 ====================
+
+router.post('/batch/import', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post('/api/batch/import', req.body, {
+      timeout: 600000  // 10分钟超时
+    });
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/batch/generate-captions', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post('/api/batch/generate-captions', null, {
+      params: req.query,
+      timeout: 600000
+    });
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/batch/pending', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.get('/api/batch/pending', {
+      params: req.query
+    });
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/batch/recompute-embeddings', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post('/api/batch/recompute-embeddings', null, {
+      params: req.query,
+      timeout: 600000
+    });
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ==================== 以图搜图 ====================
 
 router.post('/search/image', upload.single('file'), async (req, res, next) => {

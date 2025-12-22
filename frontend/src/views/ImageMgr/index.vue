@@ -7,6 +7,7 @@
           <router-link to="/imagemgr/list">图片列表</router-link>
           <router-link to="/imagemgr/search">搜索</router-link>
           <router-link to="/imagemgr/upload">上传</router-link>
+          <router-link to="/imagemgr/batch">批量处理</router-link>
         </div>
         <div class="stats" v-if="stats">
           <el-tag type="info">总计: {{ stats.total_images }}</el-tag>

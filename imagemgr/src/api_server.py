@@ -737,6 +737,435 @@ def get_stats():
     }
 
 
+# ==================== 批量处理 ====================
+
+class BatchImportRequest(BaseModel):
+    """批量导入请求"""
+    directory: str
+    source: Optional[str] = None
+    recursive: bool = False
+    generate_caption: bool = False
+    caption_method: str = "vlm"
+
+
+class BatchImportResult(BaseModel):
+    """批量导入结果"""
+    total_files: int
+    imported: int
+    skipped: int
+    failed: int
+    details: List[dict]
+
+
+# VLM 服务配置
+VLM_ENDPOINT = os.environ.get("VLM_ENDPOINT", "http://192.168.0.100:6020")
+
+
+def generate_caption_with_vlm(image_path: str) -> Optional[str]:
+    """
+    使用 VLM 服务生成图片描述
+    
+    Args:
+        image_path: 图片路径
+    
+    Returns:
+        生成的描述文本，失败返回 None
+    """
+    import requests
+    import base64
+    
+    try:
+        # 读取图片并编码
+        with open(image_path, "rb") as f:
+            image_base64 = base64.b64encode(f.read()).decode("utf-8")
+        
+        # 调用 VLM 服务
+        response = requests.post(
+            f"{VLM_ENDPOINT}/caption",
+            json={
+                "image_base64": image_base64,
+                "prompt": "请详细描述这张图片的内容，包括主要物体、场景、颜色、风格等特征。"
+            },
+            timeout=60
+        )
+        
+        if response.status_code == 200:
+            data = response.json()
+            return data.get("caption") or data.get("text") or data.get("response")
+        else:
+            print(f"VLM 服务返回错误: {response.status_code}")
+            return None
+    
+    except Exception as e:
+        print(f"调用 VLM 服务失败: {e}")
+        return None
+
+
+def import_single_image(file_path: Path, source: str = None, generate_caption: bool = False, 
+                        caption_method: str = "vlm") -> dict:
+    """
+    导入单张图片
+    
+    Returns:
+        导入结果字典
+    """
+    result = {
+        "file": str(file_path),
+        "status": "unknown",
+        "sha256": None,
+        "message": ""
+    }
+    
+    try:
+        # 读取文件
+        content = file_path.read_bytes()
+        sha256 = storage.compute_sha256_from_bytes(content)
+        result["sha256"] = sha256
+        
+        # 检查是否已存在
+        if db.image_exists(sha256):
+            result["status"] = "skipped"
+            result["message"] = "图片已存在"
+            return result
+        
+        # 保存图片
+        image_path, meta = storage.save_image_from_bytes(content, sha256)
+        
+        # 添加数据库记录
+        db.add_image(
+            sha256=sha256,
+            width=meta["width"],
+            height=meta["height"],
+            file_size=meta["file_size"],
+            format=meta["format"],
+            source=source
+        )
+        
+        # 计算图片嵌入
+        embedding = embedding_client.get_image_embedding(image_path=str(image_path))
+        
+        if embedding is not None:
+            # 保存嵌入到文件
+            storage.save_embedding(sha256, "image", embedding)
+            
+            # 添加到向量索引
+            image_index.add(embedding, sha256, "image")
+            
+            # 记录到数据库
+            db.add_vector_entry(
+                sha256, "image", IMAGE_MODEL_NAME, IMAGE_MODEL_VERSION, IMAGE_INDEX_NAME
+            )
+            
+            db.update_image_status(sha256, "ready")
+        else:
+            db.update_image_status(sha256, "pending")
+        
+        # 可选：生成描述
+        if generate_caption:
+            caption = generate_caption_with_vlm(str(image_path))
+            if caption:
+                # 保存描述
+                storage.save_description(sha256, caption_method, caption)
+                db.add_description(sha256, caption_method, caption)
+                
+                # 计算文本嵌入
+                all_embeddings = embedding_client.get_all_text_embeddings(caption)
+                
+                for service_name, emb_info in all_embeddings.items():
+                    emb = emb_info["embedding"]
+                    model_name = emb_info["model_name"]
+                    model_version = emb_info["model_version"]
+                    
+                    # 查找对应的索引
+                    index_name = None
+                    for idx_name, idx_config in TEXT_INDEXES.items():
+                        if idx_config["service_name"] == service_name:
+                            index_name = idx_name
+                            break
+                    
+                    if index_name and index_name in text_indexes:
+                        emb_filename = f"{caption_method}_{model_name.replace('-', '_')}"
+                        storage.save_embedding(sha256, emb_filename, emb)
+                        text_indexes[index_name].add(emb, sha256, caption_method)
+                        db.add_vector_entry(sha256, caption_method, model_name, model_version, index_name)
+                
+                db.update_description_embedding(sha256, caption_method, True)
+                result["caption"] = caption[:100] + "..." if len(caption) > 100 else caption
+        
+        result["status"] = "imported"
+        result["message"] = "导入成功"
+        result["width"] = meta["width"]
+        result["height"] = meta["height"]
+        
+    except Exception as e:
+        result["status"] = "failed"
+        result["message"] = str(e)
+    
+    return result
+
+
+@app.post("/api/batch/import")
+def batch_import_directory(req: BatchImportRequest):
+    """
+    批量导入目录中的图片
+    
+    - 扫描指定目录（可递归）
+    - 导入所有图片并计算嵌入
+    - 可选：使用 VLM 生成描述
+    """
+    import glob
+    
+    dir_path = Path(req.directory)
+    if not dir_path.exists():
+        raise HTTPException(status_code=400, detail=f"目录不存在: {req.directory}")
+    if not dir_path.is_dir():
+        raise HTTPException(status_code=400, detail=f"路径不是目录: {req.directory}")
+    
+    # 收集图片文件
+    image_extensions = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
+    image_files = []
+    
+    if req.recursive:
+        for ext in image_extensions:
+            image_files.extend(dir_path.rglob(f"*{ext}"))
+            image_files.extend(dir_path.rglob(f"*{ext.upper()}"))
+    else:
+        for ext in image_extensions:
+            image_files.extend(dir_path.glob(f"*{ext}"))
+            image_files.extend(dir_path.glob(f"*{ext.upper()}"))
+    
+    # 去重
+    image_files = list(set(image_files))
+    
+    # 导入统计
+    imported = 0
+    skipped = 0
+    failed = 0
+    details = []
+    
+    for file_path in image_files:
+        result = import_single_image(
+            file_path, 
+            source=req.source, 
+            generate_caption=req.generate_caption,
+            caption_method=req.caption_method
+        )
+        details.append(result)
+        
+        if result["status"] == "imported":
+            imported += 1
+        elif result["status"] == "skipped":
+            skipped += 1
+        else:
+            failed += 1
+    
+    return {
+        "total_files": len(image_files),
+        "imported": imported,
+        "skipped": skipped,
+        "failed": failed,
+        "details": details
+    }
+
+
+@app.post("/api/batch/generate-captions")
+def batch_generate_captions(
+    source: Optional[str] = None,
+    method: str = "vlm",
+    overwrite: bool = False,
+    limit: int = Query(100, ge=1, le=1000)
+):
+    """
+    批量为已有图片生成描述
+    
+    - source: 只处理指定来源的图片
+    - method: 描述方法标记（默认 vlm）
+    - overwrite: 是否覆盖已有描述
+    - limit: 最多处理数量
+    """
+    # 获取需要处理的图片
+    images = db.list_images(offset=0, limit=limit, source=source, status="ready")
+    
+    processed = 0
+    skipped = 0
+    failed = 0
+    results = []
+    
+    for img in images:
+        sha256 = img["sha256"]
+        
+        # 检查是否已有描述
+        if not overwrite:
+            existing = db.get_descriptions(sha256)
+            if any(d["method"] == method for d in existing):
+                skipped += 1
+                continue
+        
+        # 获取图片路径
+        image_path = storage.get_image_path(sha256)
+        if not image_path.exists():
+            failed += 1
+            results.append({"sha256": sha256, "status": "failed", "message": "图片文件不存在"})
+            continue
+        
+        # 生成描述
+        caption = generate_caption_with_vlm(str(image_path))
+        if not caption:
+            failed += 1
+            results.append({"sha256": sha256, "status": "failed", "message": "VLM 服务失败"})
+            continue
+        
+        # 保存描述
+        storage.save_description(sha256, method, caption)
+        db.add_description(sha256, method, caption)
+        
+        # 计算文本嵌入
+        all_embeddings = embedding_client.get_all_text_embeddings(caption)
+        
+        for service_name, emb_info in all_embeddings.items():
+            emb = emb_info["embedding"]
+            model_name = emb_info["model_name"]
+            model_version = emb_info["model_version"]
+            
+            index_name = None
+            for idx_name, idx_config in TEXT_INDEXES.items():
+                if idx_config["service_name"] == service_name:
+                    index_name = idx_name
+                    break
+            
+            if index_name and index_name in text_indexes:
+                emb_filename = f"{method}_{model_name.replace('-', '_')}"
+                storage.save_embedding(sha256, emb_filename, emb)
+                text_indexes[index_name].add(emb, sha256, method)
+                
+                try:
+                    db.add_vector_entry(sha256, method, model_name, model_version, index_name)
+                except:
+                    pass  # 忽略重复记录
+        
+        db.update_description_embedding(sha256, method, True)
+        processed += 1
+        results.append({
+            "sha256": sha256, 
+            "status": "success", 
+            "caption": caption[:100] + "..." if len(caption) > 100 else caption
+        })
+    
+    return {
+        "total": len(images),
+        "processed": processed,
+        "skipped": skipped,
+        "failed": failed,
+        "results": results
+    }
+
+
+@app.get("/api/batch/pending")
+def get_pending_images(limit: int = Query(100, ge=1, le=1000)):
+    """获取待处理的图片（嵌入未计算）"""
+    images = db.list_images(offset=0, limit=limit, status="pending")
+    return {
+        "count": len(images),
+        "images": images
+    }
+
+
+@app.post("/api/batch/recompute-embeddings")
+def batch_recompute_embeddings(
+    source: Optional[str] = None,
+    status: Optional[str] = None,
+    include_text: bool = False,
+    limit: int = Query(100, ge=1, le=1000)
+):
+    """
+    批量重新计算嵌入
+    
+    - source: 只处理指定来源的图片
+    - status: 只处理指定状态的图片
+    - include_text: 是否同时更新文本嵌入
+    - limit: 最多处理数量
+    """
+    images = db.list_images(offset=0, limit=limit, source=source, status=status)
+    
+    processed = 0
+    failed = 0
+    results = []
+    
+    for img in images:
+        sha256 = img["sha256"]
+        
+        try:
+            # 删除旧的向量记录
+            db.delete_vector_entries(sha256)
+            
+            # 计算图片嵌入
+            image_path = storage.get_image_path(sha256)
+            if not image_path.exists():
+                failed += 1
+                results.append({"sha256": sha256, "status": "failed", "message": "文件不存在"})
+                continue
+            
+            image_index.remove(sha256)
+            embedding = embedding_client.get_image_embedding(image_path=str(image_path))
+            
+            if embedding is not None:
+                storage.save_embedding(sha256, "image", embedding)
+                image_index.add(embedding, sha256, "image")
+                db.add_vector_entry(sha256, "image", IMAGE_MODEL_NAME, IMAGE_MODEL_VERSION, IMAGE_INDEX_NAME)
+                db.update_image_status(sha256, "ready")
+            else:
+                db.update_image_status(sha256, "pending")
+                failed += 1
+                results.append({"sha256": sha256, "status": "failed", "message": "嵌入服务不可用"})
+                continue
+            
+            # 可选：重新计算文本嵌入
+            if include_text:
+                descriptions = db.get_descriptions(sha256)
+                for desc in descriptions:
+                    method = desc["method"]
+                    content = storage.get_description(sha256, method)
+                    if not content:
+                        continue
+                    
+                    for idx_name, idx in text_indexes.items():
+                        idx.remove(sha256)
+                    
+                    all_embeddings = embedding_client.get_all_text_embeddings(content)
+                    for service_name, emb_info in all_embeddings.items():
+                        emb = emb_info["embedding"]
+                        model_name = emb_info["model_name"]
+                        model_version = emb_info["model_version"]
+                        
+                        index_name = None
+                        for idx_name, idx_config in TEXT_INDEXES.items():
+                            if idx_config["service_name"] == service_name:
+                                index_name = idx_name
+                                break
+                        
+                        if index_name and index_name in text_indexes:
+                            emb_filename = f"{method}_{model_name.replace('-', '_')}"
+                            storage.save_embedding(sha256, emb_filename, emb)
+                            text_indexes[index_name].add(emb, sha256, method)
+                            db.add_vector_entry(sha256, method, model_name, model_version, index_name)
+                    
+                    db.update_description_embedding(sha256, method, True)
+            
+            processed += 1
+            results.append({"sha256": sha256, "status": "success"})
+        
+        except Exception as e:
+            failed += 1
+            results.append({"sha256": sha256, "status": "failed", "message": str(e)})
+    
+    return {
+        "total": len(images),
+        "processed": processed,
+        "failed": failed,
+        "results": results
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=6060)
 
