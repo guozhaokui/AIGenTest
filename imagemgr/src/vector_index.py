@@ -133,6 +133,11 @@ class VectorIndex:
             if embedding.shape[1] != self.dimension:
                 raise ValueError(f"向量维度不匹配: 期望 {self.dimension}, 实际 {embedding.shape[1]}")
             
+            # 归一化向量（用于余弦相似度计算）
+            norm = np.linalg.norm(embedding)
+            if norm > 0:
+                embedding = embedding / norm
+            
             # 添加到内存
             if not self._embeddings:
                 self._embeddings = [embedding]
@@ -169,10 +174,17 @@ class VectorIndex:
             
             # 归一化查询向量
             query = np.array(query, dtype=np.float32).reshape(1, -1)
-            query = query / np.linalg.norm(query)
+            query_norm = np.linalg.norm(query)
+            if query_norm > 0:
+                query = query / query_norm
+            
+            # 获取所有嵌入向量并归一化（兼容未归一化的旧数据）
+            all_embeddings = self._embeddings[0].copy()
+            norms = np.linalg.norm(all_embeddings, axis=1, keepdims=True)
+            norms = np.where(norms > 0, norms, 1)  # 避免除零
+            all_embeddings = all_embeddings / norms
             
             # 计算余弦相似度
-            all_embeddings = self._embeddings[0]
             similarities = np.dot(all_embeddings, query.T).flatten()
             
             # 获取 top_k
