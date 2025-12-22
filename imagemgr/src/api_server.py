@@ -418,6 +418,140 @@ def get_descriptions(sha256: str):
     return {"descriptions": result}
 
 
+# ==================== 重新计算嵌入 ====================
+
+@app.post("/api/images/{sha256}/recompute-embedding")
+def recompute_embedding(sha256: str, include_text: bool = False):
+    """
+    重新计算图片的嵌入向量
+    
+    - 重新计算图片嵌入并更新向量索引
+    - 如果 include_text=True，同时重新计算所有描述的文本嵌入
+    """
+    image = db.get_image(sha256)
+    if not image:
+        raise HTTPException(status_code=404, detail="图片不存在")
+    
+    results = {
+        "sha256": sha256,
+        "image_embedding": None,
+        "text_embeddings": []
+    }
+    
+    # 删除旧的向量数据库记录（避免唯一约束冲突）
+    db.delete_vector_entries(sha256)
+    
+    # 1. 重新计算图片嵌入
+    image_path = storage.get_image_path(sha256)
+    if image_path and image_path.exists():
+        # 从向量索引移除旧的
+        image_index.remove(sha256)
+        
+        # 计算新嵌入
+        embedding = embedding_client.get_image_embedding(image_path=str(image_path))
+        
+        if embedding is not None:
+            # 保存嵌入到文件
+            storage.save_embedding(sha256, "image", embedding)
+            
+            # 添加到向量索引
+            image_index.add(embedding, sha256, "image")
+            
+            # 更新数据库记录
+            db.add_vector_entry(
+                sha256, "image", IMAGE_MODEL_NAME, IMAGE_MODEL_VERSION, IMAGE_INDEX_NAME
+            )
+            
+            # 更新状态为 ready
+            db.update_image_status(sha256, "ready")
+            
+            results["image_embedding"] = {
+                "status": "success",
+                "model": IMAGE_MODEL_NAME,
+                "dimension": len(embedding)
+            }
+        else:
+            db.update_image_status(sha256, "pending")
+            results["image_embedding"] = {
+                "status": "failed",
+                "error": "图片嵌入服务不可用"
+            }
+    else:
+        results["image_embedding"] = {
+            "status": "failed",
+            "error": "图片文件不存在"
+        }
+    
+    # 2. 可选：重新计算文本嵌入
+    if include_text:
+        descriptions = db.get_descriptions(sha256)
+        
+        for desc in descriptions:
+            method = desc["method"]
+            content = storage.get_description(sha256, method)
+            
+            if not content:
+                results["text_embeddings"].append({
+                    "method": method,
+                    "status": "skipped",
+                    "error": "描述内容为空"
+                })
+                continue
+            
+            # 从所有文本索引移除旧的
+            for index_name, idx in text_indexes.items():
+                idx.remove(sha256)
+            
+            # 使用所有文本嵌入服务计算嵌入
+            all_embeddings = embedding_client.get_all_text_embeddings(content)
+            
+            method_results = []
+            for service_name, emb_info in all_embeddings.items():
+                emb = emb_info["embedding"]
+                model_name = emb_info["model_name"]
+                model_version = emb_info["model_version"]
+                
+                # 查找对应的索引
+                index_name = None
+                for idx_name, idx_config in TEXT_INDEXES.items():
+                    if idx_config["service_name"] == service_name:
+                        index_name = idx_name
+                        break
+                
+                if index_name and index_name in text_indexes:
+                    # 保存嵌入
+                    emb_filename = f"{method}_{model_name.replace('-', '_')}"
+                    storage.save_embedding(sha256, emb_filename, emb)
+                    
+                    # 添加到向量索引
+                    text_indexes[index_name].add(emb, sha256, method)
+                    
+                    # 记录到数据库
+                    db.add_vector_entry(sha256, method, model_name, model_version, index_name)
+                    
+                    method_results.append({
+                        "model": model_name,
+                        "index": index_name,
+                        "dimension": len(emb)
+                    })
+            
+            if method_results:
+                db.update_description_embedding(sha256, method, True)
+                results["text_embeddings"].append({
+                    "method": method,
+                    "status": "success",
+                    "embeddings": method_results
+                })
+            else:
+                results["text_embeddings"].append({
+                    "method": method,
+                    "status": "failed",
+                    "error": "所有文本嵌入服务都不可用"
+                })
+    
+    return results
+
+
 # ==================== 搜索 ====================
 
 @app.post("/api/search/text")

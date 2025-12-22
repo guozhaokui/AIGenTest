@@ -99,6 +99,12 @@
 
           <!-- 操作按钮 -->
           <div class="actions">
+            <el-button type="primary" @click="handleRecompute(false)" :loading="recomputing">
+              更新图片嵌入
+            </el-button>
+            <el-button type="success" @click="handleRecompute(true)" :loading="recomputing">
+              更新全部嵌入
+            </el-button>
             <el-button type="danger" @click="handleDelete">删除图片</el-button>
           </div>
         </div>
@@ -117,7 +123,8 @@ import {
   getThumbnailUrl, 
   getImageUrl,
   addDescription,
-  getDescriptions
+  getDescriptions,
+  recomputeEmbedding
 } from '@/services/imagemgr';
 
 const loading = ref(false);
@@ -149,6 +156,7 @@ const selectedImage = ref(null);
 const descriptions = ref([]);
 const newDesc = reactive({ method: '', content: '' });
 const addingDesc = ref(false);
+const recomputing = ref(false);
 
 function formatSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
@@ -210,6 +218,37 @@ async function handleAddDesc() {
     ElMessage.error('添加失败');
   } finally {
     addingDesc.value = false;
+  }
+}
+
+async function handleRecompute(includeText) {
+  recomputing.value = true;
+  try {
+    const result = await recomputeEmbedding(selectedImage.value.sha256, includeText);
+    
+    // 构建结果消息
+    const msgs = [];
+    if (result.image_embedding?.status === 'success') {
+      msgs.push('图片嵌入已更新');
+    } else if (result.image_embedding?.status === 'failed') {
+      msgs.push(`图片嵌入失败: ${result.image_embedding.error}`);
+    }
+    
+    if (includeText && result.text_embeddings?.length > 0) {
+      const successCount = result.text_embeddings.filter(e => e.status === 'success').length;
+      msgs.push(`文本嵌入: ${successCount}/${result.text_embeddings.length} 成功`);
+    }
+    
+    ElMessage.success(msgs.join(', ') || '更新完成');
+    
+    // 刷新图片信息
+    const data = await getImage(selectedImage.value.sha256);
+    selectedImage.value = data;
+  } catch (e) {
+    ElMessage.error('更新嵌入失败: ' + (e.response?.data?.error || e.message));
+    console.error(e);
+  } finally {
+    recomputing.value = false;
   }
 }
 

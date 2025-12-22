@@ -7,12 +7,14 @@
 | 服务 | 端口 | 模型 | 用途 | 维度 |
 |------|------|------|------|------|
 | siglip2_embed.py | 6010 | SigLIP2-so400m-patch16-512 (1.14B) | 图片嵌入 | 1152 |
-| qwen3_embed.py | 6011 | Qwen3-4B (ZImage-Turbo) | 文本嵌入 | 2560 |
+| qwen3_embed.py | 6011 | Qwen3-4B (ZImage-Turbo) | 文本嵌入（高精度） | 2560 |
+| bge_embed.py | 6012 | BGE-Large-zh-v1.5 | 文本嵌入（轻量） | 1024 |
 
 ## 模型来源
 
-- **文本嵌入**：复用 ZImage-Turbo 的 text_encoder（Qwen3-4B），使用**倒数第二层**作为嵌入向量
 - **图片嵌入**：SigLIP2-so400m-patch16-512 (1.14B 最强版本)
+- **文本嵌入 (Qwen3)**：复用 ZImage-Turbo 的 text_encoder（Qwen3-4B），使用**倒数第二层**作为嵌入向量
+- **文本嵌入 (BGE)**：BAAI/bge-large-zh-v1.5，专为中文优化的轻量级嵌入模型
 
 ## 快速开始
 
@@ -51,7 +53,15 @@ python qwen3_embed.py
 | /embed/image | POST | 上传图片计算嵌入 |
 | /embed/image/base64 | POST | Base64 图片计算嵌入 |
 
-### 文本嵌入服务 (端口 6011)
+### 文本嵌入服务 - Qwen3 (端口 6011)
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| /health | GET | 健康检查 |
+| /embed/text | POST | 单个文本嵌入 |
+| /embed/texts | POST | 批量文本嵌入 |
+
+### 文本嵌入服务 - BGE (端口 6012)
 
 | 接口 | 方法 | 说明 |
 |------|------|------|
@@ -188,8 +198,9 @@ print(f"图片嵌入维度: {len(image_emb)}")
 
 | 模型 | 路径 |
 |------|------|
-| Qwen3-4B | `/mnt/hdd/models/Z-Image-Turbo` (复用 text_encoder) |
 | SigLIP2 | `/mnt/hdd/models/siglip2-so400m-patch16-512` |
+| Qwen3-4B | `/mnt/hdd/models/Z-Image-Turbo` (复用 text_encoder) |
+| BGE-Large-zh | `/mnt/hdd/models/bge-large-zh` |
 
 ### 下载 SigLIP2 模型
 
@@ -207,11 +218,12 @@ huggingface-cli download google/siglip2-so400m-patch16-512 \
 
 | 服务 | 模型 | 显存占用 |
 |------|------|---------|
-| 文本嵌入 | Qwen3-4B | ~8GB |
 | 图片嵌入 | SigLIP2 1.14B | ~3GB |
-| **总计** | | **~11GB** |
+| 文本嵌入 | Qwen3-4B | ~8GB |
+| 文本嵌入 | BGE-Large-zh | ~2GB |
+| **总计** | | **~13GB** |
 
-> 24GB 显存可以同时运行两个服务，还有约 13GB 余量
+> 24GB 显存可以同时运行三个服务，还有约 11GB 余量
 
 ## 日志查看
 
