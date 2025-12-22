@@ -24,16 +24,27 @@ VECTOR_INDEX_DIR = BASE_DIR / "vector_index"
 DB_PATH = BASE_DIR / "data" / "imagemgr.db"
 CONFIG_PATH = BASE_DIR / "config" / "embedding_services.yaml"
 
-# 索引配置
+# 索引配置 - 图片
 IMAGE_INDEX_NAME = "siglip2_image_v1"
 IMAGE_INDEX_DIMENSION = 1152
 IMAGE_MODEL_NAME = "siglip2-so400m-patch16-512"
 IMAGE_MODEL_VERSION = "1.0"
 
-TEXT_INDEX_NAME = "qwen3_text_v1"
-TEXT_INDEX_DIMENSION = 2560
-TEXT_MODEL_NAME = "Qwen3-4B"
-TEXT_MODEL_VERSION = "1.0"
+# 索引配置 - 文本（多模型）
+TEXT_INDEXES = {
+    "qwen3_text_v1": {
+        "dimension": 2560,
+        "model_name": "Qwen3-4B",
+        "model_version": "1.0",
+        "service_name": "qwen3_embed_local"
+    },
+    "bge_text_v1": {
+        "dimension": 1024,
+        "model_name": "bge-large-zh",
+        "model_version": "1.0",
+        "service_name": "bge_local"
+    }
+}
 
 # 初始化组件
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -42,13 +53,20 @@ storage = StorageManager(str(STORAGE_DIR))
 vector_manager = VectorIndexManager(str(VECTOR_INDEX_DIR))
 embedding_client = EmbeddingClient(str(CONFIG_PATH) if CONFIG_PATH.exists() else None)
 
-# 获取或创建索引
+# 获取或创建索引 - 图片
 image_index = vector_manager.get_or_create_index(
     IMAGE_INDEX_NAME, IMAGE_INDEX_DIMENSION, IMAGE_MODEL_NAME, IMAGE_MODEL_VERSION
 )
-text_index = vector_manager.get_or_create_index(
-    TEXT_INDEX_NAME, TEXT_INDEX_DIMENSION, TEXT_MODEL_NAME, TEXT_MODEL_VERSION
-)
+
+# 获取或创建索引 - 文本（多个）
+text_indexes = {}
+for index_name, config in TEXT_INDEXES.items():
+    text_indexes[index_name] = vector_manager.get_or_create_index(
+        index_name, config["dimension"], config["model_name"], config["model_version"]
+    )
+
+# 兼容旧代码：默认文本索引
+text_index = text_indexes.get("qwen3_text_v1")
 
 # FastAPI 应用
 app = FastAPI(
@@ -73,6 +91,7 @@ class TextSearchRequest(BaseModel):
     """文本搜索请求"""
     query: str
     top_k: int = 10
+    index: Optional[str] = None  # 指定使用的索引，默认使用 qwen3
 
 
 class ImageSearchRequest(BaseModel):
@@ -100,16 +119,55 @@ class SearchResult(BaseModel):
 def health_check():
     """健康检查"""
     image_service_ok = embedding_client.check_image_service()
-    text_service_ok = embedding_client.check_text_service()
+    
+    # 检查所有文本嵌入服务
+    text_services_status = {}
+    for service in embedding_client.get_all_text_services():
+        svc_name = service["service_name"]
+        endpoint = service.get("endpoint", "")
+        try:
+            import requests
+            resp = requests.get(f"{endpoint}/health", timeout=(2, 3))
+            text_services_status[svc_name] = "ok" if resp.status_code == 200 else "unavailable"
+        except:
+            text_services_status[svc_name] = "unavailable"
+    
+    # 统计各索引数量
+    text_index_counts = {name: idx.count() for name, idx in text_indexes.items()}
     
     return {
         "status": "ok",
         "database": "ok",
         "image_embedding_service": "ok" if image_service_ok else "unavailable",
-        "text_embedding_service": "ok" if text_service_ok else "unavailable",
+        "text_embedding_services": text_services_status,
         "image_count": db.count_images(),
         "image_index_count": image_index.count(),
-        "text_index_count": text_index.count()
+        "text_index_counts": text_index_counts
+    }
+
+
+@app.get("/api/indexes")
+def list_indexes():
+    """获取可用的索引列表"""
+    return {
+        "image_indexes": [
+            {
+                "name": IMAGE_INDEX_NAME,
+                "model": IMAGE_MODEL_NAME,
+                "dimension": IMAGE_INDEX_DIMENSION,
+                "count": image_index.count()
+            }
+        ],
+        "text_indexes": [
+            {
+                "name": name,
+                "model": config["model_name"],
+                "dimension": config["dimension"],
+                "service": config["service_name"],
+                "count": text_indexes[name].count()
+            }
+            for name, config in TEXT_INDEXES.items()
+        ]
     }
 
 
@@ -284,7 +342,7 @@ def list_images(
 
 @app.post("/api/images/{sha256}/descriptions")
 def add_description(sha256: str, req: AddDescriptionRequest):
-    """添加图片描述"""
+    """添加图片描述，使用所有启用的文本嵌入模型"""
     image = db.get_image(sha256)
     if not image:
         raise HTTPException(status_code=404, detail="图片不存在")
@@ -293,27 +351,49 @@ def add_description(sha256: str, req: AddDescriptionRequest):
     storage.save_description(sha256, req.method, req.content)
     db.add_description(sha256, req.method, req.content)
     
-    # 计算文本嵌入
-    embedding = embedding_client.get_text_embedding(req.content)
+    # 使用所有文本嵌入服务计算嵌入
+    all_embeddings = embedding_client.get_all_text_embeddings(req.content)
     
-    if embedding is not None:
-        # 保存嵌入
-        storage.save_embedding(sha256, req.method, embedding)
+    embedding_results = []
+    for service_name, emb_info in all_embeddings.items():
+        embedding = emb_info["embedding"]
+        model_name = emb_info["model_name"]
+        model_version = emb_info["model_version"]
         
-        # 添加到向量索引
-        text_index.add(embedding, sha256, req.method)
+        # 查找对应的索引
+        index_name = None
+        for idx_name, idx_config in TEXT_INDEXES.items():
+            if idx_config["service_name"] == service_name:
+                index_name = idx_name
+                break
         
-        # 记录到数据库
-        db.add_vector_entry(
-            sha256, req.method, TEXT_MODEL_NAME, TEXT_MODEL_VERSION, TEXT_INDEX_NAME
-        )
+        if index_name and index_name in text_indexes:
+            # 保存嵌入（带模型后缀区分）
+            emb_filename = f"{req.method}_{model_name.replace('-', '_')}"
+            storage.save_embedding(sha256, emb_filename, embedding)
+            
+            # 添加到对应的向量索引
+            text_indexes[index_name].add(embedding, sha256, req.method)
+            
+            # 记录到数据库
+            db.add_vector_entry(sha256, req.method, model_name, model_version, index_name)
+            
+            embedding_results.append({
+                "model": model_name,
+                "index": index_name,
+                "dimension": len(embedding)
+            })
+    
+    # 更新描述嵌入状态
+    if embedding_results:
         db.update_description_embedding(sha256, req.method, True)
     
     return {
         "message": "描述添加成功",
         "sha256": sha256,
         "method": req.method,
-        "has_embedding": embedding is not None
+        "embeddings": embedding_results,
+        "embedding_count": len(embedding_results)
     }
 
 
@@ -348,18 +428,77 @@ def search_by_text(req: TextSearchRequest):
     - 使用文本嵌入模型计算查询向量
     - 在文本索引中搜索
     - 按 sha256 去重返回结果
-    """
-    # 获取文本嵌入
-    query_embedding = embedding_client.get_text_embedding(req.query)
-    if query_embedding is None:
-        raise HTTPException(status_code=503, detail="文本嵌入服务不可用")
     
-    # 搜索
-    results = text_index.search_deduplicated(query_embedding, req.top_k)
+    Args:
+        query: 搜索文本
+        top_k: 返回结果数量
+        index: 指定索引 (qwen3_text_v1 / bge_text_v1)，不指定则使用所有索引
+    """
+    # 如果指定了索引，验证是否存在
+    if req.index and req.index not in text_indexes:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"索引 {req.index} 不存在，可选: {list(text_indexes.keys())}"
+        )
+    
+    # 确定要搜索的索引列表
+    if req.index:
+        # 指定了索引，只搜索该索引
+        indexes_to_search = {req.index: TEXT_INDEXES[req.index]}
+    else:
+        # 未指定索引，搜索所有索引
+        indexes_to_search = TEXT_INDEXES
+    
+    # 收集所有索引的搜索结果
+    all_results = []
+    used_models = []
+    
+    for index_name, index_config in indexes_to_search.items():
+        service_name = index_config.get("service_name")
+        model_name = index_config.get("model_name")
+        
+        # 使用对应服务获取文本嵌入
+        query_embedding = embedding_client.get_text_embedding_by_service(req.query, service_name)
+        if query_embedding is None:
+            print(f"警告: 文本嵌入服务 {service_name} 不可用，跳过索引 {index_name}")
+            continue
+        
+        # 在对应索引中搜索
+        search_index = text_indexes[index_name]
+        results = search_index.search_deduplicated(query_embedding, req.top_k)
+        
+        # 为每个结果添加索引和模型信息
+        for r in results:
+            r["index"] = index_name
+            r["model"] = model_name
+            all_results.append(r)
+        
+        used_models.append({
+            "index": index_name,
+            "model": model_name,
+            "result_count": len(results)
+        })
+    
+    if not all_results:
+        raise HTTPException(status_code=503, detail="所有文本嵌入服务都不可用")
+    
+    # 按分数排序，去重（同一图片保留最高分）
+    seen_sha256 = {}
+    for r in sorted(all_results, key=lambda x: x["score"], reverse=True):
+        sha256 = r["sha256"]
+        if sha256 not in seen_sha256:
+            seen_sha256[sha256] = r
+        else:
+            # 如果同一图片在另一个索引中分数更高，更新
+            if r["score"] > seen_sha256[sha256]["score"]:
+                seen_sha256[sha256] = r
+    
+    # 取 top_k 个结果
+    deduplicated = list(seen_sha256.values())[:req.top_k]
     
     # 补充图片信息
     enriched_results = []
-    for r in results:
+    for r in deduplicated:
         image = db.get_image(r["sha256"])
         if image:
             # 获取匹配的描述内容
@@ -371,7 +510,11 @@ def search_by_text(req: TextSearchRequest):
                 "height": image["height"]
             })
     
-    return {"query": req.query, "results": enriched_results}
+    return {
+        "query": req.query, 
+        "indexes_searched": used_models,
+        "results": enriched_results
+    }
 
 
 @app.post("/api/search/image")

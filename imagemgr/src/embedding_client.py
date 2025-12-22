@@ -197,4 +197,108 @@ class EmbeddingClient:
     def get_text_service_info(self) -> dict:
         """获取文本嵌入服务信息"""
         return self._get_service_config(self.text_service)
+    
+    def get_all_text_services(self) -> List[dict]:
+        """
+        获取所有启用的文本嵌入服务
+        
+        Returns:
+            服务配置列表，每个元素包含 service_name 和配置信息
+        """
+        services = []
+        for name, config in self.config.get("services", {}).items():
+            # 跳过图片嵌入服务（通过 endpoint 端口判断或模型名称）
+            if "siglip" in name.lower() or "image" in name.lower():
+                continue
+            # 跳过未启用的服务
+            if not config.get("is_enabled", True):
+                continue
+            services.append({
+                "service_name": name,
+                **config
+            })
+        return services
+    
+    def get_all_image_services(self) -> List[dict]:
+        """
+        获取所有启用的图片嵌入服务
+        
+        Returns:
+            服务配置列表
+        """
+        services = []
+        for name, config in self.config.get("services", {}).items():
+            # 只选择图片嵌入服务
+            if "siglip" in name.lower() or "image" in name.lower():
+                if config.get("is_enabled", True):
+                    services.append({
+                        "service_name": name,
+                        **config
+                    })
+        return services
+    
+    def get_text_embedding_by_service(self, text: str, service_name: str) -> Optional[np.ndarray]:
+        """
+        使用指定服务获取文本嵌入
+        
+        Args:
+            text: 文本内容
+            service_name: 服务名称
+        
+        Returns:
+            嵌入向量
+        """
+        service = self._get_service_config(service_name)
+        endpoint = service.get("endpoint")
+        if not endpoint:
+            print(f"服务 {service_name} 缺少 endpoint 配置")
+            return None
+        timeout = service.get("timeout", 30)
+        
+        try:
+            response = requests.post(
+                f"{endpoint}/embed/text",
+                json={"text": text},
+                timeout=timeout
+            )
+            response.raise_for_status()
+            data = response.json()
+            return np.array(data["embedding"], dtype=np.float32)
+        except Exception as e:
+            print(f"使用 {service_name} 获取文本嵌入失败: {e}")
+            return None
+    
+    def get_all_text_embeddings(self, text: str) -> dict:
+        """
+        使用所有启用的文本嵌入服务获取嵌入
+        
+        Args:
+            text: 文本内容
+        
+        Returns:
+            字典 {service_name: {"embedding": np.ndarray, "model_name": str, "dimension": int}}
+        """
+        results = {}
+        for service in self.get_all_text_services():
+            service_name = service["service_name"]
+            embedding = self.get_text_embedding_by_service(text, service_name)
+            if embedding is not None:
+                results[service_name] = {
+                    "embedding": embedding,
+                    "model_name": service.get("model_name"),
+                    "model_version": service.get("model_version", "1.0"),
+                    "dimension": service.get("dimension")
+                }
+        return results
+    
+    def get_index_config(self, index_name: str) -> Optional[dict]:
+        """获取索引配置"""
+        return self.config.get("indexes", {}).get(index_name)
+    
+    def get_service_for_model(self, model_name: str) -> Optional[str]:
+        """根据模型名称查找服务"""
+        for name, config in self.config.get("services", {}).items():
+            if config.get("model_name") == model_name:
+                return name
+        return None
 
