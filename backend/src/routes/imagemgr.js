@@ -219,6 +219,27 @@ router.post('/batch/import', async (req, res, next) => {
   }
 });
 
+// 流式批量导入
+router.post('/batch/import/stream', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post('/api/batch/import/stream', req.body, {
+      responseType: 'stream',
+      timeout: 0  // 无超时
+    });
+    
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+    
+    response.data.pipe(res);
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.post('/batch/generate-captions', async (req, res, next) => {
   try {
     const response = await imagemgrClient.post('/api/batch/generate-captions', null, {
@@ -226,6 +247,28 @@ router.post('/batch/generate-captions', async (req, res, next) => {
       timeout: 600000
     });
     res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 流式批量生成描述
+router.post('/batch/generate-captions/stream', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post('/api/batch/generate-captions/stream', null, {
+      params: req.query,
+      responseType: 'stream',
+      timeout: 0
+    });
+    
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+    
+    response.data.pipe(res);
   } catch (err) {
     next(err);
   }
@@ -249,6 +292,28 @@ router.post('/batch/recompute-embeddings', async (req, res, next) => {
       timeout: 600000
     });
     res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 流式批量更新嵌入
+router.post('/batch/recompute-embeddings/stream', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post('/api/batch/recompute-embeddings/stream', null, {
+      params: req.query,
+      responseType: 'stream',
+      timeout: 0
+    });
+    
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+    
+    response.data.pipe(res);
   } catch (err) {
     next(err);
   }

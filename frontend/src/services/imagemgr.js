@@ -122,6 +122,59 @@ export function batchImport(options) {
 }
 
 /**
+ * 批量导入目录（流式，实时进度）
+ * @param {object} options 导入选项
+ * @param {function} onProgress 进度回调 (data) => void
+ * @param {function} onComplete 完成回调 (data) => void
+ * @param {function} onError 错误回调 (error) => void
+ * @returns {function} 取消函数
+ */
+export function batchImportStream(options, onProgress, onComplete, onError) {
+  const controller = new AbortController();
+  
+  fetch('/api/imagemgr/batch/import/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options),
+    signal: controller.signal
+  }).then(response => {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    function processChunk({ done, value }) {
+      if (done) return;
+      
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      let eventType = '';
+      for (const line of lines) {
+        if (line.startsWith('event:')) {
+          eventType = line.slice(6).trim();
+        } else if (line.startsWith('data:')) {
+          try {
+            const data = JSON.parse(line.slice(5).trim());
+            if (eventType === 'progress' && onProgress) onProgress(data);
+            if (eventType === 'complete' && onComplete) onComplete(data);
+            if (eventType === 'init' && onProgress) onProgress({ ...data, current: 0, percent: 0 });
+          } catch (e) {}
+        }
+      }
+      
+      reader.read().then(processChunk);
+    }
+    
+    reader.read().then(processChunk);
+  }).catch(err => {
+    if (err.name !== 'AbortError' && onError) onError(err);
+  });
+  
+  return () => controller.abort();
+}
+
+/**
  * 批量生成描述
  * @param {object} params 参数
  */
@@ -130,6 +183,49 @@ export function batchGenerateCaptions(params = {}) {
     params,
     timeout: 600000
   }).then(r => r.data);
+}
+
+/**
+ * 批量生成描述（流式，实时进度）
+ */
+export function batchGenerateCaptionsStream(params, onProgress, onComplete, onError) {
+  const controller = new AbortController();
+  const queryStr = new URLSearchParams(params).toString();
+  
+  fetch(`/api/imagemgr/batch/generate-captions/stream?${queryStr}`, {
+    method: 'POST',
+    signal: controller.signal
+  }).then(response => {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    function processChunk({ done, value }) {
+      if (done) return;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      let eventType = '';
+      for (const line of lines) {
+        if (line.startsWith('event:')) eventType = line.slice(6).trim();
+        else if (line.startsWith('data:')) {
+          try {
+            const data = JSON.parse(line.slice(5).trim());
+            if (eventType === 'progress' && onProgress) onProgress(data);
+            if (eventType === 'complete' && onComplete) onComplete(data);
+            if (eventType === 'init' && onProgress) onProgress({ ...data, current: 0, percent: 0 });
+          } catch (e) {}
+        }
+      }
+      reader.read().then(processChunk);
+    }
+    reader.read().then(processChunk);
+  }).catch(err => {
+    if (err.name !== 'AbortError' && onError) onError(err);
+  });
+  
+  return () => controller.abort();
 }
 
 /**
@@ -151,6 +247,49 @@ export function batchRecomputeEmbeddings(params = {}) {
     params,
     timeout: 600000
   }).then(r => r.data);
+}
+
+/**
+ * 批量重新计算嵌入（流式，实时进度）
+ */
+export function batchRecomputeEmbeddingsStream(params, onProgress, onComplete, onError) {
+  const controller = new AbortController();
+  const queryStr = new URLSearchParams(params).toString();
+  
+  fetch(`/api/imagemgr/batch/recompute-embeddings/stream?${queryStr}`, {
+    method: 'POST',
+    signal: controller.signal
+  }).then(response => {
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    function processChunk({ done, value }) {
+      if (done) return;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      let eventType = '';
+      for (const line of lines) {
+        if (line.startsWith('event:')) eventType = line.slice(6).trim();
+        else if (line.startsWith('data:')) {
+          try {
+            const data = JSON.parse(line.slice(5).trim());
+            if (eventType === 'progress' && onProgress) onProgress(data);
+            if (eventType === 'complete' && onComplete) onComplete(data);
+            if (eventType === 'init' && onProgress) onProgress({ ...data, current: 0, percent: 0 });
+          } catch (e) {}
+        }
+      }
+      reader.read().then(processChunk);
+    }
+    reader.read().then(processChunk);
+  }).catch(err => {
+    if (err.name !== 'AbortError' && onError) onError(err);
+  });
+  
+  return () => controller.abort();
 }
 
 // ==================== 搜索 ====================

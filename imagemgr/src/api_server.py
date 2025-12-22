@@ -800,6 +800,7 @@ class BatchImportRequest(BaseModel):
     caption_method: str = "vlm"
     caption_prompt: Optional[str] = None  # 提示词名称或自定义提示词
     vlm_service: Optional[str] = None  # VLM 服务名称
+    force_reimport: bool = False  # 强制重新导入（即使已存在也重新处理）
 
 
 class BatchImportResult(BaseModel):
@@ -973,9 +974,12 @@ def generate_caption_with_vlm(image_path: str, prompt_name: str = None,
 
 def import_single_image(file_path: Path, source: str = None, generate_caption: bool = False, 
                         caption_method: str = "vlm", caption_prompt: str = None,
-                        vlm_service: str = None) -> dict:
+                        vlm_service: str = None, force_reimport: bool = False) -> dict:
     """
     导入单张图片
+    
+    Args:
+        force_reimport: 强制重新导入，即使图片已存在也重新计算嵌入
     
     Returns:
         导入结果字典
@@ -994,23 +998,43 @@ def import_single_image(file_path: Path, source: str = None, generate_caption: b
         result["sha256"] = sha256
         
         # 检查是否已存在
-        if db.image_exists(sha256):
+        already_exists = db.image_exists(sha256)
+        if already_exists and not force_reimport:
             result["status"] = "skipped"
             result["message"] = "图片已存在"
             return result
         
-        # 保存图片
-        image_path, meta = storage.save_image_from_bytes(content, sha256)
-        
-        # 添加数据库记录
-        db.add_image(
-            sha256=sha256,
-            width=meta["width"],
-            height=meta["height"],
-            file_size=meta["file_size"],
-            format=meta["format"],
-            source=source
-        )
+        if already_exists and force_reimport:
+            # 强制重新导入：删除旧的向量记录，重新计算嵌入
+            db.delete_vector_entries(sha256)
+            image_index.remove(sha256)
+            for idx in text_indexes.values():
+                idx.remove(sha256)
+            
+            # 获取已存在的图片信息
+            existing = db.get_image(sha256)
+            meta = {
+                "width": existing["width"],
+                "height": existing["height"],
+                "file_size": existing["file_size"],
+                "format": existing["format"]
+            }
+            image_path = storage.get_image_path(sha256)
+            result["message"] = "重新导入"
+        else:
+            # 新图片：保存文件
+            image_path, meta = storage.save_image_from_bytes(content, sha256)
+            
+            # 添加数据库记录
+            db.add_image(
+                sha256=sha256,
+                width=meta["width"],
+                height=meta["height"],
+                file_size=meta["file_size"],
+                format=meta["format"],
+                source=source
+            )
+            result["message"] = "新导入"
         
         # 计算图片嵌入
         embedding = embedding_client.get_image_embedding(image_path=str(image_path))
@@ -1122,7 +1146,8 @@ def batch_import_directory(req: BatchImportRequest):
             generate_caption=req.generate_caption,
             caption_method=req.caption_method,
             caption_prompt=req.caption_prompt,
-            vlm_service=req.vlm_service
+            vlm_service=req.vlm_service,
+            force_reimport=req.force_reimport
         )
         details.append(result)
         
@@ -1140,6 +1165,119 @@ def batch_import_directory(req: BatchImportRequest):
         "failed": failed,
         "details": details
     }
+
+
+from fastapi.responses import StreamingResponse
+import json
+import time
+
+
+@app.post("/api/batch/import/stream")
+def batch_import_directory_stream(req: BatchImportRequest):
+    """
+    批量导入目录（流式响应，实时报告进度）
+    
+    使用 SSE 返回实时进度：
+    - event: progress - 每处理一个文件发送进度
+    - event: complete - 处理完成发送汇总
+    """
+    dir_path = Path(req.directory)
+    if not dir_path.exists():
+        raise HTTPException(status_code=400, detail=f"目录不存在: {req.directory}")
+    if not dir_path.is_dir():
+        raise HTTPException(status_code=400, detail=f"路径不是目录: {req.directory}")
+    
+    def generate():
+        # 收集图片文件
+        image_extensions = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
+        image_files = []
+        
+        if req.recursive:
+            for ext in image_extensions:
+                image_files.extend(dir_path.rglob(f"*{ext}"))
+                image_files.extend(dir_path.rglob(f"*{ext.upper()}"))
+        else:
+            for ext in image_extensions:
+                image_files.extend(dir_path.glob(f"*{ext}"))
+                image_files.extend(dir_path.glob(f"*{ext.upper()}"))
+        
+        image_files = list(set(image_files))
+        total = len(image_files)
+        
+        # 发送初始化事件
+        yield f"event: init\ndata: {json.dumps({'total': total})}\n\n"
+        
+        imported = 0
+        skipped = 0
+        failed = 0
+        start_time = time.time()
+        
+        for i, file_path in enumerate(image_files):
+            item_start = time.time()
+            
+            result = import_single_image(
+                file_path, 
+                source=req.source, 
+                generate_caption=req.generate_caption,
+                caption_method=req.caption_method,
+                caption_prompt=req.caption_prompt,
+                vlm_service=req.vlm_service,
+                force_reimport=req.force_reimport
+            )
+            
+            if result["status"] == "imported":
+                imported += 1
+            elif result["status"] == "skipped":
+                skipped += 1
+            else:
+                failed += 1
+            
+            # 计算进度和速度
+            current = i + 1
+            elapsed = time.time() - start_time
+            speed = current / elapsed if elapsed > 0 else 0
+            eta = (total - current) / speed if speed > 0 else 0
+            
+            progress_data = {
+                "current": current,
+                "total": total,
+                "percent": round(current / total * 100, 1),
+                "imported": imported,
+                "skipped": skipped,
+                "failed": failed,
+                "speed": round(speed, 2),  # 每秒处理数
+                "eta": round(eta, 1),  # 预计剩余秒数
+                "elapsed": round(elapsed, 1),
+                "item": {
+                    "file": str(file_path.name),
+                    "status": result["status"],
+                    "message": result.get("message", ""),
+                    "time": round(time.time() - item_start, 2)
+                }
+            }
+            
+            yield f"event: progress\ndata: {json.dumps(progress_data)}\n\n"
+        
+        # 发送完成事件
+        complete_data = {
+            "total_files": total,
+            "imported": imported,
+            "skipped": skipped,
+            "failed": failed,
+            "elapsed": round(time.time() - start_time, 1),
+            "avg_speed": round(total / (time.time() - start_time), 2) if time.time() > start_time else 0
+        }
+        yield f"event: complete\ndata: {json.dumps(complete_data)}\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 
 @app.post("/api/batch/generate-captions")
@@ -1343,6 +1481,259 @@ def batch_recompute_embeddings(
         "failed": failed,
         "results": results
     }
+
+
+@app.post("/api/batch/generate-captions/stream")
+def batch_generate_captions_stream(
+    source: Optional[str] = None,
+    method: str = "vlm",
+    overwrite: bool = False,
+    limit: int = Query(100, ge=1, le=1000),
+    prompt: Optional[str] = None,
+    vlm_service: Optional[str] = None
+):
+    """批量生成描述（流式响应，实时报告进度）"""
+    
+    def generate():
+        images = db.list_images(offset=0, limit=limit, source=source, status="ready")
+        total = len(images)
+        
+        yield f"event: init\ndata: {json.dumps({'total': total})}\n\n"
+        
+        processed = 0
+        skipped = 0
+        failed = 0
+        start_time = time.time()
+        actual_processed = 0  # 实际处理的数量（不包括跳过的）
+        
+        for i, img in enumerate(images):
+            sha256 = img["sha256"]
+            item_start = time.time()
+            item_status = "processing"
+            item_message = ""
+            
+            # 检查是否已有描述
+            if not overwrite:
+                existing = db.get_descriptions(sha256)
+                if any(d["method"] == method for d in existing):
+                    skipped += 1
+                    item_status = "skipped"
+                    item_message = "已有描述"
+                else:
+                    actual_processed += 1
+            else:
+                actual_processed += 1
+            
+            if item_status != "skipped":
+                image_path = storage.get_image_path(sha256)
+                if not image_path.exists():
+                    failed += 1
+                    item_status = "failed"
+                    item_message = "图片文件不存在"
+                else:
+                    caption = generate_caption_with_vlm(str(image_path), prompt_name=prompt, 
+                                                        vlm_service=vlm_service)
+                    if not caption:
+                        failed += 1
+                        item_status = "failed"
+                        item_message = "VLM 服务失败"
+                    else:
+                        storage.save_description(sha256, method, caption)
+                        db.add_description(sha256, method, caption)
+                        
+                        all_embeddings = embedding_client.get_all_text_embeddings(caption)
+                        for service_name, emb_info in all_embeddings.items():
+                            emb = emb_info["embedding"]
+                            model_name = emb_info["model_name"]
+                            model_version = emb_info["model_version"]
+                            
+                            index_name = None
+                            for idx_name, idx_config in TEXT_INDEXES.items():
+                                if idx_config["service_name"] == service_name:
+                                    index_name = idx_name
+                                    break
+                            
+                            if index_name and index_name in text_indexes:
+                                emb_filename = f"{method}_{model_name.replace('-', '_')}"
+                                storage.save_embedding(sha256, emb_filename, emb)
+                                text_indexes[index_name].add(emb, sha256, method)
+                                try:
+                                    db.add_vector_entry(sha256, method, model_name, model_version, index_name)
+                                except:
+                                    pass
+                        
+                        db.update_description_embedding(sha256, method, True)
+                        processed += 1
+                        item_status = "success"
+                        item_message = caption[:50] + "..." if len(caption) > 50 else caption
+            
+            current = i + 1
+            elapsed = time.time() - start_time
+            speed = actual_processed / elapsed if elapsed > 0 and actual_processed > 0 else 0
+            remaining = total - current
+            eta = remaining / speed if speed > 0 else 0
+            
+            progress_data = {
+                "current": current,
+                "total": total,
+                "percent": round(current / total * 100, 1),
+                "processed": processed,
+                "skipped": skipped,
+                "failed": failed,
+                "speed": round(speed, 2),
+                "eta": round(eta, 1),
+                "elapsed": round(elapsed, 1),
+                "item": {
+                    "sha256": sha256[:16] + "...",
+                    "status": item_status,
+                    "message": item_message,
+                    "time": round(time.time() - item_start, 2)
+                }
+            }
+            yield f"event: progress\ndata: {json.dumps(progress_data)}\n\n"
+        
+        complete_data = {
+            "total": total,
+            "processed": processed,
+            "skipped": skipped,
+            "failed": failed,
+            "elapsed": round(time.time() - start_time, 1),
+            "avg_speed": round(actual_processed / (time.time() - start_time), 2) if actual_processed > 0 else 0
+        }
+        yield f"event: complete\ndata: {json.dumps(complete_data)}\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"}
+    )
+
+
+@app.post("/api/batch/recompute-embeddings/stream")
+def batch_recompute_embeddings_stream(
+    source: Optional[str] = None,
+    status: Optional[str] = None,
+    include_text: bool = False,
+    limit: int = Query(100, ge=1, le=1000)
+):
+    """批量重新计算嵌入（流式响应，实时报告进度）"""
+    
+    def generate():
+        images = db.list_images(offset=0, limit=limit, source=source, status=status)
+        total = len(images)
+        
+        yield f"event: init\ndata: {json.dumps({'total': total})}\n\n"
+        
+        processed = 0
+        failed = 0
+        start_time = time.time()
+        
+        for i, img in enumerate(images):
+            sha256 = img["sha256"]
+            item_start = time.time()
+            item_status = "processing"
+            item_message = ""
+            
+            try:
+                db.delete_vector_entries(sha256)
+                image_path = storage.get_image_path(sha256)
+                
+                if not image_path.exists():
+                    failed += 1
+                    item_status = "failed"
+                    item_message = "文件不存在"
+                else:
+                    image_index.remove(sha256)
+                    embedding = embedding_client.get_image_embedding(image_path=str(image_path))
+                    
+                    if embedding is not None:
+                        storage.save_embedding(sha256, "image", embedding)
+                        image_index.add(embedding, sha256, "image")
+                        db.add_vector_entry(sha256, "image", IMAGE_MODEL_NAME, IMAGE_MODEL_VERSION, IMAGE_INDEX_NAME)
+                        db.update_image_status(sha256, "ready")
+                        
+                        if include_text:
+                            descriptions = db.get_descriptions(sha256)
+                            for desc in descriptions:
+                                desc_method = desc["method"]
+                                content = storage.get_description(sha256, desc_method)
+                                if not content:
+                                    continue
+                                
+                                for idx_name, idx in text_indexes.items():
+                                    idx.remove(sha256)
+                                
+                                all_embeddings = embedding_client.get_all_text_embeddings(content)
+                                for service_name, emb_info in all_embeddings.items():
+                                    emb = emb_info["embedding"]
+                                    model_name = emb_info["model_name"]
+                                    model_version = emb_info["model_version"]
+                                    
+                                    index_name = None
+                                    for idx_name, idx_config in TEXT_INDEXES.items():
+                                        if idx_config["service_name"] == service_name:
+                                            index_name = idx_name
+                                            break
+                                    
+                                    if index_name and index_name in text_indexes:
+                                        emb_filename = f"{desc_method}_{model_name.replace('-', '_')}"
+                                        storage.save_embedding(sha256, emb_filename, emb)
+                                        text_indexes[index_name].add(emb, sha256, desc_method)
+                                        db.add_vector_entry(sha256, desc_method, model_name, model_version, index_name)
+                                
+                                db.update_description_embedding(sha256, desc_method, True)
+                        
+                        processed += 1
+                        item_status = "success"
+                        item_message = "更新完成"
+                    else:
+                        db.update_image_status(sha256, "pending")
+                        failed += 1
+                        item_status = "failed"
+                        item_message = "嵌入服务不可用"
+            
+            except Exception as e:
+                failed += 1
+                item_status = "failed"
+                item_message = str(e)
+            
+            current = i + 1
+            elapsed = time.time() - start_time
+            speed = current / elapsed if elapsed > 0 else 0
+            eta = (total - current) / speed if speed > 0 else 0
+            
+            progress_data = {
+                "current": current,
+                "total": total,
+                "percent": round(current / total * 100, 1),
+                "processed": processed,
+                "failed": failed,
+                "speed": round(speed, 2),
+                "eta": round(eta, 1),
+                "elapsed": round(elapsed, 1),
+                "item": {
+                    "sha256": sha256[:16] + "...",
+                    "status": item_status,
+                    "message": item_message,
+                    "time": round(time.time() - item_start, 2)
+                }
+            }
+            yield f"event: progress\ndata: {json.dumps(progress_data)}\n\n"
+        
+        complete_data = {
+            "total": total,
+            "processed": processed,
+            "failed": failed,
+            "elapsed": round(time.time() - start_time, 1),
+            "avg_speed": round(total / (time.time() - start_time), 2) if total > 0 else 0
+        }
+        yield f"event: complete\ndata: {json.dumps(complete_data)}\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "Connection": "keep-alive", "X-Accel-Buffering": "no"}
+    )
 
 
 if __name__ == "__main__":
