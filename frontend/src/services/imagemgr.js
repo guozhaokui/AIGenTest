@@ -295,15 +295,22 @@ export function batchRecomputeEmbeddingsStream(params, onProgress, onComplete, o
 // ==================== 搜索 ====================
 
 /**
+ * 获取可用的文本搜索索引列表（嵌入模型）
+ */
+export function getTextIndexes() {
+  return imagemgrApi.get('/search/text-indexes').then(r => r.data);
+}
+
+/**
  * 文本搜索
  * @param {string} query 搜索文本
  * @param {number} topK 返回数量
+ * @param {string} index 指定索引（可选）
  */
-export function searchByText(query, topK = 20) {
-  return imagemgrApi.post('/search/text', {
-    query,
-    top_k: topK
-  }).then(r => r.data);
+export function searchByText(query, topK = 100, index = null) {
+  const params = { query, top_k: topK };
+  if (index) params.index = index;
+  return imagemgrApi.post('/search/text', params).then(r => r.data);
 }
 
 /**
@@ -311,12 +318,23 @@ export function searchByText(query, topK = 20) {
  * @param {File} file 图片文件
  * @param {number} topK 返回数量
  */
-export function searchByImage(file, topK = 20) {
+export function searchByImage(file, topK = 100) {
   const form = new FormData();
   form.append('file', file);
   form.append('top_k', topK);
   return imagemgrApi.post('/search/image', form, {
     headers: { 'Content-Type': 'multipart/form-data' }
+  }).then(r => r.data);
+}
+
+/**
+ * 通过 sha256 搜索相似图片
+ * @param {string} sha256 图片的 sha256
+ * @param {number} topK 返回数量
+ */
+export function searchSimilar(sha256, topK = 100) {
+  return imagemgrApi.get(`/search/similar/${sha256}`, {
+    params: { top_k: topK }
   }).then(r => r.data);
 }
 

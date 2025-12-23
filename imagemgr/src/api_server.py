@@ -92,14 +92,14 @@ app.add_middleware(
 class TextSearchRequest(BaseModel):
     """文本搜索请求"""
     query: str
-    top_k: int = 10
-    index: Optional[str] = None  # 指定使用的索引，默认使用 qwen3
+    top_k: int = 100  # 默认返回100条结果
+    index: Optional[str] = None  # 指定使用的索引，默认搜索所有索引
 
 
 class ImageSearchRequest(BaseModel):
     """以图搜图请求（Base64）"""
     image_base64: str
-    top_k: int = 10
+    top_k: int = 100  # 默认返回100条结果
 
 
 class AddDescriptionRequest(BaseModel):
@@ -170,6 +170,29 @@ def list_indexes():
             }
             for name, config in TEXT_INDEXES.items()
         ]
+    }
+
+
+@app.get("/api/search/text-indexes")
+def get_text_indexes():
+    """
+    获取可用的文本搜索索引列表
+    
+    用于前端选择使用哪个嵌入模型进行文本搜索
+    """
+    indexes = []
+    for name, config in TEXT_INDEXES.items():
+        indexes.append({
+            "id": name,
+            "name": config["model_name"],
+            "description": f"{config['model_name']} ({config['dimension']}维)",
+            "dimension": config["dimension"],
+            "service": config["service_name"]
+        })
+    
+    return {
+        "indexes": indexes,
+        "default": "qwen3_text_v1"  # 默认使用 Qwen3
     }
 
 
@@ -722,6 +745,53 @@ def search_by_image_base64(req: ImageSearchRequest):
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/search/similar/{sha256}")
+def search_similar_images(sha256: str, top_k: int = 100):
+    """
+    通过已有图片的 sha256 搜索相似图片
+    
+    - 读取图片的已保存嵌入向量
+    - 在图片索引中搜索相似图片
+    - 排除自身
+    """
+    # 检查图片是否存在
+    image = db.get_image(sha256)
+    if not image:
+        raise HTTPException(status_code=404, detail=f"图片不存在: {sha256}")
+    
+    # 读取已保存的嵌入向量
+    embedding = storage.get_embedding(sha256, "image")
+    if embedding is None:
+        raise HTTPException(status_code=400, detail="图片嵌入向量不存在，请先计算嵌入")
+    
+    # 搜索相似图片（多取一个，因为可能包含自身）
+    results = image_index.search_deduplicated(embedding, top_k + 1)
+    
+    # 过滤掉自身并补充图片信息
+    enriched_results = []
+    for r in results:
+        if r["sha256"] == sha256:
+            continue  # 跳过自身
+        
+        img = db.get_image(r["sha256"])
+        if img:
+            enriched_results.append({
+                **r,
+                "width": img["width"],
+                "height": img["height"],
+                "matched_by": "image"
+            })
+        
+        if len(enriched_results) >= top_k:
+            break
+    
+    return {
+        "source_sha256": sha256,
+        "results": enriched_results,
+        "total": len(enriched_results)
+    }
 
 
 # ==================== VLM 配置 ====================

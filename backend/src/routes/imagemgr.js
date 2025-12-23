@@ -206,6 +206,30 @@ router.post('/search/text', async (req, res, next) => {
   }
 });
 
+// 获取文本搜索可用的索引列表
+router.get('/search/text-indexes', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.get('/api/search/text-indexes');
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 通过 sha256 搜索相似图片
+router.get('/search/similar/:sha256', async (req, res, next) => {
+  try {
+    const { sha256 } = req.params;
+    const { top_k = 100 } = req.query;
+    const response = await imagemgrClient.get(`/api/search/similar/${sha256}`, {
+      params: { top_k }
+    });
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ==================== 批量处理 ====================
 
 router.post('/batch/import', async (req, res, next) => {

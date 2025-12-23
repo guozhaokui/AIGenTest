@@ -99,6 +99,9 @@
 
           <!-- 操作按钮 -->
           <div class="actions">
+            <el-button type="info" @click="handleSearchSimilar" :loading="searchingSimilar">
+              搜索相似图片
+            </el-button>
             <el-button type="primary" @click="handleRecompute(false)" :loading="recomputing">
               更新图片嵌入
             </el-button>
@@ -116,6 +119,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { useRouter } from 'vue-router';
 import { 
   listImages, 
   getImage,
@@ -124,8 +128,11 @@ import {
   getImageUrl,
   addDescription,
   getDescriptions,
-  recomputeEmbedding
+  recomputeEmbedding,
+  searchSimilar
 } from '@/services/imagemgr';
+
+const router = useRouter();
 
 const loading = ref(false);
 const images = ref([]);
@@ -157,6 +164,7 @@ const descriptions = ref([]);
 const newDesc = reactive({ method: '', content: '' });
 const addingDesc = ref(false);
 const recomputing = ref(false);
+const searchingSimilar = ref(false);
 
 function formatSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
@@ -267,6 +275,20 @@ async function handleDelete() {
       ElMessage.error('删除失败');
     }
   }
+}
+
+async function handleSearchSimilar() {
+  if (!selectedImage.value) return;
+  
+  // 关闭详情弹窗，跳转到搜索页面并自动搜索
+  const sha256 = selectedImage.value.sha256;
+  detailVisible.value = false;
+  
+  // 跳转到搜索页面，并传递参数
+  router.push({
+    path: '/imagemgr/search',
+    query: { similar: sha256 }
+  });
 }
 
 onMounted(() => {

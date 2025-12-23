@@ -4,26 +4,57 @@
     <el-radio-group v-model="searchMode" class="search-mode">
       <el-radio-button value="text">文本搜索</el-radio-button>
       <el-radio-button value="image">以图搜图</el-radio-button>
+      <el-radio-button value="similar">相似图片</el-radio-button>
     </el-radio-group>
+
+    <!-- 相似图片搜索 -->
+    <div v-if="searchMode === 'similar'" class="similar-input">
+      <div class="similar-source" v-if="similarSource">
+        <img :src="getThumbnailUrl(similarSource)" class="source-thumb" />
+        <div class="source-info">
+          <div class="source-label">搜索与此图片相似的图片</div>
+          <code class="source-sha">{{ similarSource }}</code>
+        </div>
+        <el-button @click="clearSimilar">清除</el-button>
+      </div>
+      <div v-else class="no-source">
+        <el-empty description="请从图片详情页点击【搜索相似图片】按钮" />
+      </div>
+    </div>
 
     <!-- 文本搜索 -->
     <div v-if="searchMode === 'text'" class="search-input">
-      <el-input
-        v-model="textQuery"
-        placeholder="输入搜索内容，如：一只猫在晒太阳"
-        size="large"
-        @keyup.enter="handleTextSearch"
-      >
-        <template #append>
-          <el-button type="primary" @click="handleTextSearch" :loading="searching">
-            搜索
-          </el-button>
-        </template>
-      </el-input>
+      <div class="search-row">
+        <el-input
+          v-model="textQuery"
+          placeholder="输入搜索内容，如：一只猫在晒太阳"
+          size="large"
+          @keyup.enter="handleTextSearch"
+        >
+          <template #append>
+            <el-button type="primary" @click="handleTextSearch" :loading="searching">
+              搜索
+            </el-button>
+          </template>
+        </el-input>
+      </div>
+      <div class="search-options">
+        <span class="option-label">嵌入模型：</span>
+        <el-select v-model="selectedIndex" placeholder="选择嵌入模型" style="width: 200px;">
+          <el-option label="全部模型" value="" />
+          <el-option 
+            v-for="idx in textIndexes" 
+            :key="idx.id" 
+            :label="idx.name" 
+            :value="idx.id"
+          />
+        </el-select>
+        <span class="option-tip">选择特定模型可能获得更准确的结果</span>
+      </div>
     </div>
 
     <!-- 以图搜图 -->
-    <div v-else class="image-input">
+    <div v-if="searchMode === 'image'" class="image-input">
       <el-upload
         class="upload-area"
         drag
@@ -106,10 +137,20 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
-import { searchByText, searchByImage, getThumbnailUrl, getImageUrl } from '@/services/imagemgr';
+import { 
+  searchByText, 
+  searchByImage, 
+  searchSimilar,
+  getTextIndexes,
+  getThumbnailUrl, 
+  getImageUrl 
+} from '@/services/imagemgr';
+
+const route = useRoute();
 
 const searchMode = ref('text');
 const textQuery = ref('');
@@ -119,9 +160,51 @@ const searching = ref(false);
 const searched = ref(false);
 const results = ref([]);
 
+// 文本搜索选项
+const textIndexes = ref([]);
+const selectedIndex = ref('');
+
+// 相似图片搜索
+const similarSource = ref('');
+
 // 详情
 const detailVisible = ref(false);
 const selectedImage = ref(null);
+
+// 加载文本索引列表
+async function loadTextIndexes() {
+  try {
+    const data = await getTextIndexes();
+    textIndexes.value = data.indexes || [];
+  } catch (e) {
+    console.error('加载索引列表失败:', e);
+  }
+}
+
+// 处理路由参数（从图片详情页跳转过来）
+function handleRouteQuery() {
+  const similar = route.query.similar;
+  if (similar) {
+    similarSource.value = similar;
+    searchMode.value = 'similar';
+    // 自动执行搜索
+    handleSimilarSearch();
+  }
+}
+
+// 监听路由变化
+watch(() => route.query.similar, (newVal) => {
+  if (newVal) {
+    similarSource.value = newVal;
+    searchMode.value = 'similar';
+    handleSimilarSearch();
+  }
+});
+
+onMounted(() => {
+  loadTextIndexes();
+  handleRouteQuery();
+});
 
 function truncate(text, len) {
   if (!text) return '';
@@ -151,7 +234,7 @@ async function handleTextSearch() {
   searching.value = true;
   searched.value = true;
   try {
-    const data = await searchByText(textQuery.value.trim(), 20);
+    const data = await searchByText(textQuery.value.trim(), 100, selectedIndex.value || null);
     results.value = data.results || [];
     if (results.value.length === 0) {
       ElMessage.info('未找到匹配的图片');
@@ -172,7 +255,7 @@ async function handleImageSearch() {
   searching.value = true;
   searched.value = true;
   try {
-    const data = await searchByImage(queryFile.value, 20);
+    const data = await searchByImage(queryFile.value, 100);
     results.value = data.results || [];
     if (results.value.length === 0) {
       ElMessage.info('未找到相似的图片');
@@ -183,6 +266,33 @@ async function handleImageSearch() {
   } finally {
     searching.value = false;
   }
+}
+
+async function handleSimilarSearch() {
+  if (!similarSource.value) {
+    return ElMessage.warning('请先选择一张图片');
+  }
+  
+  searching.value = true;
+  searched.value = true;
+  try {
+    const data = await searchSimilar(similarSource.value, 100);
+    results.value = data.results || [];
+    if (results.value.length === 0) {
+      ElMessage.info('未找到相似的图片');
+    }
+  } catch (e) {
+    ElMessage.error('搜索失败: ' + (e.response?.data?.detail || e.message));
+    console.error(e);
+  } finally {
+    searching.value = false;
+  }
+}
+
+function clearSimilar() {
+  similarSource.value = '';
+  results.value = [];
+  searched.value = false;
 }
 
 function showDetail(item) {
@@ -203,11 +313,72 @@ function showDetail(item) {
 }
 
 .search-input {
-  max-width: 600px;
+  max-width: 700px;
+}
+
+.search-row {
+  margin-bottom: 12px;
+}
+
+.search-options {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.option-label {
+  color: #606266;
+  font-size: 14px;
+}
+
+.option-tip {
+  color: #909399;
+  font-size: 12px;
 }
 
 .image-input {
   max-width: 400px;
+}
+
+.similar-input {
+  max-width: 600px;
+}
+
+.similar-source {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.source-thumb {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.source-info {
+  flex: 1;
+}
+
+.source-label {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 8px;
+}
+
+.source-sha {
+  font-size: 12px;
+  color: #909399;
+  word-break: break-all;
+}
+
+.no-source {
+  padding: 40px 0;
 }
 
 .upload-area {
