@@ -341,6 +341,40 @@ export function searchSimilar(sha256, topK = 100) {
 // ==================== VLM 配置 ====================
 
 /**
+ * 通用 VLM 描述生成（不保存）
+ * 
+ * @param {object} options 选项
+ * @param {string} options.sha256 库中图片的 sha256（与 image_base64 二选一）
+ * @param {string} options.image_base64 Base64 编码的图片（与 sha256 二选一）
+ * @param {string} options.vlm_service VLM 服务名称
+ * @param {string} options.prompt 提示词（预设名称或自定义文本）
+ */
+export function vlmGenerate(options = {}) {
+  return imagemgrApi.post('/vlm/generate', {
+    sha256: options.sha256 || null,
+    image_base64: options.image_base64 || null,
+    vlm_service: options.vlm_service || null,
+    prompt: options.prompt || null
+  }, { timeout: 120000 }).then(r => r.data);
+}
+
+/**
+ * 保存描述并可选计算嵌入
+ * 
+ * @param {string} sha256 图片 sha256
+ * @param {string} method 描述类型，如 "vlm", "manual"
+ * @param {string} content 描述内容
+ * @param {boolean} computeEmbedding 是否计算文本嵌入，默认 true
+ */
+export function saveDescription(sha256, method, content, computeEmbedding = true) {
+  return imagemgrApi.post(`/images/${sha256}/descriptions/save`, {
+    method,
+    content,
+    compute_embedding: computeEmbedding
+  }, { timeout: 60000 }).then(r => r.data);
+}
+
+/**
  * 获取 VLM 配置
  */
 export function getVlmConfig() {

@@ -443,6 +443,156 @@ def get_descriptions(sha256: str):
     return {"descriptions": result}
 
 
+class VlmGenerateRequest(BaseModel):
+    """VLM 生成描述请求（通用）"""
+    sha256: Optional[str] = None  # 库中图片的 sha256（与 image_base64 二选一）
+    image_base64: Optional[str] = None  # Base64 编码的图片（与 sha256 二选一）
+    vlm_service: Optional[str] = None  # VLM 服务名称，不指定则使用默认
+    prompt: Optional[str] = None  # 提示词（预设名称或自定义文本）
+
+
+class SaveDescriptionRequest(BaseModel):
+    """保存描述请求"""
+    method: str  # 描述类型，如 "vlm", "manual" 等
+    content: str  # 描述内容
+    compute_embedding: bool = True  # 是否计算文本嵌入
+
+
+@app.post("/api/vlm/generate")
+def vlm_generate_caption(req: VlmGenerateRequest):
+    """
+    通用 VLM 描述生成接口
+    
+    支持两种输入方式：
+    1. sha256: 指定库中已有图片的 sha256
+    2. image_base64: 直接传入 base64 编码的图片
+    
+    返回生成的描述文本，不保存到数据库
+    """
+    import base64
+    import tempfile
+    import os
+    
+    temp_file = None
+    
+    try:
+        # 确定图片来源
+        if req.sha256:
+            # 从库中获取图片
+            image = db.get_image(req.sha256)
+            if not image:
+                raise HTTPException(status_code=404, detail="图片不存在")
+            
+            image_path = storage.get_image_path(req.sha256)
+            if not image_path.exists():
+                raise HTTPException(status_code=400, detail="图片文件不存在")
+            
+            image_path_str = str(image_path)
+            
+        elif req.image_base64:
+            # 从 base64 解码并保存为临时文件
+            try:
+                # 去除可能的 data URL 前缀
+                base64_data = req.image_base64
+                if ',' in base64_data:
+                    base64_data = base64_data.split(',', 1)[1]
+                
+                image_data = base64.b64decode(base64_data)
+                
+                # 创建临时文件
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.jpg')
+                temp_file.write(image_data)
+                temp_file.close()
+                
+                image_path_str = temp_file.name
+                
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=f"Base64 解码失败: {str(e)}")
+        else:
+            raise HTTPException(status_code=400, detail="必须提供 sha256 或 image_base64")
+        
+        # 调用 VLM 生成描述
+        caption = generate_caption_with_vlm(
+            image_path_str,
+            prompt_name=req.prompt,
+            vlm_service=req.vlm_service
+        )
+        
+        if not caption:
+            raise HTTPException(status_code=500, detail="VLM 服务调用失败或返回空结果")
+        
+        return {
+            "caption": caption,
+            "sha256": req.sha256,  # 如果是库中图片，返回 sha256
+            "vlm_service": req.vlm_service or VLM_CONFIG.get("default_service", "default")
+        }
+        
+    finally:
+        # 清理临时文件
+        if temp_file and os.path.exists(temp_file.name):
+            os.unlink(temp_file.name)
+
+
+@app.post("/api/images/{sha256}/descriptions/save")
+def save_description_with_embedding(sha256: str, req: SaveDescriptionRequest):
+    """
+    保存描述并可选计算文本嵌入
+    
+    用于保存 VLM 生成的描述或手动输入的描述
+    如果 compute_embedding=True，会同时计算文本嵌入
+    """
+    image = db.get_image(sha256)
+    if not image:
+        raise HTTPException(status_code=404, detail="图片不存在")
+    
+    # 保存描述
+    storage.save_description(sha256, req.method, req.content)
+    db.add_description(sha256, req.method, req.content)
+    
+    embedding_results = []
+    
+    # 可选：计算文本嵌入
+    if req.compute_embedding:
+        all_embeddings = embedding_client.get_all_text_embeddings(req.content)
+        
+        for service_name, emb_info in all_embeddings.items():
+            emb = emb_info["embedding"]
+            model_name = emb_info["model_name"]
+            model_version = emb_info["model_version"]
+            
+            index_name = None
+            for idx_name, idx_config in TEXT_INDEXES.items():
+                if idx_config["service_name"] == service_name:
+                    index_name = idx_name
+                    break
+            
+            if index_name and index_name in text_indexes:
+                emb_filename = f"{req.method}_{model_name.replace('-', '_')}"
+                storage.save_embedding(sha256, emb_filename, emb)
+                text_indexes[index_name].add(emb, sha256, req.method)
+                
+                try:
+                    db.add_vector_entry(sha256, req.method, model_name, model_version, index_name)
+                except:
+                    pass
+                
+                embedding_results.append({
+                    "model": model_name,
+                    "index": index_name
+                })
+        
+        if embedding_results:
+            db.update_description_embedding(sha256, req.method, True)
+    
+    return {
+        "message": "描述保存成功",
+        "sha256": sha256,
+        "method": req.method,
+        "content": req.content,
+        "embeddings": embedding_results
+    }
+
+
 # ==================== 重新计算嵌入 ====================
 
 @app.post("/api/images/{sha256}/recompute-embedding")
@@ -976,6 +1126,7 @@ def get_vlm_prompt(prompt_name: str = None) -> str:
     
     Args:
         prompt_name: 提示词名称（default/short/detailed/tags/objects）
+                    或者自定义提示词文本
                     如果为 None，使用配置中的 default_prompt
     
     Returns:
@@ -986,11 +1137,13 @@ def get_vlm_prompt(prompt_name: str = None) -> str:
     if prompt_name is None:
         prompt_name = VLM_CONFIG.get("default_prompt", "default")
     
-    # 如果是自定义提示词（不在预设中），直接返回
-    if prompt_name not in prompts and len(prompt_name) > 20:
-        return prompt_name
+    # 如果在预设列表中，返回对应的提示词
+    if prompt_name in prompts:
+        return prompts[prompt_name]
     
-    return prompts.get(prompt_name, prompts.get("default", "请描述这张图片。"))
+    # 否则就是自定义提示词，直接返回
+    # 如果是未知的预设名称（很短且不在预设中），也当作自定义返回
+    return prompt_name if prompt_name else prompts.get("default", "请描述这张图片。")
 
 
 def generate_caption_with_vlm(image_path: str, prompt_name: str = None, 

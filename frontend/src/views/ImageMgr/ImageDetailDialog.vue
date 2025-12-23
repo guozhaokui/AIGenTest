@@ -43,17 +43,83 @@
 
         <!-- 描述列表 -->
         <div class="descriptions-section">
-          <h4>描述信息</h4>
-          <div v-if="descriptions.length === 0" class="no-desc">暂无描述</div>
-          <div v-for="desc in descriptions" :key="desc.method" class="desc-item">
-            <el-tag size="small">{{ desc.method }}</el-tag>
-            <span>{{ desc.content }}</span>
+          <h4>
+            描述信息
+            <el-tag v-if="previewCaption" type="warning" size="small" style="margin-left: 8px;">预览中</el-tag>
+          </h4>
+          <!-- 预览模式：显示生成的描述 -->
+          <div v-if="previewCaption" class="preview-section">
+            <div class="desc-item preview-item">
+              <el-tag size="small" type="warning">{{ previewCaption.method }}</el-tag>
+              <span>{{ previewCaption.content }}</span>
+            </div>
+            <div class="preview-actions">
+              <el-button type="success" size="small" @click="handleConfirmCaption" :loading="confirming">
+                接受
+              </el-button>
+              <el-button size="small" @click="handleCancelPreview">
+                取消
+              </el-button>
+            </div>
+          </div>
+          <!-- 正常模式：显示已保存的描述 -->
+          <template v-else>
+            <div v-if="descriptions.length === 0" class="no-desc">暂无描述</div>
+            <div v-for="desc in descriptions" :key="desc.method" class="desc-item">
+              <el-tag size="small">{{ desc.method }}</el-tag>
+              <span>{{ desc.content }}</span>
+            </div>
+          </template>
+        </div>
+
+        <!-- AI 生成描述 -->
+        <div class="generate-desc-section" v-if="!previewCaption">
+          <h4>AI 生成描述</h4>
+          <div class="generate-form">
+            <el-select v-model="generateForm.vlmService" placeholder="VLM服务" size="small" style="width: 140px;">
+              <el-option 
+                v-for="svc in vlmServices" 
+                :key="svc.id" 
+                :label="svc.name" 
+                :value="svc.id"
+              />
+            </el-select>
+            <el-select v-model="generateForm.promptType" placeholder="提示词" size="small" style="width: 100px;">
+              <el-option label="预设" value="preset" />
+              <el-option label="自定义" value="custom" />
+            </el-select>
+            <el-select 
+              v-if="generateForm.promptType === 'preset'"
+              v-model="generateForm.promptName" 
+              placeholder="选择提示词" 
+              size="small" 
+              style="width: 120px;"
+            >
+              <el-option 
+                v-for="p in vlmPrompts" 
+                :key="p.name" 
+                :label="p.name" 
+                :value="p.name"
+              />
+            </el-select>
+            <el-button type="success" size="small" @click="handleGenerateCaption" :loading="generating">
+              生成
+            </el-button>
+          </div>
+          <div v-if="generateForm.promptType === 'custom'" class="custom-prompt">
+            <el-input 
+              v-model="generateForm.customPrompt" 
+              type="textarea" 
+              :rows="2"
+              placeholder="输入自定义提示词，如：请用中文详细描述这张图片的内容、风格和构图"
+              size="small"
+            />
           </div>
         </div>
 
-        <!-- 添加描述 -->
+        <!-- 手动添加描述 -->
         <div class="add-desc-section">
-          <h4>添加描述</h4>
+          <h4>手动添加描述</h4>
           <div class="add-desc-form">
             <el-input v-model="newDesc.method" placeholder="类型" style="width: 100px;" size="small" />
             <el-input v-model="newDesc.content" placeholder="描述内容" style="flex: 1;" size="small" />
@@ -90,7 +156,11 @@ import {
   getDescriptions,
   addDescription,
   recomputeEmbedding,
-  deleteImage
+  deleteImage,
+  vlmGenerate,
+  saveDescription,
+  getVlmServices,
+  getVlmPrompts
 } from '@/services/imagemgr';
 
 const props = defineProps({
@@ -106,6 +176,21 @@ const descriptions = ref([]);
 const newDesc = reactive({ method: '', content: '' });
 const addingDesc = ref(false);
 const recomputing = ref(false);
+
+// AI 生成描述
+const generating = ref(false);
+const confirming = ref(false);
+const vlmServices = ref([]);
+const vlmPrompts = ref([]);
+const generateForm = reactive({
+  vlmService: '',
+  promptType: 'preset',
+  promptName: 'default',
+  customPrompt: ''
+});
+
+// 预览状态
+const previewCaption = ref(null);  // { method: 'vlm', content: '...' }
 
 const statusText = {
   ready: '就绪',
@@ -152,12 +237,102 @@ async function loadImageData(sha256) {
     
     const descData = await getDescriptions(sha256);
     descriptions.value = descData.descriptions || [];
+    
+    // 加载 VLM 配置（只加载一次）
+    if (vlmServices.value.length === 0) {
+      loadVlmConfig();
+    }
   } catch (e) {
     ElMessage.error('加载图片信息失败');
     console.error(e);
   } finally {
     loading.value = false;
   }
+}
+
+async function loadVlmConfig() {
+  try {
+    const [servicesData, promptsData] = await Promise.all([
+      getVlmServices(),
+      getVlmPrompts()
+    ]);
+    vlmServices.value = servicesData.services || [];
+    vlmPrompts.value = promptsData.prompts || [];
+    
+    // 设置默认值
+    if (vlmServices.value.length > 0 && !generateForm.vlmService) {
+      generateForm.vlmService = vlmServices.value[0].id;
+    }
+    if (promptsData.default) {
+      generateForm.promptName = promptsData.default;
+    }
+  } catch (e) {
+    console.error('加载 VLM 配置失败:', e);
+  }
+}
+
+async function handleGenerateCaption() {
+  if (!imageData.value) return;
+  
+  generating.value = true;
+  try {
+    // 使用通用 VLM 生成 API
+    const result = await vlmGenerate({
+      sha256: imageData.value.sha256,
+      vlm_service: generateForm.vlmService || null,
+      prompt: generateForm.promptType === 'custom' 
+        ? generateForm.customPrompt 
+        : generateForm.promptName
+    });
+    
+    // 显示预览
+    previewCaption.value = {
+      method: 'vlm',
+      content: result.caption
+    };
+    
+    ElMessage.info('描述已生成，请确认是否保存');
+  } catch (e) {
+    ElMessage.error('生成失败: ' + (e.response?.data?.detail || e.message));
+    console.error(e);
+  } finally {
+    generating.value = false;
+  }
+}
+
+// 确认保存描述
+async function handleConfirmCaption() {
+  if (!previewCaption.value || !imageData.value) return;
+  
+  confirming.value = true;
+  try {
+    await saveDescription(
+      imageData.value.sha256,
+      previewCaption.value.method,
+      previewCaption.value.content,
+      true  // 计算嵌入
+    );
+    
+    ElMessage.success('描述已保存并计算嵌入');
+    
+    // 刷新描述列表
+    const descData = await getDescriptions(imageData.value.sha256);
+    descriptions.value = descData.descriptions || [];
+    
+    // 清除预览
+    previewCaption.value = null;
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message));
+    console.error(e);
+  } finally {
+    confirming.value = false;
+  }
+}
+
+// 取消预览，恢复原始描述显示
+function handleCancelPreview() {
+  previewCaption.value = null;
+  ElMessage.info('已取消');
 }
 
 async function handleAddDesc() {
@@ -310,6 +485,51 @@ function handleSearchSimilar() {
 .add-desc-form {
   display: flex;
   gap: 8px;
+}
+
+.generate-desc-section {
+  padding: 10px;
+  background: #f0f9eb;
+  border-radius: 6px;
+}
+
+.generate-desc-section h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  color: #67c23a;
+}
+
+.generate-form {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.custom-prompt {
+  margin-top: 8px;
+}
+
+.preview-section {
+  background: #fef0e6;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px dashed #e6a23c;
+}
+
+.preview-item {
+  background: transparent;
+}
+
+.preview-item span {
+  color: #e6a23c;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #e6a23c;
 }
 
 .actions {

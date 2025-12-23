@@ -173,6 +173,34 @@ router.post('/images/:sha256/descriptions', async (req, res, next) => {
   }
 });
 
+// 通用 VLM 描述生成（不保存）
+router.post('/vlm/generate', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post(
+      '/api/vlm/generate',
+      req.body,
+      { timeout: 120000 }  // 2分钟超时，VLM 可能比较慢
+    );
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 保存描述并计算嵌入
+router.post('/images/:sha256/descriptions/save', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post(
+      `/api/images/${req.params.sha256}/descriptions/save`,
+      req.body,
+      { timeout: 60000 }
+    );
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ==================== 重新计算嵌入 ====================
 
 router.post('/images/:sha256/recompute-embedding', async (req, res, next) => {
