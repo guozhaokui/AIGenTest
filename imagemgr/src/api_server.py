@@ -94,6 +94,7 @@ class TextSearchRequest(BaseModel):
     query: str
     top_k: int = 100  # 默认返回100条结果
     index: Optional[str] = None  # 指定使用的索引，默认搜索所有索引
+    rerank: bool = False  # 是否使用重排序
 
 
 class ImageSearchRequest(BaseModel):
@@ -821,11 +822,14 @@ def search_by_text(req: TextSearchRequest):
     
     # 如果启用重排序，使用 LLM 精排
     reranked = False
+    print(f"[Rerank] 请求参数 req.rerank={req.rerank}, 结果数量={len(enriched_results)}")
     if req.rerank and enriched_results:
         # 提取描述文本用于重排序
         documents = [r.get("matched_text", "") for r in enriched_results]
+        print(f"[Rerank] 调用重排序服务, query={req.query[:50]}..., documents数量={len(documents)}")
         rerank_results = embedding_client.rerank(req.query, documents, req.top_k)
         
+        print(f"[Rerank] 重排序返回: {rerank_results is not None}, 结果数量={len(rerank_results) if rerank_results else 0}")
         if rerank_results:
             # 根据重排序结果重新排列
             reranked_enriched = []
@@ -838,6 +842,9 @@ def search_by_text(req: TextSearchRequest):
                     reranked_enriched.append(result)
             enriched_results = reranked_enriched
             reranked = True
+            print(f"[Rerank] 重排序完成, 最终结果数量={len(enriched_results)}")
+        else:
+            print("[Rerank] 重排序服务返回空结果")
     
     return {
         "query": req.query, 

@@ -306,9 +306,10 @@ export function getTextIndexes() {
  * @param {string} query 搜索文本
  * @param {number} topK 返回数量
  * @param {string} index 指定索引（可选）
+ * @param {boolean} rerank 是否使用重排序（可选）
  */
-export function searchByText(query, topK = 100, index = null) {
-  const params = { query, top_k: topK };
+export function searchByText(query, topK = 100, index = null, rerank = false) {
+  const params = { query, top_k: topK, rerank };
   if (index) params.index = index;
   return imagemgrApi.post('/search/text', params).then(r => r.data);
 }

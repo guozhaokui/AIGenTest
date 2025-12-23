@@ -49,7 +49,10 @@
             :value="idx.id"
           />
         </el-select>
-        <span class="option-tip">选择特定模型可能获得更准确的结果</span>
+        <el-checkbox v-model="useRerank" style="margin-left: 16px;">
+          启用重排序
+        </el-checkbox>
+        <span class="option-tip">重排序可提高结果准确度，但会增加响应时间</span>
       </div>
     </div>
 
@@ -139,6 +142,7 @@ const results = ref([]);
 // 文本搜索选项
 const textIndexes = ref([]);
 const selectedIndex = ref('');
+const useRerank = ref(false);
 
 // 相似图片搜索
 const similarSource = ref('');
@@ -243,7 +247,12 @@ async function handleTextSearch() {
   searching.value = true;
   searched.value = true;
   try {
-    const data = await searchByText(textQuery.value.trim(), 100, selectedIndex.value || null);
+    const data = await searchByText(
+      textQuery.value.trim(), 
+      100, 
+      selectedIndex.value || null,
+      useRerank.value
+    );
     results.value = data.results || [];
     if (results.value.length === 0) {
       ElMessage.info('未找到匹配的图片');
