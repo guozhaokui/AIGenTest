@@ -3,44 +3,66 @@
     :model-value="modelValue" 
     @update:model-value="$emit('update:modelValue', $event)"
     title="图片详情" 
-    width="850px"
+    width="900px"
   >
     <div class="detail-content" v-if="imageData" v-loading="loading">
-      <div class="detail-left">
-        <el-image 
-          :src="getImageUrl(imageData.sha256)" 
-          :preview-src-list="[getImageUrl(imageData.sha256)]"
-          fit="contain"
-          class="detail-image"
-        />
+      <!-- 上半部分：图片 + 基本信息 -->
+      <div class="detail-top">
+        <div class="detail-image-wrap">
+          <el-image 
+            :src="getImageUrl(imageData.sha256)" 
+            :preview-src-list="[getImageUrl(imageData.sha256)]"
+            fit="contain"
+            class="detail-image"
+          />
+        </div>
+        <div class="detail-info">
+          <el-descriptions :column="1" border size="small">
+            <el-descriptions-item label="SHA256">
+              <code class="sha-code" @click="copySha256" title="点击复制">{{ imageData.sha256 }}</code>
+            </el-descriptions-item>
+            <el-descriptions-item label="尺寸">
+              {{ imageData.width }} × {{ imageData.height }}
+            </el-descriptions-item>
+            <el-descriptions-item label="大小">
+              {{ formatSize(imageData.file_size) }}
+            </el-descriptions-item>
+            <el-descriptions-item label="格式">
+              {{ imageData.format }}
+            </el-descriptions-item>
+            <el-descriptions-item label="来源">
+              {{ imageData.source || '-' }}
+            </el-descriptions-item>
+            <el-descriptions-item label="状态">
+              <el-tag :type="statusType[imageData.status]" size="small">
+                {{ statusText[imageData.status] }}
+              </el-tag>
+            </el-descriptions-item>
+            <el-descriptions-item label="创建时间">
+              {{ imageData.created_at }}
+            </el-descriptions-item>
+          </el-descriptions>
+          
+          <!-- 操作按钮放在基本信息下方 -->
+          <div class="actions">
+            <el-button type="info" size="small" @click="handleSearchSimilar">
+              搜索相似图片
+            </el-button>
+            <el-button type="primary" size="small" @click="handleRecompute(false)" :loading="recomputing">
+              更新图片嵌入
+            </el-button>
+            <el-button type="success" size="small" @click="handleRecompute(true)" :loading="recomputing">
+              更新全部嵌入
+            </el-button>
+            <el-button type="danger" size="small" @click="handleDelete">
+              删除图片
+            </el-button>
+          </div>
+        </div>
       </div>
-      <div class="detail-right">
-        <el-descriptions :column="1" border size="small">
-          <el-descriptions-item label="SHA256">
-            <code class="sha-code" @click="copySha256" title="点击复制">{{ imageData.sha256 }}</code>
-          </el-descriptions-item>
-          <el-descriptions-item label="尺寸">
-            {{ imageData.width }} × {{ imageData.height }}
-          </el-descriptions-item>
-          <el-descriptions-item label="大小">
-            {{ formatSize(imageData.file_size) }}
-          </el-descriptions-item>
-          <el-descriptions-item label="格式">
-            {{ imageData.format }}
-          </el-descriptions-item>
-          <el-descriptions-item label="来源">
-            {{ imageData.source || '-' }}
-          </el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="statusType[imageData.status]" size="small">
-              {{ statusText[imageData.status] }}
-            </el-tag>
-          </el-descriptions-item>
-          <el-descriptions-item label="创建时间">
-            {{ imageData.created_at }}
-          </el-descriptions-item>
-        </el-descriptions>
 
+      <!-- 下半部分：描述信息（独占整行） -->
+      <div class="detail-bottom">
         <!-- 描述列表 -->
         <div class="descriptions-section">
           <h4>
@@ -51,7 +73,7 @@
           <div v-if="previewCaption" class="preview-section">
             <div class="desc-item preview-item">
               <el-tag size="small" type="warning">{{ previewCaption.method }}</el-tag>
-              <span>{{ previewCaption.content }}</span>
+              <span class="desc-content">{{ previewCaption.content }}</span>
             </div>
             <div class="preview-actions">
               <el-button type="success" size="small" @click="handleConfirmCaption" :loading="confirming">
@@ -72,7 +94,7 @@
                 <el-input 
                   v-model="editingContent" 
                   type="textarea" 
-                  :rows="2" 
+                  :rows="3" 
                   size="small"
                   style="flex: 1;"
                 />
@@ -94,75 +116,62 @@
           </template>
         </div>
 
-        <!-- AI 生成描述 -->
-        <div class="generate-desc-section" v-if="!previewCaption">
-          <h4>AI 生成描述</h4>
-          <div class="generate-form">
-            <el-select v-model="generateForm.vlmService" placeholder="VLM服务" size="small" style="width: 140px;">
-              <el-option 
-                v-for="svc in vlmServices" 
-                :key="svc.id" 
-                :label="svc.name" 
-                :value="svc.id"
+        <!-- AI 生成 & 手动添加 放在一行 -->
+        <div class="desc-tools">
+          <!-- AI 生成描述 -->
+          <div class="generate-desc-section" v-if="!previewCaption">
+            <h4>AI 生成描述</h4>
+            <div class="generate-form">
+              <el-select v-model="generateForm.vlmService" placeholder="VLM服务" size="small" style="width: 130px;">
+                <el-option 
+                  v-for="svc in vlmServices" 
+                  :key="svc.id" 
+                  :label="svc.name" 
+                  :value="svc.id"
+                />
+              </el-select>
+              <el-select v-model="generateForm.promptType" placeholder="提示词" size="small" style="width: 90px;">
+                <el-option label="预设" value="preset" />
+                <el-option label="自定义" value="custom" />
+              </el-select>
+              <el-select 
+                v-if="generateForm.promptType === 'preset'"
+                v-model="generateForm.promptName" 
+                placeholder="选择提示词" 
+                size="small" 
+                style="width: 110px;"
+              >
+                <el-option 
+                  v-for="p in vlmPrompts" 
+                  :key="p.name" 
+                  :label="p.name" 
+                  :value="p.name"
+                />
+              </el-select>
+              <el-button type="success" size="small" @click="handleGenerateCaption" :loading="generating">
+                生成
+              </el-button>
+            </div>
+            <div v-if="generateForm.promptType === 'custom'" class="custom-prompt">
+              <el-input 
+                v-model="generateForm.customPrompt" 
+                type="textarea" 
+                :rows="2"
+                placeholder="输入自定义提示词"
+                size="small"
               />
-            </el-select>
-            <el-select v-model="generateForm.promptType" placeholder="提示词" size="small" style="width: 100px;">
-              <el-option label="预设" value="preset" />
-              <el-option label="自定义" value="custom" />
-            </el-select>
-            <el-select 
-              v-if="generateForm.promptType === 'preset'"
-              v-model="generateForm.promptName" 
-              placeholder="选择提示词" 
-              size="small" 
-              style="width: 120px;"
-            >
-              <el-option 
-                v-for="p in vlmPrompts" 
-                :key="p.name" 
-                :label="p.name" 
-                :value="p.name"
-              />
-            </el-select>
-            <el-button type="success" size="small" @click="handleGenerateCaption" :loading="generating">
-              生成
-            </el-button>
+            </div>
           </div>
-          <div v-if="generateForm.promptType === 'custom'" class="custom-prompt">
-            <el-input 
-              v-model="generateForm.customPrompt" 
-              type="textarea" 
-              :rows="2"
-              placeholder="输入自定义提示词，如：请用中文详细描述这张图片的内容、风格和构图"
-              size="small"
-            />
-          </div>
-        </div>
 
-        <!-- 手动添加描述 -->
-        <div class="add-desc-section">
-          <h4>手动添加描述</h4>
-          <div class="add-desc-form">
-            <el-input v-model="newDesc.method" placeholder="类型" style="width: 100px;" size="small" />
-            <el-input v-model="newDesc.content" placeholder="描述内容" style="flex: 1;" size="small" />
-            <el-button type="primary" size="small" @click="handleAddDesc" :loading="addingDesc">添加</el-button>
+          <!-- 手动添加描述 -->
+          <div class="add-desc-section">
+            <h4>手动添加描述</h4>
+            <div class="add-desc-form">
+              <el-input v-model="newDesc.method" placeholder="类型" style="width: 80px;" size="small" />
+              <el-input v-model="newDesc.content" placeholder="描述内容" style="flex: 1;" size="small" />
+              <el-button type="primary" size="small" @click="handleAddDesc" :loading="addingDesc">添加</el-button>
+            </div>
           </div>
-        </div>
-
-        <!-- 操作按钮 -->
-        <div class="actions">
-          <el-button type="info" size="small" @click="handleSearchSimilar">
-            搜索相似图片
-          </el-button>
-          <el-button type="primary" size="small" @click="handleRecompute(false)" :loading="recomputing">
-            更新图片嵌入
-          </el-button>
-          <el-button type="success" size="small" @click="handleRecompute(true)" :loading="recomputing">
-            更新全部嵌入
-          </el-button>
-          <el-button type="danger" size="small" @click="handleDelete">
-            删除图片
-          </el-button>
         </div>
       </div>
     </div>
@@ -483,24 +492,31 @@ function handleSearchSimilar() {
 <style scoped>
 .detail-content {
   display: flex;
-  gap: 20px;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.detail-left {
-  flex: 0 0 380px;
+/* 上半部分：图片 + 基本信息 */
+.detail-top {
+  display: flex;
+  gap: 16px;
+}
+
+.detail-image-wrap {
+  flex: 0 0 280px;
   background: #f5f7fa;
   border-radius: 8px;
-  padding: 12px;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 300px;
+  min-height: 200px;
 }
 
 .detail-image {
   width: 100%;
   height: 100%;
-  max-height: 450px;
+  max-height: 260px;
   border-radius: 4px;
 }
 
@@ -510,11 +526,11 @@ function handleSearchSimilar() {
   height: 100%;
 }
 
-.detail-right {
+.detail-info {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
   min-width: 0;
 }
 
@@ -528,8 +544,26 @@ function handleSearchSimilar() {
   color: #409eff;
 }
 
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+/* 下半部分：描述信息 */
+.detail-bottom {
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.descriptions-section {
+  margin-bottom: 12px;
+}
+
 .descriptions-section h4,
-.add-desc-section h4 {
+.add-desc-section h4,
+.generate-desc-section h4 {
   margin: 0 0 8px 0;
   font-size: 14px;
   color: #303133;
@@ -543,10 +577,10 @@ function handleSearchSimilar() {
 .desc-item {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
+  gap: 10px;
   margin-bottom: 8px;
   font-size: 13px;
-  padding: 6px 8px;
+  padding: 8px 10px;
   background: #fafafa;
   border-radius: 4px;
   flex-wrap: wrap;
@@ -562,44 +596,45 @@ function handleSearchSimilar() {
 
 .desc-content {
   flex: 1;
-  line-height: 1.5;
-  word-break: break-all;
+  min-width: 0;
+  line-height: 1.6;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
   cursor: pointer;
-}
-
-.desc-content:hover {
-  color: #409eff;
 }
 
 .edit-actions {
   display: flex;
   gap: 6px;
   width: 100%;
-  margin-top: 6px;
-  padding-top: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px dashed #ddd;
 }
 
-.add-desc-form {
+/* 描述工具栏：AI 生成 + 手动添加 */
+.desc-tools {
   display: flex;
-  gap: 8px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .generate-desc-section {
+  flex: 1;
+  min-width: 300px;
   padding: 10px;
   background: #f0f9eb;
   border-radius: 6px;
 }
 
 .generate-desc-section h4 {
-  margin: 0 0 8px 0;
-  font-size: 14px;
   color: #67c23a;
 }
 
 .generate-form {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -607,6 +642,24 @@ function handleSearchSimilar() {
   margin-top: 8px;
 }
 
+.add-desc-section {
+  flex: 1;
+  min-width: 280px;
+  padding: 10px;
+  background: #ecf5ff;
+  border-radius: 6px;
+}
+
+.add-desc-section h4 {
+  color: #409eff;
+}
+
+.add-desc-form {
+  display: flex;
+  gap: 6px;
+}
+
+/* 预览模式 */
 .preview-section {
   background: #fef0e6;
   padding: 10px;
@@ -618,7 +671,7 @@ function handleSearchSimilar() {
   background: transparent;
 }
 
-.preview-item span {
+.preview-item .desc-content {
   color: #e6a23c;
 }
 
@@ -628,14 +681,6 @@ function handleSearchSimilar() {
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px dashed #e6a23c;
-}
-
-.actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 10px;
-  border-top: 1px solid #eee;
 }
 </style>
 
