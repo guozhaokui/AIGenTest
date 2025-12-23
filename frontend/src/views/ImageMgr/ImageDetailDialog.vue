@@ -65,9 +65,31 @@
           <!-- 正常模式：显示已保存的描述 -->
           <template v-else>
             <div v-if="descriptions.length === 0" class="no-desc">暂无描述</div>
-            <div v-for="desc in descriptions" :key="desc.method" class="desc-item">
+            <div v-for="(desc, index) in descriptions" :key="desc.method" class="desc-item">
               <el-tag size="small">{{ desc.method }}</el-tag>
-              <span>{{ desc.content }}</span>
+              <!-- 编辑模式 -->
+              <template v-if="editingIndex === index">
+                <el-input 
+                  v-model="editingContent" 
+                  type="textarea" 
+                  :rows="2" 
+                  size="small"
+                  style="flex: 1;"
+                />
+                <div class="edit-actions">
+                  <el-button type="success" size="small" @click="handleSaveEdit(desc.method)" :loading="savingEdit">
+                    保存
+                  </el-button>
+                  <el-button size="small" @click="handleCancelEdit">取消</el-button>
+                </div>
+              </template>
+              <!-- 查看模式 -->
+              <template v-else>
+                <span class="desc-content" @dblclick="handleStartEdit(index, desc.content)">{{ desc.content }}</span>
+                <el-button link type="primary" size="small" @click="handleStartEdit(index, desc.content)">
+                  编辑
+                </el-button>
+              </template>
             </div>
           </template>
         </div>
@@ -191,6 +213,11 @@ const generateForm = reactive({
 
 // 预览状态
 const previewCaption = ref(null);  // { method: 'vlm', content: '...' }
+
+// 编辑状态
+const editingIndex = ref(-1);  // 正在编辑的描述索引，-1 表示没有编辑
+const editingContent = ref('');  // 编辑中的内容
+const savingEdit = ref(false);  // 是否正在保存
 
 const statusText = {
   ready: '就绪',
@@ -335,6 +362,50 @@ function handleCancelPreview() {
   ElMessage.info('已取消');
 }
 
+// 开始编辑描述
+function handleStartEdit(index, content) {
+  editingIndex.value = index;
+  editingContent.value = content;
+}
+
+// 取消编辑
+function handleCancelEdit() {
+  editingIndex.value = -1;
+  editingContent.value = '';
+}
+
+// 保存编辑的描述
+async function handleSaveEdit(method) {
+  if (!editingContent.value.trim()) {
+    return ElMessage.warning('描述内容不能为空');
+  }
+  
+  savingEdit.value = true;
+  try {
+    await saveDescription(
+      imageData.value.sha256,
+      method,
+      editingContent.value.trim(),
+      true  // 重新计算嵌入
+    );
+    
+    ElMessage.success('描述已更新并重新计算嵌入');
+    
+    // 刷新描述列表
+    const descData = await getDescriptions(imageData.value.sha256);
+    descriptions.value = descData.descriptions || [];
+    
+    // 退出编辑模式
+    editingIndex.value = -1;
+    editingContent.value = '';
+  } catch (e) {
+    ElMessage.error('保存失败: ' + (e.response?.data?.detail || e.message));
+    console.error(e);
+  } finally {
+    savingEdit.value = false;
+  }
+}
+
 async function handleAddDesc() {
   if (!newDesc.method || !newDesc.content) {
     return ElMessage.warning('请填写类型和描述内容');
@@ -473,13 +544,40 @@ function handleSearchSimilar() {
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-size: 13px;
+  padding: 6px 8px;
+  background: #fafafa;
+  border-radius: 4px;
+  flex-wrap: wrap;
 }
 
-.desc-item span {
+.desc-item:hover {
+  background: #f0f0f0;
+}
+
+.desc-item .el-tag {
+  flex-shrink: 0;
+}
+
+.desc-content {
+  flex: 1;
   line-height: 1.5;
   word-break: break-all;
+  cursor: pointer;
+}
+
+.desc-content:hover {
+  color: #409eff;
+}
+
+.edit-actions {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed #ddd;
 }
 
 .add-desc-form {
