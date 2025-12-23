@@ -3295,5 +3295,40 @@
     "createdAt": "2025-12-22T02:56:49.098Z",
     "dimensionScores": {},
     "thumbnailPath": "/modeldb/00187b78-274b-4b5d-a25b-29dff2c84069/245ea0e4-909c-49e2-9079-16619e9a97ac/thumbnail.jpg"
+  },
+  {
+    "id": "dfc1981d-3e64-4366-8a27-d10c65277148",
+    "prompt": "狗",
+    "imagePath": "/imagedb/09/b9/09b99eb771a5c4278fb0affedf4efa96.png",
+    "imageUrls": [],
+    "modelId": "google_gemini_image",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png"
+    },
+    "duration": 12853,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 2,
+      "candidatesTokenCount": 1290,
+      "totalTokenCount": 1292,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 2
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1290
+        }
+      ]
+    },
+    "createdAt": "2025-12-22T07:53:20.593Z",
+    "dimensionScores": {}
   }
 ]

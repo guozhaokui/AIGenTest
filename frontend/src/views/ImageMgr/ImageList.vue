@@ -10,10 +10,18 @@
       </el-select>
       <el-input v-model="filter.source" placeholder="来源" clearable style="width: 150px;" />
       <el-button type="primary" @click="loadImages">刷新</el-button>
+      
+      <div class="spacer"></div>
+      
+      <!-- 视图切换 -->
+      <el-radio-group v-model="viewMode" size="small" @change="onViewModeChange">
+        <el-radio-button value="large">大图</el-radio-button>
+        <el-radio-button value="small">小图</el-radio-button>
+      </el-radio-group>
     </div>
 
     <!-- 图片网格 -->
-    <div class="image-grid" v-loading="loading">
+    <div class="image-grid" :class="viewMode" v-loading="loading">
       <div 
         v-for="img in images" 
         :key="img.sha256" 
@@ -22,11 +30,11 @@
       >
         <div class="image-thumb">
           <img :src="getThumbnailUrl(img.sha256)" :alt="img.sha256" />
-          <div class="status-badge" :class="img.status">
+          <div v-if="viewMode === 'large'" class="status-badge" :class="img.status">
             {{ statusText[img.status] }}
           </div>
         </div>
-        <div class="image-info">
+        <div class="image-info" v-if="viewMode === 'large'">
           <div class="size">{{ img.width }} × {{ img.height }}</div>
           <div class="meta">{{ formatSize(img.file_size) }} · {{ img.format }}</div>
         </div>
@@ -39,96 +47,36 @@
         v-model:current-page="pagination.page"
         v-model:page-size="pagination.size"
         :total="pagination.total"
-        :page-sizes="[20, 50, 100]"
+        :page-sizes="pageSizeOptions"
         layout="total, sizes, prev, pager, next"
         @size-change="loadImages"
         @current-change="loadImages"
       />
     </div>
 
-    <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="图片详情" width="800px">
-      <div class="detail-content" v-if="selectedImage">
-        <div class="detail-left">
-          <img :src="getImageUrl(selectedImage.sha256)" class="detail-image" />
-        </div>
-        <div class="detail-right">
-          <el-descriptions :column="1" border>
-            <el-descriptions-item label="SHA256">
-              <code>{{ selectedImage.sha256 }}</code>
-            </el-descriptions-item>
-            <el-descriptions-item label="尺寸">
-              {{ selectedImage.width }} × {{ selectedImage.height }}
-            </el-descriptions-item>
-            <el-descriptions-item label="大小">
-              {{ formatSize(selectedImage.file_size) }}
-            </el-descriptions-item>
-            <el-descriptions-item label="格式">
-              {{ selectedImage.format }}
-            </el-descriptions-item>
-            <el-descriptions-item label="来源">
-              {{ selectedImage.source || '-' }}
-            </el-descriptions-item>
-            <el-descriptions-item label="状态">
-              <el-tag :type="statusType[selectedImage.status]">
-                {{ statusText[selectedImage.status] }}
-              </el-tag>
-            </el-descriptions-item>
-            <el-descriptions-item label="创建时间">
-              {{ selectedImage.created_at }}
-            </el-descriptions-item>
-          </el-descriptions>
-
-          <!-- 描述列表 -->
-          <div class="descriptions-section">
-            <h4>描述信息</h4>
-            <div v-if="descriptions.length === 0" class="no-desc">暂无描述</div>
-            <div v-for="desc in descriptions" :key="desc.method" class="desc-item">
-              <el-tag size="small">{{ desc.method }}</el-tag>
-              <span>{{ desc.content }}</span>
-            </div>
-          </div>
-
-          <!-- 添加描述 -->
-          <div class="add-desc-section">
-            <h4>添加描述</h4>
-            <el-input v-model="newDesc.method" placeholder="类型 (如: human)" style="width: 120px; margin-right: 8px;" />
-            <el-input v-model="newDesc.content" placeholder="描述内容" style="flex: 1; margin-right: 8px;" />
-            <el-button type="primary" @click="handleAddDesc" :loading="addingDesc">添加</el-button>
-          </div>
-
-          <!-- 操作按钮 -->
-          <div class="actions">
-            <el-button type="primary" @click="handleRecompute(false)" :loading="recomputing">
-              更新图片嵌入
-            </el-button>
-            <el-button type="success" @click="handleRecompute(true)" :loading="recomputing">
-              更新全部嵌入
-            </el-button>
-            <el-button type="danger" @click="handleDelete">删除图片</el-button>
-          </div>
-        </div>
-      </div>
-    </el-dialog>
+    <!-- 详情弹窗组件 -->
+    <ImageDetailDialog 
+      v-model="detailVisible"
+      :sha256="selectedSha256"
+      @deleted="onImageDeleted"
+      @search-similar="onSearchSimilar"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { 
-  listImages, 
-  getImage,
-  deleteImage, 
-  getThumbnailUrl, 
-  getImageUrl,
-  addDescription,
-  getDescriptions,
-  recomputeEmbedding
-} from '@/services/imagemgr';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { ElMessage } from 'element-plus';
+import { useRouter } from 'vue-router';
+import { listImages, getThumbnailUrl } from '@/services/imagemgr';
+import ImageDetailDialog from './ImageDetailDialog.vue';
+
+const router = useRouter();
 
 const loading = ref(false);
 const images = ref([]);
+const viewMode = ref('large'); // 'large' | 'small'
+
 const pagination = reactive({
   page: 1,
   size: 20,
@@ -139,29 +87,38 @@ const filter = reactive({
   source: ''
 });
 
+// 根据视图模式提供不同的分页选项
+const pageSizeOptions = computed(() => {
+  return viewMode.value === 'small' 
+    ? [50, 100, 200] 
+    : [20, 50, 100];
+});
+
 const statusText = {
   ready: '就绪',
   pending: '待处理',
   failed: '失败'
 };
-const statusType = {
-  ready: 'success',
-  pending: 'warning',
-  failed: 'danger'
-};
 
-// 详情相关
+// 详情弹窗
 const detailVisible = ref(false);
-const selectedImage = ref(null);
-const descriptions = ref([]);
-const newDesc = reactive({ method: '', content: '' });
-const addingDesc = ref(false);
-const recomputing = ref(false);
+const selectedSha256 = ref('');
 
 function formatSize(bytes) {
   if (bytes < 1024) return bytes + ' B';
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
   return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+}
+
+function onViewModeChange(mode) {
+  // 切换视图时调整每页数量
+  if (mode === 'small') {
+    pagination.size = 100;
+  } else {
+    pagination.size = 20;
+  }
+  pagination.page = 1;
+  loadImages();
 }
 
 async function loadImages() {
@@ -185,88 +142,20 @@ async function loadImages() {
   }
 }
 
-async function showDetail(img) {
-  selectedImage.value = img;
+function showDetail(img) {
+  selectedSha256.value = img.sha256;
   detailVisible.value = true;
-  
-  // 加载描述
-  try {
-    const data = await getDescriptions(img.sha256);
-    descriptions.value = data.descriptions || [];
-  } catch (e) {
-    descriptions.value = [];
-  }
 }
 
-async function handleAddDesc() {
-  if (!newDesc.method || !newDesc.content) {
-    return ElMessage.warning('请填写类型和内容');
-  }
-  
-  addingDesc.value = true;
-  try {
-    await addDescription(selectedImage.value.sha256, newDesc.method, newDesc.content);
-    ElMessage.success('添加成功');
-    
-    // 刷新描述列表
-    const data = await getDescriptions(selectedImage.value.sha256);
-    descriptions.value = data.descriptions || [];
-    
-    newDesc.method = '';
-    newDesc.content = '';
-  } catch (e) {
-    ElMessage.error('添加失败');
-  } finally {
-    addingDesc.value = false;
-  }
+function onImageDeleted() {
+  loadImages();
 }
 
-async function handleRecompute(includeText) {
-  recomputing.value = true;
-  try {
-    const result = await recomputeEmbedding(selectedImage.value.sha256, includeText);
-    
-    // 构建结果消息
-    const msgs = [];
-    if (result.image_embedding?.status === 'success') {
-      msgs.push('图片嵌入已更新');
-    } else if (result.image_embedding?.status === 'failed') {
-      msgs.push(`图片嵌入失败: ${result.image_embedding.error}`);
-    }
-    
-    if (includeText && result.text_embeddings?.length > 0) {
-      const successCount = result.text_embeddings.filter(e => e.status === 'success').length;
-      msgs.push(`文本嵌入: ${successCount}/${result.text_embeddings.length} 成功`);
-    }
-    
-    ElMessage.success(msgs.join(', ') || '更新完成');
-    
-    // 刷新图片信息
-    const data = await getImage(selectedImage.value.sha256);
-    selectedImage.value = data;
-  } catch (e) {
-    ElMessage.error('更新嵌入失败: ' + (e.response?.data?.error || e.message));
-    console.error(e);
-  } finally {
-    recomputing.value = false;
-  }
-}
-
-async function handleDelete() {
-  try {
-    await ElMessageBox.confirm('确定要删除这张图片吗？', '警告', {
-      type: 'warning'
-    });
-    
-    await deleteImage(selectedImage.value.sha256);
-    ElMessage.success('删除成功');
-    detailVisible.value = false;
-    loadImages();
-  } catch (e) {
-    if (e !== 'cancel') {
-      ElMessage.error('删除失败');
-    }
-  }
+function onSearchSimilar(sha256) {
+  router.push({
+    path: '/imagemgr/search',
+    query: { similar: sha256 }
+  });
 }
 
 onMounted(() => {
@@ -281,18 +170,24 @@ onMounted(() => {
 
 .filter-bar {
   display: flex;
+  align-items: center;
   gap: 12px;
   margin-bottom: 16px;
 }
 
-.image-grid {
+.spacer {
+  flex: 1;
+}
+
+/* 大图模式 */
+.image-grid.large {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
   min-height: 300px;
 }
 
-.image-card {
+.image-grid.large .image-card {
   background: white;
   border-radius: 8px;
   overflow: hidden;
@@ -301,25 +196,25 @@ onMounted(() => {
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.image-card:hover {
+.image-grid.large .image-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 4px 16px rgba(0,0,0,0.15);
 }
 
-.image-thumb {
+.image-grid.large .image-thumb {
   position: relative;
   width: 100%;
   aspect-ratio: 1;
   background: #f5f7fa;
 }
 
-.image-thumb img {
+.image-grid.large .image-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.status-badge {
+.image-grid.large .status-badge {
   position: absolute;
   top: 8px;
   right: 8px;
@@ -329,86 +224,75 @@ onMounted(() => {
   color: white;
 }
 
-.status-badge.ready { background: #67c23a; }
-.status-badge.pending { background: #e6a23c; }
-.status-badge.failed { background: #f56c6c; }
-
-.image-info {
+.image-grid.large .image-info {
   padding: 12px;
 }
 
-.image-info .size {
+.image-grid.large .image-info .size {
   font-weight: 500;
   color: #303133;
 }
 
-.image-info .meta {
+.image-grid.large .image-info .meta {
   font-size: 12px;
   color: #909399;
   margin-top: 4px;
 }
+
+/* 小图模式 */
+.image-grid.small {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  min-height: 300px;
+}
+
+.image-grid.small .image-card {
+  background: white;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.image-grid.small .image-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+.image-grid.small .image-thumb {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: #f5f7fa;
+}
+
+.image-grid.small .image-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.image-grid.small .status-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 10px;
+  color: white;
+}
+
+/* 通用状态颜色 */
+.status-badge.ready { background: #67c23a; }
+.status-badge.pending { background: #e6a23c; }
+.status-badge.failed { background: #f56c6c; }
 
 .pagination {
   margin-top: 24px;
   display: flex;
   justify-content: center;
 }
-
-/* 详情弹窗 */
-.detail-content {
-  display: flex;
-  gap: 24px;
-}
-
-.detail-left {
-  flex: 0 0 350px;
-}
-
-.detail-image {
-  width: 100%;
-  border-radius: 8px;
-}
-
-.detail-right {
-  flex: 1;
-}
-
-.descriptions-section {
-  margin-top: 16px;
-}
-
-.descriptions-section h4 {
-  margin: 0 0 8px 0;
-  color: #303133;
-}
-
-.no-desc {
-  color: #909399;
-  font-size: 14px;
-}
-
-.desc-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.add-desc-section {
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-}
-
-.add-desc-section h4 {
-  margin: 0 12px 0 0;
-  white-space: nowrap;
-}
-
-.actions {
-  margin-top: 24px;
-  padding-top: 16px;
-  border-top: 1px solid #eee;
-}
 </style>
-

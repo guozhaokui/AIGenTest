@@ -70,3 +70,34 @@ defaults:
   image_embedding: siglip2_local
   text_embedding: bge_local  # BGE 专为检索设计，效果更好
 
+# VLM 图片描述生成服务（支持多个）
+vlm_services:
+  # Qwen3-VL-8B 服务
+  qwen3vl:
+    name: "Qwen3-VL-8B"
+    endpoint: http://localhost:6050
+    timeout: 60
+    is_enabled: true
+    description: "通义千问 VL 8B 视觉语言模型"
+  
+  # 可以添加更多 VLM 服务
+  # gemini:
+  #   name: "Gemini Pro Vision"
+  #   endpoint: http://localhost:6051
+  #   timeout: 60
+  #   is_enabled: false
+  #   description: "Google Gemini 视觉模型"
+
+# VLM 全局配置
+vlm:
+  # 默认使用的 VLM 服务
+  default_service: qwen3vl
+  # 提示词模板
+  prompts:
+    default: "请详细描述这张图片的内容，包括主要物体、场景、颜色、风格等特征。"
+    short: "用一句话简洁描述这张图片。"
+    detailed: "请详细地描述这张图片，包括：1)主要物体及其位置关系 2)场景和背景 3)颜色和光线 4)风格和氛围 5)任何文字或标识 6)如果你知道的话，再描述这个图片的外部背景。"
+    tags: "请为这张图片生成10-20个描述性标签，用逗号分隔。"
+    objects: "列出这张图片中所有可识别的物体，用逗号分隔。"
+  default_prompt: default
+

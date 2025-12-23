@@ -17,6 +17,7 @@ const ImageMgrIndex = () => import('../views/ImageMgr/index.vue');
 const ImageList = () => import('../views/ImageMgr/ImageList.vue');
 const ImageSearch = () => import('../views/ImageMgr/ImageSearch.vue');
 const ImageUpload = () => import('../views/ImageMgr/ImageUpload.vue');
+const BatchImport = () => import('../views/ImageMgr/BatchImport.vue');
 
 const routes = [
   { path: '/', redirect: '/admin' },
@@ -56,7 +57,8 @@ const routes = [
       { path: '', redirect: '/imagemgr/list' },
       { path: 'list', name: 'ImageList', component: ImageList },
       { path: 'search', name: 'ImageSearch', component: ImageSearch },
-      { path: 'upload', name: 'ImageUpload', component: ImageUpload }
+      { path: 'upload', name: 'ImageUpload', component: ImageUpload },
+      { path: 'batch', name: 'BatchImport', component: BatchImport }
     ]
   }
 ];
