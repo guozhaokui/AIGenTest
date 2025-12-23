@@ -64,8 +64,8 @@ else
     echo -e "${GREEN}  ✓ PID: $!${NC}"
 fi
 
-# 启动 Qwen3 重排序服务 (6013) - 可选，消耗更多显存
-if [ "$1" = "--with-rerank" ]; then
+# 启动 Qwen3 重排序服务 (6013) - 默认启动，使用 --no-rerank 跳过
+if [ "$1" != "--no-rerank" ]; then
     if pgrep -f "qwen3_rerank.py" > /dev/null; then
         echo -e "${YELLOW}⚡ 重排序服务 (6013): 已在运行${NC}"
     else
@@ -97,7 +97,7 @@ check_service() {
 check_service "图片嵌入服务 (SigLIP-2)" 6010
 check_service "文本嵌入服务 (Qwen3)" 6011
 check_service "文本嵌入服务 (BGE)" 6012
-if [ "$1" = "--with-rerank" ]; then
+if [ "$1" != "--no-rerank" ]; then
     check_service "重排序服务 (Qwen3)" 6013
 fi
 
@@ -110,7 +110,7 @@ echo -e "${GREEN}远程连接信息:${NC}"
 echo "  图片嵌入 (SigLIP-2): http://${SERVER_IP}:6010"
 echo "  文本嵌入 (Qwen3):    http://${SERVER_IP}:6011"
 echo "  文本嵌入 (BGE):      http://${SERVER_IP}:6012"
-if [ "$1" = "--with-rerank" ]; then
+if [ "$1" != "--no-rerank" ]; then
     echo "  重排序 (Qwen3):      http://${SERVER_IP}:6013"
 fi
 echo ""
