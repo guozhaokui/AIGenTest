@@ -81,13 +81,20 @@ def compute_relevance_score(query: str, document: str) -> float:
     使用 LLM 的 logits 来判断相关性，而不是生成文本（更快）
     思路：给模型一个 prompt，看它对 "是" 的置信度
     """
-    # 构造 prompt
-    prompt = f"""判断以下图片描述是否与用户查询相关。
+    # 构造严格的 prompt，强调必须精确匹配关键词
+    # 截取描述前200字符避免太长
+    doc_snippet = document[:200].replace('\n', ' ')
+    
+    prompt = f"""任务：判断图片描述是否匹配用户搜索。
 
-图片描述：{document}
-用户查询：{query}
+用户搜索：{query}
+图片描述：{doc_snippet}
 
-请只回答"是"或"否"："""
+判断标准：描述中必须包含与"{query}"直接相关的关键词或概念。
+如果描述完全没有提及相关内容，回答"否"。
+如果描述明确涉及相关内容，回答"是"。
+
+回答（是/否）："""
 
     # Tokenize
     inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=512)
@@ -138,11 +145,32 @@ async def rerank(req: RerankRequest):
         results: 按相关性排序的结果
     """
     try:
+        print(f"\n{'='*60}")
+        print(f"[Rerank] 收到请求")
+        print(f"  查询: {req.query}")
+        print(f"  文档数: {len(req.documents)}")
+        print(f"  top_k: {req.top_k}")
+        
         if not req.documents:
+            print(f"  结果: 无文档，返回空")
             return {"query": req.query, "results": []}
         
+        # 打印每个文档
+        print(f"\n[Rerank] 输入文档:")
+        for i, doc in enumerate(req.documents):
+            doc_preview = doc[:50] + "..." if len(doc) > 50 else doc
+            print(f"  [{i}] {doc_preview}")
+        
         # 计算每个文档的相关性分数
+        print(f"\n[Rerank] 计算相关性分数...")
         scores = compute_relevance_score_batch(req.query, req.documents)
+        
+        # 打印每个分数
+        print(f"\n[Rerank] 相关性分数:")
+        for i, (doc, score) in enumerate(zip(req.documents, scores)):
+            doc_preview = doc[:30] + "..." if len(doc) > 30 else doc
+            bar = "█" * int(score * 20)
+            print(f"  [{i}] {score*100:5.1f}% {bar:<20} {doc_preview}")
         
         # 构建结果
         results = []
@@ -159,6 +187,13 @@ async def rerank(req: RerankRequest):
         # 返回 top_k
         if req.top_k:
             results = results[:req.top_k]
+        
+        # 打印排序后结果
+        print(f"\n[Rerank] 排序后结果 (top {len(results)}):")
+        for i, r in enumerate(results):
+            doc_preview = r["document"][:30] + "..." if len(r["document"]) > 30 else r["document"]
+            print(f"  {i+1}. [{r['original_index']}] {r['score']*100:5.1f}% {doc_preview}")
+        print(f"{'='*60}\n")
         
         return {
             "query": req.query,
