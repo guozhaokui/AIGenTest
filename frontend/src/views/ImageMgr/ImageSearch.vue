@@ -81,25 +81,14 @@
       <h3>搜索结果 ({{ results.length }} 张)</h3>
       <div class="result-grid">
         <div 
-          v-for="(item, idx) in results" 
+          v-for="item in results" 
           :key="item.sha256"
           class="result-card"
           @click="showDetail(item)"
         >
-          <div class="rank">{{ idx + 1 }}</div>
           <div class="result-thumb">
             <img :src="getThumbnailUrl(item.sha256)" />
-          </div>
-          <div class="result-info">
-            <div class="score">
-              相似度: <strong>{{ (item.score * 100).toFixed(1) }}%</strong>
-            </div>
-            <div class="matched" v-if="item.matched_by">
-              匹配: {{ item.matched_by }}
-            </div>
-            <div class="matched-text" v-if="item.matched_text">
-              "{{ truncate(item.matched_text, 50) }}"
-            </div>
+            <div class="score-badge">{{ (item.score * 100).toFixed(0) }}%</div>
           </div>
         </div>
       </div>
@@ -110,29 +99,13 @@
       <el-empty description="未找到匹配的图片" />
     </div>
 
-    <!-- 详情弹窗 -->
-    <el-dialog v-model="detailVisible" title="图片详情" width="600px">
-      <div class="detail-content" v-if="selectedImage">
-        <img :src="getImageUrl(selectedImage.sha256)" class="detail-image" />
-        <el-descriptions :column="2" border style="margin-top: 16px;">
-          <el-descriptions-item label="SHA256" :span="2">
-            <code>{{ selectedImage.sha256 }}</code>
-          </el-descriptions-item>
-          <el-descriptions-item label="相似度">
-            {{ (selectedImage.score * 100).toFixed(1) }}%
-          </el-descriptions-item>
-          <el-descriptions-item label="匹配方式">
-            {{ selectedImage.matched_by }}
-          </el-descriptions-item>
-          <el-descriptions-item label="尺寸">
-            {{ selectedImage.width }} × {{ selectedImage.height }}
-          </el-descriptions-item>
-        </el-descriptions>
-        <div v-if="selectedImage.matched_text" class="matched-text-full">
-          <strong>匹配文本:</strong> {{ selectedImage.matched_text }}
-        </div>
-      </div>
-    </el-dialog>
+    <!-- 详情弹窗组件 -->
+    <ImageDetailDialog 
+      v-model="detailVisible"
+      :sha256="selectedSha256"
+      @deleted="onImageDeleted"
+      @search-similar="onSearchSimilar"
+    />
   </div>
 </template>
 
@@ -146,9 +119,9 @@ import {
   searchByImage, 
   searchSimilar,
   getTextIndexes,
-  getThumbnailUrl, 
-  getImageUrl 
+  getThumbnailUrl
 } from '@/services/imagemgr';
+import ImageDetailDialog from './ImageDetailDialog.vue';
 
 const route = useRoute();
 
@@ -167,9 +140,9 @@ const selectedIndex = ref('');
 // 相似图片搜索
 const similarSource = ref('');
 
-// 详情
+// 详情弹窗
 const detailVisible = ref(false);
-const selectedImage = ref(null);
+const selectedSha256 = ref('');
 
 // 加载文本索引列表
 async function loadTextIndexes() {
@@ -187,7 +160,6 @@ function handleRouteQuery() {
   if (similar) {
     similarSource.value = similar;
     searchMode.value = 'similar';
-    // 自动执行搜索
     handleSimilarSearch();
   }
 }
@@ -206,11 +178,6 @@ onMounted(() => {
   handleRouteQuery();
 });
 
-function truncate(text, len) {
-  if (!text) return '';
-  return text.length > len ? text.slice(0, len) + '...' : text;
-}
-
 function onFileChange(uploadFile) {
   const file = uploadFile.raw;
   if (!file) return;
@@ -222,6 +189,12 @@ function onFileChange(uploadFile) {
 function clearImage() {
   queryFile.value = null;
   previewUrl.value = '';
+  results.value = [];
+  searched.value = false;
+}
+
+function clearSimilar() {
+  similarSource.value = '';
   results.value = [];
   searched.value = false;
 }
@@ -289,15 +262,20 @@ async function handleSimilarSearch() {
   }
 }
 
-function clearSimilar() {
-  similarSource.value = '';
-  results.value = [];
-  searched.value = false;
+function showDetail(item) {
+  selectedSha256.value = item.sha256;
+  detailVisible.value = true;
 }
 
-function showDetail(item) {
-  selectedImage.value = item;
-  detailVisible.value = true;
+function onImageDeleted(sha256) {
+  // 从结果中移除被删除的图片
+  results.value = results.value.filter(r => r.sha256 !== sha256);
+}
+
+function onSearchSimilar(sha256) {
+  similarSource.value = sha256;
+  searchMode.value = 'similar';
+  handleSimilarSearch();
 }
 </script>
 
@@ -422,8 +400,8 @@ function showDetail(item) {
 
 .result-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
 }
 
 .result-card {
@@ -440,24 +418,8 @@ function showDetail(item) {
   transform: translateY(-4px);
 }
 
-.rank {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 28px;
-  height: 28px;
-  background: #409eff;
-  color: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 14px;
-  z-index: 1;
-}
-
 .result-thumb {
+  position: relative;
   width: 100%;
   aspect-ratio: 1;
   background: #f5f7fa;
@@ -469,48 +431,19 @@ function showDetail(item) {
   object-fit: cover;
 }
 
-.result-info {
-  padding: 12px;
-}
-
-.result-info .score {
-  color: #303133;
-}
-
-.result-info .score strong {
-  color: #409eff;
-}
-
-.result-info .matched {
+.score-badge {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
   font-size: 12px;
-  color: #909399;
-  margin-top: 4px;
-}
-
-.result-info .matched-text {
-  font-size: 12px;
-  color: #606266;
-  margin-top: 4px;
-  font-style: italic;
+  font-weight: bold;
+  border-radius: 4px;
 }
 
 .no-results {
   margin-top: 48px;
 }
-
-/* 详情 */
-.detail-image {
-  width: 100%;
-  max-height: 400px;
-  object-fit: contain;
-  border-radius: 8px;
-}
-
-.matched-text-full {
-  margin-top: 16px;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 4px;
-}
 </style>
-
