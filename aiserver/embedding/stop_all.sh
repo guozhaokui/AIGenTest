@@ -38,6 +38,15 @@ else
     echo "BGE 嵌入服务未运行"
 fi
 
+# 停止重排序服务
+if pgrep -f "qwen3_rerank.py" > /dev/null; then
+    echo -e "${YELLOW}停止重排序服务...${NC}"
+    pkill -f "qwen3_rerank.py"
+    echo -e "${GREEN}✓ 已停止${NC}"
+else
+    echo "重排序服务未运行"
+fi
+
 echo ""
 echo "所有嵌入服务已停止"
 

@@ -805,7 +805,7 @@ def search_by_text(req: TextSearchRequest):
     # 取 top_k 个结果
     deduplicated = list(seen_sha256.values())[:req.top_k]
     
-    # 补充图片信息
+    # 补充图片信息和获取描述文本
     enriched_results = []
     for r in deduplicated:
         image = db.get_image(r["sha256"])
@@ -814,14 +814,35 @@ def search_by_text(req: TextSearchRequest):
             matched_text = storage.get_description(r["sha256"], r["matched_by"])
             enriched_results.append({
                 **r,
-                "matched_text": matched_text,
+                "matched_text": matched_text or "",
                 "width": image["width"],
                 "height": image["height"]
             })
     
+    # 如果启用重排序，使用 LLM 精排
+    reranked = False
+    if req.rerank and enriched_results:
+        # 提取描述文本用于重排序
+        documents = [r.get("matched_text", "") for r in enriched_results]
+        rerank_results = embedding_client.rerank(req.query, documents, req.top_k)
+        
+        if rerank_results:
+            # 根据重排序结果重新排列
+            reranked_enriched = []
+            for rr in rerank_results:
+                original_idx = rr["original_index"]
+                if original_idx < len(enriched_results):
+                    result = enriched_results[original_idx].copy()
+                    result["rerank_score"] = rr["score"]
+                    result["vector_score"] = result.pop("score")  # 保留原向量分数
+                    reranked_enriched.append(result)
+            enriched_results = reranked_enriched
+            reranked = True
+    
     return {
         "query": req.query, 
         "indexes_searched": used_models,
+        "reranked": reranked,
         "results": enriched_results
     }
 
