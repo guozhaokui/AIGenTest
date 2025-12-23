@@ -54,7 +54,7 @@
     </div>
 
     <!-- 以图搜图 -->
-    <div v-if="searchMode === 'image'" class="image-input">
+    <div v-if="searchMode === 'image'" class="image-input" @paste="onPaste">
       <el-upload
         class="upload-area"
         drag
@@ -66,7 +66,10 @@
       >
         <div v-if="!previewUrl" class="upload-placeholder">
           <el-icon class="el-icon--upload" :size="48"><UploadFilled /></el-icon>
-          <div class="el-upload__text">将图片拖到此处，或<em>点击上传</em></div>
+          <div class="el-upload__text">
+            将图片拖到此处，或<em>点击上传</em>
+            <div class="paste-hint">也可以按 <kbd>Ctrl</kbd>+<kbd>V</kbd> 粘贴图片</div>
+          </div>
         </div>
         <img v-else :src="previewUrl" class="preview-image" />
       </el-upload>
@@ -110,7 +113,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { UploadFilled } from '@element-plus/icons-vue';
@@ -173,9 +176,42 @@ watch(() => route.query.similar, (newVal) => {
   }
 });
 
+// 全局粘贴事件处理
+function handleGlobalPaste(e) {
+  // 只在以图搜图模式下处理粘贴
+  if (searchMode.value !== 'image') return;
+  
+  const items = e.clipboardData?.items;
+  if (!items) return;
+  
+  for (const item of items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) {
+        queryFile.value = file;
+        previewUrl.value = URL.createObjectURL(file);
+        ElMessage.success('已从剪贴板粘贴图片');
+        e.preventDefault();
+        return;
+      }
+    }
+  }
+}
+
+// 处理粘贴事件（备用，用于 div 元素）
+function onPaste(e) {
+  handleGlobalPaste(e);
+}
+
 onMounted(() => {
   loadTextIndexes();
   handleRouteQuery();
+  // 添加全局粘贴监听
+  document.addEventListener('paste', handleGlobalPaste);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('paste', handleGlobalPaste);
 });
 
 function onFileChange(uploadFile) {
@@ -375,6 +411,23 @@ function onSearchSimilar(sha256) {
 .upload-placeholder {
   text-align: center;
   color: #909399;
+}
+
+.paste-hint {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #c0c4cc;
+}
+
+.paste-hint kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-family: monospace;
+  background: #f5f7fa;
+  border: 1px solid #dcdfe6;
+  border-radius: 3px;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.1);
 }
 
 .preview-image {
