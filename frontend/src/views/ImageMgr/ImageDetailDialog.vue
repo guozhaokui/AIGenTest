@@ -45,6 +45,9 @@
           
           <!-- 操作按钮放在基本信息下方 -->
           <div class="actions">
+            <el-button size="small" @click="handleDownload">
+              下载原图
+            </el-button>
             <el-button type="info" size="small" @click="handleSearchSimilar">
               搜索相似图片
             </el-button>
@@ -486,6 +489,24 @@ async function handleDelete() {
 function handleSearchSimilar() {
   emit('search-similar', imageData.value.sha256);
   emit('update:modelValue', false);
+}
+
+function handleDownload() {
+  if (!imageData.value) return;
+  
+  const url = getImageUrl(imageData.value.sha256);
+  const filename = `${imageData.value.sha256.slice(0, 16)}.${imageData.value.format.toLowerCase()}`;
+  
+  // 创建隐藏的 a 标签来触发下载
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.target = '_blank';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  
+  ElMessage.success('开始下载');
 }
 </script>
 

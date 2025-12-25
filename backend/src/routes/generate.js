@@ -228,7 +228,11 @@ router.post('/', upload.any(), async (req, res, next) => {
 
       const startT = Date.now();
       // 合并 imageSlots：优先使用前端传递的（带有实际 path），否则使用配置中的定义
-      const frontendSlots = req.body?.imageSlots;
+      let frontendSlots = req.body?.imageSlots;
+      // 如果是 JSON 字符串（来自 FormData），需要解析
+      if (typeof frontendSlots === 'string') {
+        try { frontendSlots = JSON.parse(frontendSlots); } catch { frontendSlots = null; }
+      }
       const configSlots = selected.input?.imageSlots || [];
       // 如果前端传递了 imageSlots（带有 path），直接使用；否则使用配置定义
       const mergedImageSlots = (frontendSlots && frontendSlots.length > 0) ? frontendSlots : configSlots;

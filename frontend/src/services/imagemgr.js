@@ -379,7 +379,9 @@ export function getTextIndexes() {
 export function searchByText(query, topK = 100, index = null, rerank = false) {
   const params = { query, top_k: topK, rerank };
   if (index) params.index = index;
-  return imagemgrApi.post('/search/text', params).then(r => r.data);
+  // 开启重排序时需要更长的超时时间（5分钟）
+  const timeout = rerank ? 300000 : 60000;
+  return imagemgrApi.post('/search/text', params, { timeout }).then(r => r.data);
 }
 
 /**

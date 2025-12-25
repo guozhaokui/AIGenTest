@@ -208,6 +208,21 @@
             </el-button>
           </div>
           
+          <!-- 后台任务提示 -->
+          <el-alert 
+            v-if="rebuilding" 
+            type="info" 
+            :closable="false"
+            style="margin-bottom: 16px;"
+          >
+            <template #title>
+              <span>任务正在后台运行：{{ getModelNameByIndex(rebuildingIndex) }}</span>
+            </template>
+            <template #default>
+              切换到其他页面后任务会继续运行，回到此页面可查看进度
+            </template>
+          </el-alert>
+
           <!-- 索引状态表格 -->
           <el-table :data="indexStatus" v-loading="loadingIndexStatus" style="width: 100%; margin-bottom: 20px;">
             <el-table-column prop="model" label="模型" width="180" />
@@ -238,7 +253,7 @@
                   size="small" 
                   type="primary" 
                   :disabled="!row.needs_rebuild || rebuilding"
-                  @click="startRebuild(row.index_name)"
+                  @click="selectIndex(row.index_name)"
                 >
                   补充
                 </el-button>
@@ -246,22 +261,22 @@
             </el-table-column>
           </el-table>
 
-          <!-- 更新配置 -->
-          <el-form :model="rebuildForm" label-width="120px" class="import-form" v-if="rebuildingIndex">
+          <!-- 更新配置（显示选中的索引或正在运行的任务） -->
+          <el-form label-width="120px" class="import-form" v-if="selectedIndex || rebuildingIndex">
             <el-form-item label="目标模型">
-              <el-tag size="large">{{ getModelNameByIndex(rebuildingIndex) }}</el-tag>
-              <span class="form-tip">索引: {{ rebuildingIndex }}</span>
+              <el-tag size="large">{{ getModelNameByIndex(selectedIndex || rebuildingIndex) }}</el-tag>
+              <span class="form-tip">索引: {{ selectedIndex || rebuildingIndex }}</span>
             </el-form-item>
-            <el-form-item label="并发数">
-              <el-input-number v-model="rebuildForm.concurrency" :min="1" :max="16" :disabled="rebuilding" />
+            <el-form-item label="并发数" v-if="!rebuilding">
+              <el-input-number v-model="concurrency" :min="1" :max="16" />
               <span class="form-tip">同时请求嵌入服务的数量</span>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="handleRebuild" :loading="rebuilding">
+              <el-button type="primary" @click="handleRebuild" :loading="rebuilding" :disabled="rebuilding">
                 {{ rebuilding ? '更新中...' : '开始更新' }}
               </el-button>
               <el-button v-if="rebuilding" @click="cancelRebuild" type="danger">取消</el-button>
-              <el-button v-if="!rebuilding" @click="rebuildingIndex = null">取消选择</el-button>
+              <el-button v-if="!rebuilding && selectedIndex" @click="selectedIndex = null">取消选择</el-button>
             </el-form-item>
           </el-form>
 
@@ -317,18 +332,21 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, onUnmounted } from 'vue';
+import { ref, reactive, computed, onMounted, onUnmounted, watch } from 'vue';
 import { ElMessage } from 'element-plus';
 import { 
   batchImportStream, 
   batchGenerateCaptionsStream, 
   getVlmPrompts, 
   getVlmServices,
-  getRebuildIndexStatus,
-  rebuildIndexStream
+  getRebuildIndexStatus
 } from '@/services/imagemgr';
+import { useBatchTasksStore } from '@/stores/batchTasks';
 
 const activeTab = ref('import');
+
+// 使用全局 store 管理更新嵌入任务（支持后台运行）
+const batchStore = useBatchTasksStore();
 
 // VLM 服务和提示词列表
 const vlmServices = ref([]);
@@ -366,18 +384,18 @@ const captionProgress = ref(null);
 const captionResult = ref(null);
 let cancelCaptionsFn = null;
 
-// 更新嵌入（补充缺失的模型嵌入）
+// 更新嵌入（使用全局 store，支持后台运行）
 const indexStatus = ref([]);
 const loadingIndexStatus = ref(false);
-const rebuildingIndex = ref(null);
-const rebuildForm = reactive({
-  concurrency: 4
-});
-const rebuilding = ref(false);
-const rebuildProgress = ref(null);
-const rebuildResult = ref(null);
-let cancelRebuildFn = null;
-let rebuildStartTime = null;
+const selectedIndex = ref(null);  // 选中的索引（用于配置）
+const concurrency = ref(4);
+
+// 从 store 读取状态
+const rebuilding = computed(() => batchStore.rebuildTask.running);
+const rebuildProgress = computed(() => batchStore.rebuildTask.progress);
+const rebuildResult = computed(() => batchStore.rebuildTask.result);
+const rebuildError = computed(() => batchStore.rebuildTask.error);
+const rebuildingIndex = computed(() => batchStore.rebuildTask.indexName);
 
 const statusType = {
   imported: 'success',
@@ -479,7 +497,7 @@ function cancelCaptions() {
   ElMessage.info('已取消生成');
 }
 
-// 更新嵌入操作（补充缺失的模型嵌入）
+// 更新嵌入操作（使用全局 store，支持后台运行）
 async function loadIndexStatus() {
   loadingIndexStatus.value = true;
   try {
@@ -497,62 +515,42 @@ function getModelNameByIndex(indexName) {
   return idx ? idx.model : indexName;
 }
 
-function startRebuild(indexName) {
-  rebuildingIndex.value = indexName;
-  rebuildProgress.value = null;
-  rebuildResult.value = null;
+function selectIndex(indexName) {
+  // 如果任务正在运行，不允许切换
+  if (rebuilding.value) {
+    ElMessage.warning('请等待当前任务完成或取消后再选择');
+    return;
+  }
+  selectedIndex.value = indexName;
+  batchStore.clearRebuildResult();
 }
 
 function handleRebuild() {
-  if (!rebuildingIndex.value) return;
+  if (!selectedIndex.value) return;
   
-  rebuilding.value = true;
-  rebuildProgress.value = null;
-  rebuildResult.value = null;
-  rebuildStartTime = Date.now();
-  
-  const options = {
-    index_name: rebuildingIndex.value,
-    concurrency: rebuildForm.concurrency
-  };
-  
-  cancelRebuildFn = rebuildIndexStream(
-    options,
-    (data) => {
-      const elapsed = (Date.now() - rebuildStartTime) / 1000;
-      const current = data.processed + data.failed;
-      const percent = data.total > 0 ? Math.round((current / data.total) * 100) : 0;
-      const speed = elapsed > 0 ? (current / elapsed).toFixed(1) : 0;
-      const remaining = data.total - current;
-      const eta = speed > 0 ? remaining / parseFloat(speed) : 0;
-      
-      rebuildProgress.value = {
-        ...data,
-        percent,
-        speed,
-        elapsed,
-        eta
-      };
-    },
-    (data) => {
-      rebuildResult.value = data;
-      rebuilding.value = false;
-      ElMessage.success(`更新完成: ${data.processed} 条`);
-      // 刷新状态
-      loadIndexStatus();
-    },
-    (err) => {
-      rebuilding.value = false;
-      ElMessage.error('更新失败: ' + err.message);
-    }
-  );
+  batchStore.startRebuildTask(selectedIndex.value, concurrency.value);
+  ElMessage.info('任务已开始，可以切换到其他页面，任务会在后台继续运行');
 }
 
 function cancelRebuild() {
-  if (cancelRebuildFn) cancelRebuildFn();
-  rebuilding.value = false;
+  batchStore.cancelRebuildTask();
   ElMessage.info('已取消更新');
 }
+
+// 监听任务完成
+watch(() => batchStore.rebuildTask.result, (result) => {
+  if (result) {
+    ElMessage.success(`更新完成: ${result.processed} 条`);
+    loadIndexStatus();
+  }
+});
+
+// 监听任务错误
+watch(() => batchStore.rebuildTask.error, (error) => {
+  if (error) {
+    ElMessage.error('更新失败: ' + error);
+  }
+});
 
 onMounted(() => {
   loadVlmServices();
@@ -561,10 +559,10 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-  // 组件卸载时取消所有进行中的操作
+  // 组件卸载时取消导入和生成描述操作（这些不需要后台运行）
+  // 注意：更新嵌入任务由 store 管理，不在这里取消，支持后台运行
   if (cancelImportFn) cancelImportFn();
   if (cancelCaptionsFn) cancelCaptionsFn();
-  if (cancelRebuildFn) cancelRebuildFn();
 });
 </script>
 

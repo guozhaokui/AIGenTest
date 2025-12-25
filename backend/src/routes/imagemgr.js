@@ -227,7 +227,9 @@ router.post('/images/:sha256/recompute-embedding', async (req, res, next) => {
 
 router.post('/search/text', async (req, res, next) => {
   try {
-    const response = await imagemgrClient.post('/api/search/text', req.body);
+    // 开启重排序时需要更长的超时时间（5分钟）
+    const timeout = req.body.rerank ? 300000 : 60000;
+    const response = await imagemgrClient.post('/api/search/text', req.body, { timeout });
     res.json(response.data);
   } catch (err) {
     next(err);

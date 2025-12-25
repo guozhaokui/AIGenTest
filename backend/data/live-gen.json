@@ -3330,5 +3330,98 @@
     },
     "createdAt": "2025-12-22T07:53:20.593Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "32107719-caf3-4826-9734-c16c20a4a155",
+    "prompt": "",
+    "imagePath": "/modeldb/f3ac1371-ff89-4a73-84f0-7c854e011d01/a392425f-f2a5-4736-8ad3-cc03cacc73d8",
+    "imageUrls": [
+      "imagedb/a3/d9/a3d90fd5a2ab08d146f5d7a4c631b330.jpg",
+      "imagedb/1f/93/1f937e92fd3cd1168d21cdaeccde96ee.jpg",
+      "imagedb/3c/05/3c0575bc24d1db22931e61cd25167376.jpg",
+      "imagedb/c1/23/c1237d41b60c590450124f63b1acd1b0.jpg"
+    ],
+    "modelId": "tripo_3d_multiview",
+    "modelName": "",
+    "params": {
+      "modelVersion": "v3.0-20250812",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "modelSeed": -1
+    },
+    "duration": 93824,
+    "info3d": {
+      "modelDir": "/modeldb/f3ac1371-ff89-4a73-84f0-7c854e011d01/a392425f-f2a5-4736-8ad3-cc03cacc73d8",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-25T08:24:20.445Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/f3ac1371-ff89-4a73-84f0-7c854e011d01/a392425f-f2a5-4736-8ad3-cc03cacc73d8/thumbnail.jpg"
+  },
+  {
+    "id": "8e8b7ec5-b52a-49c9-b1c0-6b373baf6590",
+    "prompt": "",
+    "imagePath": "/modeldb/aa123381-2948-40b6-ae53-46223aa24c6d/95abc9fd-5526-4896-ad14-5f3d8083b8ca",
+    "imageUrls": [
+      "imagedb/a3/d9/a3d90fd5a2ab08d146f5d7a4c631b330.jpg",
+      "imagedb/1f/93/1f937e92fd3cd1168d21cdaeccde96ee.jpg",
+      "imagedb/c1/23/c1237d41b60c590450124f63b1acd1b0.jpg",
+      "imagedb/3c/05/3c0575bc24d1db22931e61cd25167376.jpg"
+    ],
+    "modelId": "meshy_multi_image_to_3d",
+    "modelName": "",
+    "params": {
+      "topology": "triangle",
+      "targetPolycount": 30000
+    },
+    "duration": 316720,
+    "info3d": {
+      "modelDir": "/modeldb/aa123381-2948-40b6-ae53-46223aa24c6d/95abc9fd-5526-4896-ad14-5f3d8083b8ca",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-25T08:31:35.310Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "964be7ca-3575-4314-b751-8a7ed04269b1",
+    "prompt": "北京市海淀区牛顿办公区的外观",
+    "imagePath": "/imagedb/a4/98/a4989b7a6967e2c2f64bf9b3a2cd04dd.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 20893,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 11,
+      "candidatesTokenCount": 1252,
+      "totalTokenCount": 1464,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 11
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 201
+    },
+    "createdAt": "2025-12-25T09:15:19.662Z",
+    "dimensionScores": {}
   }
 ]
