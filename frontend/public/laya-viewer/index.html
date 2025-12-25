@@ -24,33 +24,69 @@
             top: 10px;
             left: 10px;
             z-index: 100;
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 5px;
+            background: transparent;
+            padding: 8px 12px;
             color: white;
             font-family: Arial, sans-serif;
             font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         button {
-            background: #4CAF50;
-            border: none;
-            color: white;
-            padding: 5px 10px;
-            margin: 5px 0;
-            border-radius: 3px;
+            background: rgba(80, 80, 80, 0.9);
+            border: 1px solid rgba(100, 100, 100, 0.5);
+            color: #ddd;
+            padding: 6px 12px;
+            border-radius: 4px;
             cursor: pointer;
             font-size: 12px;
+            transition: all 0.2s;
         }
         button:hover {
-            background: #45a049;
+            background: rgba(100, 100, 100, 0.9);
+            color: #fff;
+        }
+        button.active {
+            background: rgba(70, 130, 180, 0.9);
+            border-color: rgba(100, 160, 210, 0.7);
+            color: #fff;
+        }
+        .mode-group {
+            display: flex;
+            gap: 2px;
+            background: rgba(30, 30, 30, 0.5);
+            border-radius: 4px;
+            padding: 2px;
+        }
+        .mode-group button {
+            border-radius: 3px;
+            padding: 6px 10px;
         }
         select {
-            background: #333;
-            border: 1px solid #555;
-            color: white;
-            padding: 5px;
-            border-radius: 3px;
+            background: rgba(80, 80, 80, 0.9);
+            border: 1px solid rgba(100, 100, 100, 0.5);
+            color: #ddd;
+            padding: 6px 10px;
+            border-radius: 4px;
             font-size: 12px;
+            cursor: pointer;
+        }
+        select:hover {
+            background: rgba(100, 100, 100, 0.9);
+        }
+        .stats {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100;
+            background: rgba(40, 40, 40, 0.7);
+            padding: 8px 12px;
+            border-radius: 6px;
+            color: #ccc;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.5;
         }
         .loading {
             position: absolute;
@@ -65,13 +101,17 @@
 </head>
 <body>
     <div class="controls">
-        <div>模型选择：</div>
-        <select id="modelSelect"></select>
-        <div style="margin-top: 10px;">操作：</div>
+        <select id="modelSelect" title="模型选择"></select>
         <button id="resetBtn">重置视角</button>
-        <button id="fullscreenBtn">全屏</button>
+        <div class="mode-group">
+            <button id="modeWireframe">线框</button>
+            <button id="modeBoth">框+实</button>
+            <button id="modeSolid" class="active">实体</button>
+        </div>
+        <button id="groundBtn" class="active">地面</button>
         <button id="updateThumbnailBtn">更新缩略图</button>
     </div>
+    <div class="stats" id="modelStats"></div>
     <div class="loading" id="loadingText">加载中...</div>
 
     <!-- LayaAir 3.x 本地库 -->
@@ -112,6 +152,9 @@
         let currentModel = null;
         let ground = null;
         let modelOptions = [];
+        let isSolidVisible = true;          // 实体是否显示
+        let isWireframeVisible = false;     // 线框是否显示
+        let wireframeSprite = null;         // 线框精灵
 
         // 解析模型列表
         // 优先使用 models 参数（JSON 数组格式）
@@ -441,8 +484,11 @@
             scene.addChild(ground);
             ground.addComponent(Laya.MeshFilter).sharedMesh = Laya.PrimitiveMesh.createPlane(10, 10, 10, 10);
             const renderer = ground.addComponent(Laya.MeshRenderer);
-            const material = new Laya.BlinnPhongMaterial();
-            material.albedoColor = new Laya.Color(0.6, 0.6, 0.6, 1);
+            // 使用 PBRStandardMaterial，设置粗糙度为1（smoothness=0），金属度为0，消除反光
+            const material = new Laya.PBRStandardMaterial();
+            material.albedoColor = new Laya.Color(0.9, 0.9, 0.9, 1);
+            material.smoothness = 0;  // 粗糙度 = 1 - smoothness，设为0表示完全粗糙
+            material.metallic = 0;    // 非金属材质
             renderer.sharedMaterial = material;
             
             // 地面接收阴影
@@ -480,11 +526,22 @@
             document.getElementById('loadingText').style.display = 'block';
             document.getElementById('loadingText').textContent = '加载中...';
 
-            // 移除当前模型
+            // 移除当前模型和线框
+            if (wireframeSprite) {
+                wireframeSprite.destroy();
+                wireframeSprite = null;
+            }
             if (currentModel) {
                 currentModel.destroy();
                 currentModel = null;
             }
+            // 重置显示状态为纯实体模式
+            displayMode = 'solid';
+            isSolidVisible = true;
+            isWireframeVisible = false;
+            document.getElementById('modeWireframe').classList.remove('active');
+            document.getElementById('modeBoth').classList.remove('active');
+            document.getElementById('modeSolid').classList.add('active');
 
             // 加载GLB模型
             Laya.Sprite3D.load(option.path, Laya.Handler.create(null, (sprite) => {
@@ -497,6 +554,9 @@
                     
                     // 设置模型阴影
                     setupModelShadow(currentModel);
+                    
+                    // 更新统计信息
+                    updateModelStats(currentModel);
                     
                     document.getElementById('loadingText').style.display = 'none';
                     console.log('模型加载成功:', option.path);
@@ -742,6 +802,51 @@
             });
         }
 
+        // 更新模型统计信息（顶点数、面数）
+        function updateModelStats(model) {
+            let totalVertices = 0;
+            let totalTriangles = 0;
+            
+            function countMeshStats(node) {
+                let mesh = null;
+                
+                // 从 MeshFilter 获取 mesh
+                const meshFilter = node.getComponent(Laya.MeshFilter);
+                if (meshFilter && meshFilter.sharedMesh) {
+                    mesh = meshFilter.sharedMesh;
+                }
+                
+                // 从 SkinnedMeshRenderer 获取 mesh
+                const skinnedRenderer = node.getComponent(Laya.SkinnedMeshRenderer);
+                if (!mesh && skinnedRenderer && skinnedRenderer._mesh) {
+                    mesh = skinnedRenderer._mesh;
+                }
+                
+                if (mesh) {
+                    totalVertices += mesh.vertexCount || 0;
+                    // 计算三角形数：索引数 / 3
+                    totalTriangles += Math.floor((mesh.indexCount || 0) / 3);
+                }
+                
+                // 递归处理子节点
+                for (let i = 0; i < node.numChildren; i++) {
+                    countMeshStats(node.getChildAt(i));
+                }
+            }
+            
+            countMeshStats(model);
+            
+            // 格式化数字显示
+            const formatNumber = (num) => {
+                if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+                if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+                return num.toString();
+            };
+            
+            document.getElementById('modelStats').innerHTML = 
+                `顶点: ${formatNumber(totalVertices)}<br>面数: ${formatNumber(totalTriangles)}`;
+        }
+
         // 事件监听
         modelSelect.addEventListener('change', (e) => {
             loadModel(parseInt(e.target.value));
@@ -756,13 +861,214 @@
             }
         });
 
-        document.getElementById('fullscreenBtn').addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else {
-                document.exitFullscreen();
-            }
+        // 显示模式：'solid' | 'wireframe' | 'both'
+        let displayMode = 'solid';
+
+        // 纯线框模式
+        document.getElementById('modeWireframe').addEventListener('click', () => {
+            if (!currentModel) return;
+            setDisplayMode('wireframe');
         });
+
+        // 线框+实体模式
+        document.getElementById('modeBoth').addEventListener('click', () => {
+            if (!currentModel) return;
+            setDisplayMode('both');
+        });
+
+        // 纯实体模式
+        document.getElementById('modeSolid').addEventListener('click', () => {
+            if (!currentModel) return;
+            setDisplayMode('solid');
+        });
+
+        // 设置显示模式
+        function setDisplayMode(mode) {
+            displayMode = mode;
+            
+            // 更新按钮状态
+            document.getElementById('modeWireframe').classList.toggle('active', mode === 'wireframe');
+            document.getElementById('modeBoth').classList.toggle('active', mode === 'both');
+            document.getElementById('modeSolid').classList.toggle('active', mode === 'solid');
+            
+            // 根据模式设置显示
+            const showSolid = (mode === 'solid' || mode === 'both');
+            const showWireframe = (mode === 'wireframe' || mode === 'both');
+            
+            // 设置实体可见性
+            setModelRenderersVisible(currentModel, showSolid);
+            isSolidVisible = showSolid;
+            
+            // 设置线框可见性
+            if (showWireframe && !wireframeSprite) {
+                createWireframe(currentModel);
+            } else if (!showWireframe && wireframeSprite) {
+                wireframeSprite.destroy();
+                wireframeSprite = null;
+            }
+            isWireframeVisible = showWireframe;
+        }
+
+        // 地面显示状态
+        let isGroundVisible = true;
+
+        // 地面显示切换
+        document.getElementById('groundBtn').addEventListener('click', () => {
+            isGroundVisible = !isGroundVisible;
+            if (ground) {
+                const renderer = ground.getComponent(Laya.MeshRenderer);
+                if (renderer) {
+                    renderer.enabled = isGroundVisible;
+                }
+            }
+            document.getElementById('groundBtn').classList.toggle('active', isGroundVisible);
+        });
+
+        // 设置模型渲染器可见性
+        function setModelRenderersVisible(model, visible) {
+            findBounds(model, (renderer) => {
+                renderer.enabled = visible;
+            });
+        }
+
+        // 创建线框精灵
+        function createWireframe(model) {
+            if (wireframeSprite) {
+                wireframeSprite.destroy();
+            }
+            
+            wireframeSprite = new Laya.PixelLineSprite3D(1000000, 'wireframe');
+            scene.addChild(wireframeSprite);
+            
+            // 线框颜色
+            const lineColor = new Laya.Color(0.2, 0.8, 1.0, 1);
+            
+            // 遍历所有 Mesh，提取边缘
+            extractEdgesFromModel(model, wireframeSprite, lineColor);
+        }
+
+        // 从模型中提取边缘并添加到线框精灵
+        function extractEdgesFromModel(node, lineSprite, color) {
+            let mesh = null;
+            
+            // 尝试从 MeshFilter 获取 mesh（普通 MeshRenderer）
+            const meshFilter = node.getComponent(Laya.MeshFilter);
+            if (meshFilter && meshFilter.sharedMesh) {
+                mesh = meshFilter.sharedMesh;
+            }
+            
+            // 尝试从 SkinnedMeshRenderer 获取 mesh
+            const skinnedRenderer = node.getComponent(Laya.SkinnedMeshRenderer);
+            if (!mesh && skinnedRenderer && skinnedRenderer._mesh) {
+                mesh = skinnedRenderer._mesh;
+            }
+            
+            if (mesh) {
+                const transform = node.transform;
+                // 获取顶点数据和索引数据
+                extractMeshEdges(mesh, transform, lineSprite, color);
+            }
+            
+            // 递归处理子节点
+            for (let i = 0; i < node.numChildren; i++) {
+                extractEdgesFromModel(node.getChildAt(i), lineSprite, color);
+            }
+        }
+
+        // 提取网格边缘
+        function extractMeshEdges(mesh, transform, lineSprite, color) {
+            try {
+                // 检查 mesh 是否可读
+                if (!mesh._isReadable) {
+                    console.warn('Mesh 不可读，无法提取线框');
+                    return;
+                }
+                
+                // 使用 Mesh 的高级 API 获取顶点位置
+                const positions = [];
+                mesh.getPositions(positions);
+                if (!positions || positions.length === 0) {
+                    console.warn('无法获取顶点位置数据');
+                    return;
+                }
+                
+                // 获取世界变换矩阵
+                const worldMatrix = transform.worldMatrix;
+                
+                // 用于存储边缘的 Set（避免重复边）
+                const edgeSet = new Set();
+                const lines = [];
+                
+                // 遍历所有子网格
+                for (let s = 0; s < mesh.subMeshCount; s++) {
+                    const subMesh = mesh.getSubMesh(s);
+                    
+                    // 使用 getIndices() 获取索引数据
+                    let indexData;
+                    try {
+                        indexData = subMesh.getIndices();
+                    } catch (e) {
+                        console.warn('无法获取子网格索引:', e);
+                        continue;
+                    }
+                    if (!indexData || indexData.length === 0) continue;
+                    
+                    // 遍历三角形
+                    for (let i = 0; i < indexData.length; i += 3) {
+                        const i0 = indexData[i];
+                        const i1 = indexData[i + 1];
+                        const i2 = indexData[i + 2];
+                        
+                        // 添加三条边（使用排序后的索引作为 key 避免重复）
+                        addEdgeFromPositions(edgeSet, lines, positions, i0, i1, worldMatrix, color);
+                        addEdgeFromPositions(edgeSet, lines, positions, i1, i2, worldMatrix, color);
+                        addEdgeFromPositions(edgeSet, lines, positions, i2, i0, worldMatrix, color);
+                    }
+                }
+                
+                // 批量添加线条
+                if (lines.length > 0) {
+                    lineSprite.addLines(lines);
+                }
+                
+            } catch (e) {
+                console.warn('提取网格边缘失败:', e);
+            }
+        }
+        
+        // 从位置数组添加边缘
+        function addEdgeFromPositions(edgeSet, lines, positions, index1, index2, worldMatrix, color) {
+            // 创建边的唯一键
+            const minIdx = Math.min(index1, index2);
+            const maxIdx = Math.max(index1, index2);
+            const edgeKey = `${minIdx}_${maxIdx}`;
+            
+            // 检查边是否已存在
+            if (edgeSet.has(edgeKey)) return;
+            edgeSet.add(edgeKey);
+            
+            // 获取顶点位置（positions 是 Vector3 数组）
+            const pos1 = positions[index1];
+            const pos2 = positions[index2];
+            
+            if (!pos1 || !pos2) return;
+            
+            // 变换到世界坐标
+            const startPos = new Laya.Vector3();
+            const endPos = new Laya.Vector3();
+            Laya.Vector3.transformCoordinate(pos1, worldMatrix, startPos);
+            Laya.Vector3.transformCoordinate(pos2, worldMatrix, endPos);
+            
+            // 创建线条数据（PixelLineData 需要手动设置属性）
+            const lineData = new Laya.PixelLineData();
+            startPos.cloneTo(lineData.startPosition);
+            endPos.cloneTo(lineData.endPosition);
+            color.cloneTo(lineData.startColor);
+            color.cloneTo(lineData.endColor);
+            
+            lines.push(lineData);
+        }
+
 
         document.getElementById('updateThumbnailBtn').addEventListener('click', () => {
             if (currentModel && modelOptions.length > 0) {
