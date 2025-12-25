@@ -160,5 +160,12 @@ def compute_image_embedding(image: Image.Image) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=6010)
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from config import port_siglip2
+    
+    port = port_siglip2()
+    print(f"启动 SigLIP2 图片嵌入服务，端口: {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
 

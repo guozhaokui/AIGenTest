@@ -1,0 +1,24 @@
+# AI 服务网关配置
+# 网关在客户端电脑上运行，转发请求到 GPU 服务器
+
+# 本地网关地址（在客户端电脑上运行）
+gateway_url: "http://localhost:8080"
+
+# GPU 服务器地址（网关会转发到这里）
+gpu_server: "192.168.0.100"
+
+# API 路由
+routes:
+  embed_image: "/embed/image"
+  embed_text: "/embed/text"
+  embed_texts: "/embed/texts"
+  rerank: "/rerank"
+  vlm: "/vlm/describe"
+  health: "/health/all"
+
+# 模型维度（用于向量索引）
+dimensions:
+  siglip2: 1152
+  qwen3_8b: 4096
+  qwen3_4b: 2560
+  bge: 1024

@@ -236,4 +236,11 @@ def compute_text_embeddings_batch(texts: List[str]) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=6011)
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from config import port_embed_4b
+    
+    port = port_embed_4b()
+    print(f"启动 Qwen3-4B 文本嵌入服务，端口: {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)

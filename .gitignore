@@ -1,6 +1,6 @@
 # dependencies
 node_modules/
-
+aiserver/models/
 # build output
 dist/
 .next/

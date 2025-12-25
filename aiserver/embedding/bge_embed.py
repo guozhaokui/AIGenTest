@@ -153,5 +153,12 @@ def compute_embeddings(texts: List[str]) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=6012)
+    import sys
+    from pathlib import Path
+    sys.path.insert(0, str(Path(__file__).parent.parent))
+    from config import port_embed_bge
+    
+    port = port_embed_bge()
+    print(f"启动 BGE 文本嵌入服务，端口: {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
