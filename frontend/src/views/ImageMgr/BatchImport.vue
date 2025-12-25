@@ -198,79 +198,11 @@
         </div>
       </el-tab-pane>
 
-      <!-- 批量更新嵌入 -->
-      <el-tab-pane label="批量更新嵌入" name="embeddings">
-        <el-form :model="embeddingForm" label-width="120px" class="import-form">
-          <el-form-item label="来源筛选">
-            <el-input v-model="embeddingForm.source" placeholder="只处理指定来源的图片（可选）" :disabled="recomputing" />
-          </el-form-item>
-          <el-form-item label="状态筛选">
-            <el-select v-model="embeddingForm.status" clearable placeholder="全部" :disabled="recomputing">
-              <el-option label="全部" value="" />
-              <el-option label="就绪" value="ready" />
-              <el-option label="待处理" value="pending" />
-              <el-option label="失败" value="failed" />
-            </el-select>
-          </el-form-item>
-          <el-form-item label="更新文本嵌入">
-            <el-switch v-model="embeddingForm.include_text" :disabled="recomputing" />
-            <span class="form-tip">同时更新描述的文本嵌入</span>
-          </el-form-item>
-          <el-form-item label="最大数量">
-            <el-input-number v-model="embeddingForm.limit" :min="1" :max="1000" :disabled="recomputing" />
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleRecomputeEmbeddings" :loading="recomputing">
-              {{ recomputing ? '更新中...' : '开始更新' }}
-            </el-button>
-            <el-button v-if="recomputing" @click="cancelEmbeddings" type="danger">取消</el-button>
-          </el-form-item>
-        </el-form>
-
-        <!-- 进度显示 -->
-        <div v-if="embeddingProgress" class="progress-panel">
-          <div class="progress-header">
-            <span class="progress-title">更新进度</span>
-            <span class="progress-stats">
-              {{ embeddingProgress.current }} / {{ embeddingProgress.total }}
-              <span class="speed">{{ embeddingProgress.speed }} 张/秒</span>
-            </span>
-          </div>
-          <el-progress :percentage="embeddingProgress.percent" :stroke-width="20" />
-          <div class="progress-info">
-            <div class="info-row">
-              <span class="label">成功:</span>
-              <el-tag type="success" size="small">{{ embeddingProgress.processed }}</el-tag>
-              <span class="label">失败:</span>
-              <el-tag type="danger" size="small">{{ embeddingProgress.failed }}</el-tag>
-            </div>
-            <div class="info-row">
-              <span class="label">已用时:</span>
-              <span>{{ formatTime(embeddingProgress.elapsed) }}</span>
-              <span class="label">预计剩余:</span>
-              <span>{{ formatTime(embeddingProgress.eta) }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div v-if="embeddingResult && !recomputing" class="import-result">
-          <el-alert 
-            :title="`更新完成: ${embeddingResult.processed} 成功, ${embeddingResult.failed} 失败`"
-            :type="embeddingResult.failed > 0 ? 'warning' : 'success'"
-            show-icon
-          >
-            <template #default>
-              <div>总耗时: {{ formatTime(embeddingResult.elapsed) }}，平均速度: {{ embeddingResult.avg_speed }} 张/秒</div>
-            </template>
-          </el-alert>
-        </div>
-      </el-tab-pane>
-
-      <!-- 重建索引 -->
-      <el-tab-pane label="重建索引" name="rebuild">
+      <!-- 更新嵌入（补充缺失的模型嵌入） -->
+      <el-tab-pane label="批量更新嵌入" name="rebuild">
         <div class="rebuild-section">
           <div class="section-header">
-            <h4>索引状态</h4>
+            <h4>嵌入模型状态</h4>
             <el-button size="small" @click="loadIndexStatus" :loading="loadingIndexStatus">
               刷新状态
             </el-button>
@@ -295,8 +227,8 @@
             </el-table-column>
             <el-table-column label="状态" width="100" align="center">
               <template #default="{ row }">
-                <el-tag :type="row.needs_rebuild ? 'danger' : 'success'" size="small">
-                  {{ row.needs_rebuild ? '需要重建' : '完整' }}
+                <el-tag :type="row.needs_rebuild ? 'warning' : 'success'" size="small">
+                  {{ row.needs_rebuild ? '待补充' : '完整' }}
                 </el-tag>
               </template>
             </el-table-column>
@@ -308,20 +240,17 @@
                   :disabled="!row.needs_rebuild || rebuilding"
                   @click="startRebuild(row.index_name)"
                 >
-                  重建
+                  补充
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
 
-          <!-- 重建配置 -->
+          <!-- 更新配置 -->
           <el-form :model="rebuildForm" label-width="120px" class="import-form" v-if="rebuildingIndex">
-            <el-form-item label="目标索引">
-              <el-tag size="large">{{ rebuildingIndex }}</el-tag>
-            </el-form-item>
-            <el-form-item label="每批数量">
-              <el-input-number v-model="rebuildForm.limit" :min="100" :max="10000" :step="100" :disabled="rebuilding" />
-              <span class="form-tip">每次处理的描述数量</span>
+            <el-form-item label="目标模型">
+              <el-tag size="large">{{ getModelNameByIndex(rebuildingIndex) }}</el-tag>
+              <span class="form-tip">索引: {{ rebuildingIndex }}</span>
             </el-form-item>
             <el-form-item label="并发数">
               <el-input-number v-model="rebuildForm.concurrency" :min="1" :max="16" :disabled="rebuilding" />
@@ -329,7 +258,7 @@
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="handleRebuild" :loading="rebuilding">
-                {{ rebuilding ? '重建中...' : '开始重建' }}
+                {{ rebuilding ? '更新中...' : '开始更新' }}
               </el-button>
               <el-button v-if="rebuilding" @click="cancelRebuild" type="danger">取消</el-button>
               <el-button v-if="!rebuilding" @click="rebuildingIndex = null">取消选择</el-button>
@@ -339,7 +268,7 @@
           <!-- 进度显示 -->
           <div v-if="rebuildProgress" class="progress-panel">
             <div class="progress-header">
-              <span class="progress-title">重建进度 - {{ rebuildProgress.model || rebuildingIndex }}</span>
+              <span class="progress-title">更新进度 - {{ rebuildProgress.model || rebuildingIndex }}</span>
               <span class="progress-stats">
                 {{ rebuildProgress.processed + rebuildProgress.failed }} / {{ rebuildProgress.total }}
                 <span class="speed" v-if="rebuildProgress.speed">{{ rebuildProgress.speed }} 条/秒</span>
@@ -372,7 +301,7 @@
           <!-- 完成结果 -->
           <div v-if="rebuildResult && !rebuilding" class="import-result">
             <el-alert 
-              :title="`重建完成: ${rebuildResult.processed} 成功, ${rebuildResult.failed} 失败`"
+              :title="`更新完成: ${rebuildResult.processed} 成功, ${rebuildResult.failed} 失败`"
               :type="rebuildResult.failed > 0 ? 'warning' : 'success'"
               show-icon
             >
@@ -393,7 +322,6 @@ import { ElMessage } from 'element-plus';
 import { 
   batchImportStream, 
   batchGenerateCaptionsStream, 
-  batchRecomputeEmbeddingsStream, 
   getVlmPrompts, 
   getVlmServices,
   getRebuildIndexStatus,
@@ -438,24 +366,11 @@ const captionProgress = ref(null);
 const captionResult = ref(null);
 let cancelCaptionsFn = null;
 
-// 批量更新嵌入
-const embeddingForm = reactive({
-  source: '',
-  status: '',
-  include_text: false,
-  limit: 100
-});
-const recomputing = ref(false);
-const embeddingProgress = ref(null);
-const embeddingResult = ref(null);
-let cancelEmbeddingsFn = null;
-
-// 重建索引
+// 更新嵌入（补充缺失的模型嵌入）
 const indexStatus = ref([]);
 const loadingIndexStatus = ref(false);
 const rebuildingIndex = ref(null);
 const rebuildForm = reactive({
-  limit: 1000,
   concurrency: 4
 });
 const rebuilding = ref(false);
@@ -564,38 +479,7 @@ function cancelCaptions() {
   ElMessage.info('已取消生成');
 }
 
-// 更新嵌入操作
-function handleRecomputeEmbeddings() {
-  recomputing.value = true;
-  embeddingProgress.value = null;
-  embeddingResult.value = null;
-  
-  const params = { ...embeddingForm };
-  if (!params.source) delete params.source;
-  if (!params.status) delete params.status;
-  
-  cancelEmbeddingsFn = batchRecomputeEmbeddingsStream(
-    params,
-    (data) => { embeddingProgress.value = data; },
-    (data) => {
-      embeddingResult.value = data;
-      recomputing.value = false;
-      ElMessage.success(`更新完成: ${data.processed} 张图片`);
-    },
-    (err) => {
-      recomputing.value = false;
-      ElMessage.error('更新失败: ' + err.message);
-    }
-  );
-}
-
-function cancelEmbeddings() {
-  if (cancelEmbeddingsFn) cancelEmbeddingsFn();
-  recomputing.value = false;
-  ElMessage.info('已取消更新');
-}
-
-// 重建索引操作
+// 更新嵌入操作（补充缺失的模型嵌入）
 async function loadIndexStatus() {
   loadingIndexStatus.value = true;
   try {
@@ -606,6 +490,11 @@ async function loadIndexStatus() {
   } finally {
     loadingIndexStatus.value = false;
   }
+}
+
+function getModelNameByIndex(indexName) {
+  const idx = indexStatus.value.find(i => i.index_name === indexName);
+  return idx ? idx.model : indexName;
 }
 
 function startRebuild(indexName) {
@@ -624,7 +513,6 @@ function handleRebuild() {
   
   const options = {
     index_name: rebuildingIndex.value,
-    limit: rebuildForm.limit,
     concurrency: rebuildForm.concurrency
   };
   
@@ -649,13 +537,13 @@ function handleRebuild() {
     (data) => {
       rebuildResult.value = data;
       rebuilding.value = false;
-      ElMessage.success(`重建完成: ${data.processed} 条`);
-      // 刷新索引状态
+      ElMessage.success(`更新完成: ${data.processed} 条`);
+      // 刷新状态
       loadIndexStatus();
     },
     (err) => {
       rebuilding.value = false;
-      ElMessage.error('重建失败: ' + err.message);
+      ElMessage.error('更新失败: ' + err.message);
     }
   );
 }
@@ -663,7 +551,7 @@ function handleRebuild() {
 function cancelRebuild() {
   if (cancelRebuildFn) cancelRebuildFn();
   rebuilding.value = false;
-  ElMessage.info('已取消重建');
+  ElMessage.info('已取消更新');
 }
 
 onMounted(() => {
@@ -676,7 +564,6 @@ onUnmounted(() => {
   // 组件卸载时取消所有进行中的操作
   if (cancelImportFn) cancelImportFn();
   if (cancelCaptionsFn) cancelCaptionsFn();
-  if (cancelEmbeddingsFn) cancelEmbeddingsFn();
   if (cancelRebuildFn) cancelRebuildFn();
 });
 </script>

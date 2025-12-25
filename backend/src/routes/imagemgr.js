@@ -371,9 +371,9 @@ router.post('/batch/recompute-embeddings/stream', async (req, res, next) => {
   }
 });
 
-// ==================== 索引重建 ====================
+// ==================== 更新嵌入（补充缺失的模型嵌入） ====================
 
-// 获取索引重建状态
+// 获取嵌入更新状态
 router.get('/batch/rebuild-index/status', async (req, res, next) => {
   try {
     const response = await imagemgrClient.get('/api/batch/rebuild-index/status');
@@ -383,7 +383,7 @@ router.get('/batch/rebuild-index/status', async (req, res, next) => {
   }
 });
 
-// 批量重建索引
+// 批量更新嵌入
 router.post('/batch/rebuild-index', async (req, res, next) => {
   try {
     const response = await imagemgrClient.post('/api/batch/rebuild-index', req.body, {
@@ -395,7 +395,7 @@ router.post('/batch/rebuild-index', async (req, res, next) => {
   }
 });
 
-// 流式批量重建索引
+// 流式批量更新嵌入
 router.post('/batch/rebuild-index/stream', async (req, res, next) => {
   try {
     const response = await imagemgrClient.post('/api/batch/rebuild-index/stream', req.body, {

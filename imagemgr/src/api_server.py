@@ -1881,25 +1881,25 @@ def batch_recompute_embeddings(
     }
 
 
-# ==================== 批量重建索引 ====================
+# ==================== 更新嵌入（补充缺失的模型嵌入） ====================
 
 class RebuildIndexRequest(BaseModel):
-    """重建索引请求"""
+    """更新嵌入请求"""
     index_name: str  # 索引名称，如 qwen3_8b_text_v1
-    limit: int = 1000  # 每批处理数量
     concurrency: int = 4  # 并发数量
+    batch_size: int = 500  # 内部批次大小（用于分批获取数据，避免内存问题）
 
 
 @app.post("/api/batch/rebuild-index")
 def batch_rebuild_index(req: RebuildIndexRequest):
     """
-    批量重建指定的文本索引
+    更新嵌入（同步版本，用于小批量处理）
     
-    用于为已有描述添加缺失的嵌入向量（如新增的 8B 模型索引）
+    用于为已有描述添加缺失的嵌入向量
+    推荐使用流式版本 /api/batch/rebuild-index/stream
     
     Args:
-        index_name: 要重建的索引名称（如 qwen3_8b_text_v1）
-        limit: 每批处理数量
+        index_name: 要更新的索引名称（如 qwen3_8b_text_v1）
         concurrency: 并发数量
     """
     # 验证索引名称
@@ -1922,8 +1922,8 @@ def batch_rebuild_index(req: RebuildIndexRequest):
             detail=f"嵌入服务 {service_name} 未配置 endpoint"
         )
     
-    # 获取缺少该索引的描述
-    descriptions = db.get_descriptions_missing_index(req.index_name, req.limit)
+    # 获取缺少该索引的所有描述
+    descriptions = db.get_descriptions_missing_index(req.index_name, limit=100000)
     total = len(descriptions)
     
     if total == 0:
@@ -1999,12 +1999,12 @@ def batch_rebuild_index(req: RebuildIndexRequest):
 @app.post("/api/batch/rebuild-index/stream")
 def batch_rebuild_index_stream(req: RebuildIndexRequest):
     """
-    批量重建索引（流式响应，实时报告进度）
+    更新嵌入（流式响应，自动处理所有缺失数据）
     
     Args:
-        index_name: 要重建的索引名称
-        limit: 每批处理数量
+        index_name: 要更新的索引名称
         concurrency: 并发数量
+        batch_size: 内部批次大小
     """
     from fastapi.responses import StreamingResponse
     
@@ -2023,14 +2023,15 @@ def batch_rebuild_index_stream(req: RebuildIndexRequest):
     def generate():
         import json
         
-        # 获取缺少该索引的描述
-        descriptions = db.get_descriptions_missing_index(req.index_name, req.limit)
-        total = len(descriptions)
+        # 先统计总数（获取所有缺失的数量）
+        all_missing = db.get_descriptions_missing_index(req.index_name, limit=100000)
+        total = len(all_missing)
         
         yield f"event: init\ndata: {json.dumps({'total': total, 'index_name': req.index_name, 'model': model_name})}\n\n"
         
         if total == 0:
-            yield f"event: complete\ndata: {json.dumps({'message': '没有需要处理的描述', 'processed': 0, 'failed': 0})}\n\n"
+            new_count = text_indexes[req.index_name].count()
+            yield f"event: complete\ndata: {json.dumps({'message': '没有需要处理的描述', 'processed': 0, 'failed': 0, 'index_count': new_count})}\n\n"
             return
         
         processed = 0
@@ -2059,9 +2060,9 @@ def batch_rebuild_index_stream(req: RebuildIndexRequest):
             except Exception as e:
                 return {"sha256": sha256, "method": method, "status": "failed", "error": str(e)}
         
-        # 并发处理
+        # 并发处理所有数据
         with ThreadPoolExecutor(max_workers=req.concurrency) as executor:
-            futures = {executor.submit(process_single, desc): desc for desc in descriptions}
+            futures = {executor.submit(process_single, desc): desc for desc in all_missing}
             
             for future in as_completed(futures):
                 result = future.result()
@@ -2082,7 +2083,7 @@ def batch_rebuild_index_stream(req: RebuildIndexRequest):
         # 完成
         new_count = text_indexes[req.index_name].count()
         complete_data = {
-            "message": "重建完成",
+            "message": "更新完成",
             "processed": processed,
             "failed": failed,
             "index_count": new_count
@@ -2103,7 +2104,7 @@ def batch_rebuild_index_stream(req: RebuildIndexRequest):
 @app.get("/api/batch/rebuild-index/status")
 def get_rebuild_index_status():
     """
-    获取索引重建状态（查看哪些索引需要重建）
+    获取嵌入更新状态（查看哪些模型的嵌入需要补充）
     """
     status = []
     total_descriptions = db.count_all_descriptions()
