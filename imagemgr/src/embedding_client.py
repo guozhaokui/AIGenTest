@@ -1,6 +1,9 @@
 """
 嵌入服务客户端
 调用嵌入服务 API 获取向量
+
+配置源：统一从 aiserver/config.yaml 读取服务地址
+本地配置（embedding_services.yaml）仅用于索引定义和 VLM 提示词等
 """
 import requests
 import numpy as np
@@ -18,41 +21,103 @@ class EmbeddingClient:
         初始化客户端
         
         Args:
-            config_path: 配置文件路径，默认使用内置配置
+            config_path: 本地配置文件路径（用于索引、VLM 等）
         """
-        self.config = self._load_config(config_path)
-        self.image_service = self.config.get("defaults", {}).get("image_embedding", "siglip2_local")
-        self.text_service = self.config.get("defaults", {}).get("text_embedding", "qwen3_embed_local")
-    
-    def _load_config(self, config_path: str = None) -> dict:
-        """加载配置"""
-        if config_path and Path(config_path).exists():
-            with open(config_path, "r") as f:
-                return yaml.safe_load(f)
+        # 加载统一的服务配置（aiserver/config.yaml）
+        self.ai_config = self._load_ai_config()
+        # 加载本地配置（索引、VLM 等）
+        self.local_config = self._load_local_config(config_path)
+        # 合并生成 services 配置
+        self.config = self._build_services_config()
         
-        # 默认配置
-        return {
-            "services": {
-                "siglip2_local": {
-                    "model_name": "siglip2-so400m-patch16-512",
-                    "model_version": "1.0",
-                    "endpoint": "http://192.168.0.100:6010",
-                    "dimension": 1152,
-                    "timeout": 30
-                },
-                "qwen3_embed_local": {
-                    "model_name": "Qwen3-4B",
-                    "model_version": "1.0",
-                    "endpoint": "http://192.168.0.100:6011",
-                    "dimension": 2560,
-                    "timeout": 10
-                }
-            },
-            "defaults": {
-                "image_embedding": "siglip2_local",
-                "text_embedding": "qwen3_embed_local"
+        # 设置默认服务
+        defaults = self.ai_config.get("defaults", {})
+        self.image_service = self._map_service_name(defaults.get("image_embedding", "siglip2"))
+        self.text_service = self._map_service_name(defaults.get("text_embedding", "embed_8b"))
+    
+    def _load_ai_config(self) -> dict:
+        """加载 aiserver/config.yaml（统一服务配置）"""
+        # 查找 aiserver/config.yaml
+        current_dir = Path(__file__).parent
+        possible_paths = [
+            current_dir.parent.parent / "aiserver" / "config.yaml",  # imagemgr/src -> 项目根目录
+            Path("/home/layabox/laya/guo/AIGenTest/aiserver/config.yaml"),  # 绝对路径
+        ]
+        
+        for path in possible_paths:
+            if path.exists():
+                with open(path, "r", encoding="utf-8") as f:
+                    config = yaml.safe_load(f)
+                    print(f"[EmbeddingClient] 加载服务配置: {path}")
+                    return config
+        
+        print("[EmbeddingClient] 警告: 未找到 aiserver/config.yaml，使用默认配置")
+        return {}
+    
+    def _load_local_config(self, config_path: str = None) -> dict:
+        """加载本地配置（索引、VLM 提示词等）"""
+        if config_path and Path(config_path).exists():
+            with open(config_path, "r", encoding="utf-8") as f:
+                return yaml.safe_load(f)
+        return {}
+    
+    def _build_services_config(self) -> dict:
+        """从 ai_config 构建 services 配置（兼容旧格式）"""
+        services = {}
+        
+        # 从 embed_server_1 构建
+        server1 = self.ai_config.get("embed_server_1", {})
+        host1 = server1.get("host", "192.168.0.100")
+        for svc_name, svc_config in server1.get("services", {}).items():
+            internal_name = self._map_service_name(svc_name)
+            services[internal_name] = {
+                "model_name": svc_config.get("model_name", svc_name),
+                "model_version": svc_config.get("model_version", "1.0"),
+                "endpoint": f"http://{host1}:{svc_config.get('port')}",
+                "dimension": svc_config.get("dimension"),
+                "timeout": svc_config.get("timeout", 30),
+                "is_enabled": True
             }
+        
+        # 从 embed_server_2 构建
+        server2 = self.ai_config.get("embed_server_2", {})
+        host2 = server2.get("host", "192.168.0.132")
+        for svc_name, svc_config in server2.get("services", {}).items():
+            internal_name = self._map_service_name(svc_name)
+            services[internal_name] = {
+                "model_name": svc_config.get("model_name", svc_name),
+                "model_version": svc_config.get("model_version", "1.0"),
+                "endpoint": f"http://{host2}:{svc_config.get('port')}",
+                "dimension": svc_config.get("dimension"),
+                "timeout": svc_config.get("timeout", 30),
+                "is_enabled": True
+            }
+        
+        # 合并本地配置中的额外信息（如 VLM 等）
+        local_services = self.local_config.get("services", {})
+        for name, config in local_services.items():
+            if name not in services:
+                services[name] = config
+        
+        return {
+            "services": services,
+            "defaults": self.ai_config.get("defaults", {}),
+            "indexes": self.local_config.get("indexes", {}),
+            "vlm_services": self.local_config.get("vlm_services", {}),
+            "vlm": self.local_config.get("vlm", {})
         }
+    
+    def _map_service_name(self, name: str) -> str:
+        """将 aiserver 服务名映射到内部服务名"""
+        mapping = {
+            "siglip2": "siglip2_local",
+            "embed_4b": "qwen3_embed_local",
+            "embed_bge": "bge_local",
+            "rerank_4b": "qwen3_rerank",
+            "embed_8b": "qwen3_8b_embed",
+            "rerank_8b": "qwen3_8b_rerank",
+        }
+        return mapping.get(name, name)
     
     def _get_service_config(self, service_name: str) -> dict:
         """获取服务配置"""
@@ -304,7 +369,7 @@ class EmbeddingClient:
     
     def rerank(self, query: str, documents: List[str], top_k: int = None) -> Optional[List[dict]]:
         """
-        使用 LLM 重排序
+        使用 LLM 重排序（优先使用 8B 模型）
         
         Args:
             query: 用户查询
@@ -314,49 +379,58 @@ class EmbeddingClient:
         Returns:
             重排序后的结果列表 [{"document": str, "score": float, "original_index": int}, ...]
         """
-        rerank_config = self.config.get("services", {}).get("qwen3_rerank", {})
-        if not rerank_config.get("is_enabled", False):
-            print("重排序服务未启用")
-            return None
+        # 优先使用 8B rerank，然后尝试 4B
+        rerank_services = ["qwen3_8b_rerank", "qwen3_rerank"]
         
-        endpoint = rerank_config.get("endpoint")
-        if not endpoint:
-            print("重排序服务缺少 endpoint 配置")
-            return None
-        
-        timeout = rerank_config.get("timeout", 60)
-        
-        try:
-            payload = {"query": query, "documents": documents}
-            if top_k:
-                payload["top_k"] = top_k
+        for service_name in rerank_services:
+            rerank_config = self.config.get("services", {}).get(service_name, {})
+            if not rerank_config.get("is_enabled", False):
+                continue
             
-            response = requests.post(
-                f"{endpoint}/rerank",
-                json=payload,
-                timeout=timeout
-            )
-            response.raise_for_status()
-            data = response.json()
-            return data.get("results", [])
+            endpoint = rerank_config.get("endpoint")
+            if not endpoint:
+                continue
+            
+            timeout = rerank_config.get("timeout", 60)
+            
+            try:
+                payload = {"query": query, "documents": documents}
+                if top_k:
+                    payload["top_k"] = top_k
+                
+                response = requests.post(
+                    f"{endpoint}/rerank",
+                    json=payload,
+                    timeout=timeout
+                )
+                response.raise_for_status()
+                data = response.json()
+                print(f"[Rerank] 使用 {service_name} 成功")
+                return data.get("results", [])
+            
+            except Exception as e:
+                print(f"[Rerank] {service_name} 失败: {e}")
+                continue
         
-        except Exception as e:
-            print(f"重排序失败: {e}")
-            return None
+        print("所有重排序服务都不可用")
+        return None
     
     def check_rerank_service(self) -> bool:
-        """检查重排序服务是否可用"""
-        rerank_config = self.config.get("services", {}).get("qwen3_rerank", {})
-        if not rerank_config.get("is_enabled", False):
-            return False
-        
-        endpoint = rerank_config.get("endpoint")
-        if not endpoint:
-            return False
-        
-        try:
-            response = requests.get(f"{endpoint}/health", timeout=(2, 3))
-            return response.status_code == 200
-        except:
-            return False
+        """检查重排序服务是否可用（优先检查 8B）"""
+        for service_name in ["qwen3_8b_rerank", "qwen3_rerank"]:
+            rerank_config = self.config.get("services", {}).get(service_name, {})
+            if not rerank_config.get("is_enabled", False):
+                continue
+            
+            endpoint = rerank_config.get("endpoint")
+            if not endpoint:
+                continue
+            
+            try:
+                response = requests.get(f"{endpoint}/health", timeout=(2, 3))
+                if response.status_code == 200:
+                    return True
+            except:
+                continue
+        return False
 

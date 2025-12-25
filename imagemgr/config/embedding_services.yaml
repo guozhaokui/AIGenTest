@@ -1,81 +1,53 @@
-# 嵌入服务配置文件
-# 用于图片管理系统的向量嵌入服务
-# GPU 服务器 IP: 192.168.0.100
+# =============================================================================
+# imagemgr 本地配置
+# =============================================================================
+# 服务地址和端口：从 aiserver/config.yaml 读取（统一配置源）
+# 本文件仅包含 imagemgr 特有的配置：索引定义、VLM 提示词等
+# =============================================================================
 
-services:
-  # === SigLIP2 图片嵌入（远程 GPU 服务器） ===
-  siglip2_local:
-    model_name: siglip2-so400m-patch16-512
-    model_version: "1.0"
-    service_type: remote
-    endpoint: http://192.168.0.100:6010
-    dimension: 1152
-    priority: 1
-    timeout: 60
-    is_enabled: true
-
-  # === Qwen3-4B 文本嵌入（远程 GPU 服务器，高精度） ===
-  qwen3_embed_local:
-    model_name: Qwen3-4B
-    model_version: "1.0"
-    service_type: remote
-    endpoint: http://192.168.0.100:6011
-    dimension: 2560
-    priority: 1
-    timeout: 30
-    is_enabled: true
-
-  # === BGE 文本嵌入（远程 GPU 服务器，轻量） ===
-  bge_local:
-    model_name: bge-large-zh
-    model_version: "1.0"
-    service_type: remote
-    endpoint: http://192.168.0.100:6012
-    dimension: 1024
-    priority: 2
-    timeout: 30
-    is_enabled: true
-
-  # === Qwen3 重排序服务（可选，更精确但较慢） ===
-  qwen3_rerank:
-    model_name: Qwen3-4B
-    model_version: "1.0"
-    service_type: remote
-    endpoint: http://192.168.0.100:6013
-    timeout: 60
-    is_enabled: true  # 已启用
-
-# 索引与模型的绑定关系
+# -----------------------------------------------------------------------------
+# 索引定义（向量索引与模型的绑定关系）
+# -----------------------------------------------------------------------------
 indexes:
+  # 图片嵌入索引
   siglip2_image_v1:
     model_name: siglip2-so400m-patch16-512
     model_version: "1.0"
     dimension: 1152
     description: 图片视觉嵌入索引
 
+  # 文本嵌入索引 - Qwen3-4B
   qwen3_text_v1:
     model_name: Qwen3-4B
     model_version: "1.0"
     dimension: 2560
-    description: 文本描述嵌入索引（高精度）
+    service_name: qwen3_embed_local
+    description: 文本描述嵌入索引（4B）
 
+  # 文本嵌入索引 - BGE
   bge_text_v1:
     model_name: bge-large-zh
     model_version: "1.0"
     dimension: 1024
-    description: 文本描述嵌入索引（轻量）
+    service_name: bge_local
+    description: 文本描述嵌入索引（BGE）
 
-# 默认服务映射
-defaults:
-  image_embedding: siglip2_local
-  text_embedding: bge_local  # BGE 专为检索设计，效果更好
+  # 文本嵌入索引 - Qwen3-8B（推荐）
+  qwen3_8b_text_v1:
+    model_name: Qwen3-Embedding-8B
+    model_version: "1.0"
+    dimension: 4096
+    service_name: qwen3_8b_embed
+    description: 文本描述嵌入索引（8B 高精度）
 
-# VLM 图片描述生成服务（支持多个）
+# -----------------------------------------------------------------------------
+# VLM 图片描述生成服务
+# -----------------------------------------------------------------------------
 vlm_services:
   # Qwen3-VL-8B 服务
   qwen3vl:
     name: "Qwen3-VL-8B"
-    endpoint: http://localhost:6050
+    endpoint: http://localhost:6050  # 通过 SSH 转发
     timeout: 60
     is_enabled: true
     description: "通义千问 VL 8B 视觉语言模型"
@@ -88,10 +60,13 @@ vlm_services:
   #   is_enabled: false
   #   description: "Google Gemini 视觉模型"
 
+# -----------------------------------------------------------------------------
 # VLM 全局配置
+# -----------------------------------------------------------------------------
 vlm:
   # 默认使用的 VLM 服务
   default_service: qwen3vl
+  
   # 提示词模板
   prompts:
     default: "请详细描述这张图片的内容，包括主要物体、场景、颜色、风格等特征。"
@@ -99,5 +74,5 @@ vlm:
     detailed: "请详细地描述这张图片，包括：1)主要物体及其位置关系 2)场景和背景 3)颜色和光线 4)风格和氛围 5)任何文字或标识 6)如果你知道的话，再描述这个图片的外部背景。"
     tags: "请为这张图片生成10-20个描述性标签，用逗号分隔。"
     objects: "列出这张图片中所有可识别的物体，用逗号分隔。"
+  
   default_prompt: default
-

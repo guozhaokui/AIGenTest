@@ -45,6 +45,12 @@ TEXT_INDEXES = {
         "model_name": "bge-large-zh",
         "model_version": "1.0",
         "service_name": "bge_local"
+    },
+    "qwen3_8b_text_v1": {
+        "dimension": 4096,
+        "model_name": "Qwen3-Embedding-8B",
+        "model_version": "1.0",
+        "service_name": "qwen3_8b_embed"
     }
 }
 
@@ -93,8 +99,8 @@ class TextSearchRequest(BaseModel):
     """文本搜索请求"""
     query: str
     top_k: int = 100  # 默认返回100条结果
-    index: Optional[str] = None  # 指定使用的索引，默认搜索所有索引
-    rerank: bool = False  # 是否使用重排序
+    index: Optional[str] = None  # 指定使用的索引，默认使用 8B 索引
+    rerank: bool = True  # 默认启用重排序（使用 8B Reranker）
 
 
 class ImageSearchRequest(BaseModel):
@@ -193,7 +199,7 @@ def get_text_indexes():
     
     return {
         "indexes": indexes,
-        "default": "qwen3_text_v1"  # 默认使用 Qwen3
+        "default": "qwen3_8b_text_v1"  # 默认使用 Qwen3-8B（高精度）
     }
 
 
