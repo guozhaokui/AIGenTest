@@ -180,6 +180,42 @@ def list_indexes():
     }
 
 
+@app.get("/api/debug/services")
+def debug_services():
+    """调试接口：查看服务配置和连通性"""
+    import requests as req_lib
+    
+    services_status = {}
+    all_services = embedding_client.config.get("services", {})
+    
+    for name, config in all_services.items():
+        endpoint = config.get("endpoint", "")
+        status = {
+            "endpoint": endpoint,
+            "model_name": config.get("model_name"),
+            "dimension": config.get("dimension"),
+            "timeout": config.get("timeout"),
+        }
+        
+        # 测试连通性
+        if endpoint:
+            try:
+                resp = req_lib.get(f"{endpoint}/health", timeout=(2, 3))
+                status["health"] = "ok" if resp.status_code == 200 else f"status={resp.status_code}"
+                status["health_response"] = resp.json() if resp.status_code == 200 else None
+            except Exception as e:
+                status["health"] = f"error: {str(e)}"
+        else:
+            status["health"] = "no endpoint"
+        
+        services_status[name] = status
+    
+    return {
+        "ai_config_loaded": bool(embedding_client.ai_config),
+        "services": services_status
+    }
+
+
 @app.get("/api/search/text-indexes")
 def get_text_indexes():
     """
@@ -768,6 +804,7 @@ def search_by_text(req: TextSearchRequest):
     # 收集所有索引的搜索结果
     all_results = []
     used_models = []
+    failed_services = []
     
     for index_name, index_config in indexes_to_search.items():
         service_name = index_config.get("service_name")
@@ -777,6 +814,7 @@ def search_by_text(req: TextSearchRequest):
         query_embedding = embedding_client.get_text_embedding_by_service(req.query, service_name)
         if query_embedding is None:
             print(f"警告: 文本嵌入服务 {service_name} 不可用，跳过索引 {index_name}")
+            failed_services.append({"index": index_name, "service": service_name, "model": model_name})
             continue
         
         # 在对应索引中搜索
@@ -795,8 +833,28 @@ def search_by_text(req: TextSearchRequest):
             "result_count": len(results)
         })
     
+    # 区分"服务不可用"和"索引为空/无匹配结果"
+    if not used_models:
+        # 没有任何服务成功调用 -> 503
+        if failed_services:
+            failed_info = ", ".join([f"{f['model']}({f['service']})" for f in failed_services])
+            if req.index:
+                detail = f"嵌入服务不可用: {failed_info}。请检查服务是否已启动。"
+            else:
+                detail = f"所有文本嵌入服务都不可用: {failed_info}"
+        else:
+            detail = "没有可用的文本嵌入服务"
+        raise HTTPException(status_code=503, detail=detail)
+    
     if not all_results:
-        raise HTTPException(status_code=503, detail="所有文本嵌入服务都不可用")
+        # 服务正常但没有搜索结果（索引为空或无匹配）-> 返回空结果
+        return {
+            "results": [],
+            "total": 0,
+            "query": req.query,
+            "used_models": used_models,
+            "message": "索引为空或无匹配结果"
+        }
     
     # 按分数排序，去重（同一图片保留最高分）
     seen_sha256 = {}
@@ -1820,6 +1878,253 @@ def batch_recompute_embeddings(
         "processed": processed,
         "failed": failed,
         "results": results
+    }
+
+
+# ==================== 批量重建索引 ====================
+
+class RebuildIndexRequest(BaseModel):
+    """重建索引请求"""
+    index_name: str  # 索引名称，如 qwen3_8b_text_v1
+    limit: int = 1000  # 每批处理数量
+    concurrency: int = 4  # 并发数量
+
+
+@app.post("/api/batch/rebuild-index")
+def batch_rebuild_index(req: RebuildIndexRequest):
+    """
+    批量重建指定的文本索引
+    
+    用于为已有描述添加缺失的嵌入向量（如新增的 8B 模型索引）
+    
+    Args:
+        index_name: 要重建的索引名称（如 qwen3_8b_text_v1）
+        limit: 每批处理数量
+        concurrency: 并发数量
+    """
+    # 验证索引名称
+    if req.index_name not in TEXT_INDEXES:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"索引 {req.index_name} 不存在，可选: {list(TEXT_INDEXES.keys())}"
+        )
+    
+    index_config = TEXT_INDEXES[req.index_name]
+    service_name = index_config["service_name"]
+    model_name = index_config["model_name"]
+    model_version = index_config.get("model_version", "1.0")
+    
+    # 检查服务是否可用
+    service_config = embedding_client._get_service_config(service_name)
+    if not service_config.get("endpoint"):
+        raise HTTPException(
+            status_code=503, 
+            detail=f"嵌入服务 {service_name} 未配置 endpoint"
+        )
+    
+    # 获取缺少该索引的描述
+    descriptions = db.get_descriptions_missing_index(req.index_name, req.limit)
+    total = len(descriptions)
+    
+    if total == 0:
+        return {
+            "message": "没有需要处理的描述",
+            "index_name": req.index_name,
+            "total": 0,
+            "processed": 0,
+            "failed": 0
+        }
+    
+    processed = 0
+    failed = 0
+    failed_list = []
+    
+    def process_single(desc: dict) -> dict:
+        """处理单条描述"""
+        sha256 = desc["image_sha256"]
+        method = desc["method"]
+        content = desc["content"]
+        
+        try:
+            # 获取嵌入向量
+            embedding = embedding_client.get_text_embedding_by_service(content, service_name)
+            if embedding is None:
+                return {"sha256": sha256, "method": method, "status": "failed", "error": "嵌入服务返回空"}
+            
+            # 保存嵌入文件
+            emb_filename = f"{method}_{model_name.replace('-', '_')}"
+            storage.save_embedding(sha256, emb_filename, embedding)
+            
+            # 添加到向量索引
+            text_indexes[req.index_name].add(embedding, sha256, method)
+            
+            # 记录到数据库
+            try:
+                db.add_vector_entry(sha256, method, model_name, model_version, req.index_name)
+            except:
+                pass  # 忽略重复记录
+            
+            return {"sha256": sha256, "method": method, "status": "success"}
+        
+        except Exception as e:
+            return {"sha256": sha256, "method": method, "status": "failed", "error": str(e)}
+    
+    # 使用线程池并发处理
+    with ThreadPoolExecutor(max_workers=req.concurrency) as executor:
+        futures = [executor.submit(process_single, desc) for desc in descriptions]
+        
+        for future in as_completed(futures):
+            result = future.result()
+            if result["status"] == "success":
+                processed += 1
+            else:
+                failed += 1
+                failed_list.append(result)
+    
+    # 获取索引当前数量
+    new_count = text_indexes[req.index_name].count()
+    
+    return {
+        "message": f"索引 {req.index_name} 重建完成",
+        "index_name": req.index_name,
+        "model": model_name,
+        "total": total,
+        "processed": processed,
+        "failed": failed,
+        "index_count": new_count,
+        "failed_list": failed_list[:10] if failed_list else []  # 只返回前10个失败记录
+    }
+
+
+@app.post("/api/batch/rebuild-index/stream")
+def batch_rebuild_index_stream(req: RebuildIndexRequest):
+    """
+    批量重建索引（流式响应，实时报告进度）
+    
+    Args:
+        index_name: 要重建的索引名称
+        limit: 每批处理数量
+        concurrency: 并发数量
+    """
+    from fastapi.responses import StreamingResponse
+    
+    # 验证索引名称
+    if req.index_name not in TEXT_INDEXES:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"索引 {req.index_name} 不存在，可选: {list(TEXT_INDEXES.keys())}"
+        )
+    
+    index_config = TEXT_INDEXES[req.index_name]
+    service_name = index_config["service_name"]
+    model_name = index_config["model_name"]
+    model_version = index_config.get("model_version", "1.0")
+    
+    def generate():
+        import json
+        
+        # 获取缺少该索引的描述
+        descriptions = db.get_descriptions_missing_index(req.index_name, req.limit)
+        total = len(descriptions)
+        
+        yield f"event: init\ndata: {json.dumps({'total': total, 'index_name': req.index_name, 'model': model_name})}\n\n"
+        
+        if total == 0:
+            yield f"event: complete\ndata: {json.dumps({'message': '没有需要处理的描述', 'processed': 0, 'failed': 0})}\n\n"
+            return
+        
+        processed = 0
+        failed = 0
+        
+        def process_single(desc: dict) -> dict:
+            sha256 = desc["image_sha256"]
+            method = desc["method"]
+            content = desc["content"]
+            
+            try:
+                embedding = embedding_client.get_text_embedding_by_service(content, service_name)
+                if embedding is None:
+                    return {"sha256": sha256, "method": method, "status": "failed", "error": "嵌入服务返回空"}
+                
+                emb_filename = f"{method}_{model_name.replace('-', '_')}"
+                storage.save_embedding(sha256, emb_filename, embedding)
+                text_indexes[req.index_name].add(embedding, sha256, method)
+                
+                try:
+                    db.add_vector_entry(sha256, method, model_name, model_version, req.index_name)
+                except:
+                    pass
+                
+                return {"sha256": sha256, "method": method, "status": "success"}
+            except Exception as e:
+                return {"sha256": sha256, "method": method, "status": "failed", "error": str(e)}
+        
+        # 并发处理
+        with ThreadPoolExecutor(max_workers=req.concurrency) as executor:
+            futures = {executor.submit(process_single, desc): desc for desc in descriptions}
+            
+            for future in as_completed(futures):
+                result = future.result()
+                if result["status"] == "success":
+                    processed += 1
+                else:
+                    failed += 1
+                
+                # 发送进度
+                progress_data = {
+                    "processed": processed,
+                    "failed": failed,
+                    "total": total,
+                    "current": result
+                }
+                yield f"event: progress\ndata: {json.dumps(progress_data)}\n\n"
+        
+        # 完成
+        new_count = text_indexes[req.index_name].count()
+        complete_data = {
+            "message": "重建完成",
+            "processed": processed,
+            "failed": failed,
+            "index_count": new_count
+        }
+        yield f"event: complete\ndata: {json.dumps(complete_data)}\n\n"
+    
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"
+        }
+    )
+
+
+@app.get("/api/batch/rebuild-index/status")
+def get_rebuild_index_status():
+    """
+    获取索引重建状态（查看哪些索引需要重建）
+    """
+    status = []
+    total_descriptions = db.count_all_descriptions()
+    
+    for index_name, config in TEXT_INDEXES.items():
+        index_count = text_indexes[index_name].count()
+        missing_count = len(db.get_descriptions_missing_index(index_name, limit=10000))
+        
+        status.append({
+            "index_name": index_name,
+            "model": config["model_name"],
+            "service": config["service_name"],
+            "dimension": config["dimension"],
+            "current_count": index_count,
+            "missing_count": missing_count,
+            "needs_rebuild": missing_count > 0
+        })
+    
+    return {
+        "total_descriptions": total_descriptions,
+        "indexes": status
     }
 
 

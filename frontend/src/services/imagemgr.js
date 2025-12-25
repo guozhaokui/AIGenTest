@@ -292,6 +292,74 @@ export function batchRecomputeEmbeddingsStream(params, onProgress, onComplete, o
   return () => controller.abort();
 }
 
+// ==================== 索引重建 ====================
+
+/**
+ * 获取索引重建状态
+ */
+export function getRebuildIndexStatus() {
+  return imagemgrApi.get('/batch/rebuild-index/status').then(r => r.data);
+}
+
+/**
+ * 重建索引（流式，实时进度）
+ * @param {object} options 重建选项
+ * @param {string} options.index_name 索引名称
+ * @param {number} options.limit 最大处理数量
+ * @param {number} options.concurrency 并发数量
+ * @param {function} onProgress 进度回调
+ * @param {function} onComplete 完成回调
+ * @param {function} onError 错误回调
+ * @returns {function} 取消函数
+ */
+export function rebuildIndexStream(options, onProgress, onComplete, onError) {
+  const controller = new AbortController();
+  
+  fetch('/api/imagemgr/batch/rebuild-index/stream', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(options),
+    signal: controller.signal
+  }).then(response => {
+    if (!response.ok) {
+      response.json().then(data => {
+        if (onError) onError(new Error(data.detail || '请求失败'));
+      });
+      return;
+    }
+    
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    
+    function processChunk({ done, value }) {
+      if (done) return;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+      
+      let eventType = '';
+      for (const line of lines) {
+        if (line.startsWith('event:')) eventType = line.slice(6).trim();
+        else if (line.startsWith('data:')) {
+          try {
+            const data = JSON.parse(line.slice(5).trim());
+            if (eventType === 'progress' && onProgress) onProgress(data);
+            if (eventType === 'complete' && onComplete) onComplete(data);
+            if (eventType === 'init' && onProgress) onProgress({ ...data, processed: 0, failed: 0, percent: 0 });
+          } catch (e) {}
+        }
+      }
+      reader.read().then(processChunk);
+    }
+    reader.read().then(processChunk);
+  }).catch(err => {
+    if (err.name !== 'AbortError' && onError) onError(err);
+  });
+  
+  return () => controller.abort();
+}
+
 // ==================== 搜索 ====================
 
 /**

@@ -268,4 +268,61 @@ class Database:
                 SELECT COUNT(*) FROM vector_entries WHERE index_name = ?
             """, (index_name,))
             return cursor.fetchone()[0]
+    
+    def get_all_descriptions_with_content(self, limit: int = None, offset: int = 0) -> List[Dict[str, Any]]:
+        """
+        获取所有描述及其内容（用于批量重建索引）
+        
+        Returns:
+            包含 image_sha256, method, content 的列表
+        """
+        with self.get_cursor() as cursor:
+            query = """
+                SELECT d.image_sha256, d.method, d.content
+                FROM descriptions d
+                JOIN images i ON d.image_sha256 = i.sha256
+                WHERE i.is_deleted = 0 AND d.content IS NOT NULL AND d.content != ''
+                ORDER BY d.image_sha256
+            """
+            if limit:
+                query += f" LIMIT {limit} OFFSET {offset}"
+            
+            cursor.execute(query)
+            return [dict(row) for row in cursor.fetchall()]
+    
+    def count_all_descriptions(self) -> int:
+        """统计所有有效描述的数量"""
+        with self.get_cursor() as cursor:
+            cursor.execute("""
+                SELECT COUNT(*) 
+                FROM descriptions d
+                JOIN images i ON d.image_sha256 = i.sha256
+                WHERE i.is_deleted = 0 AND d.content IS NOT NULL AND d.content != ''
+            """)
+            return cursor.fetchone()[0]
+    
+    def get_descriptions_missing_index(self, index_name: str, limit: int = 1000) -> List[Dict[str, Any]]:
+        """
+        获取缺少指定索引的描述（用于增量重建）
+        
+        Args:
+            index_name: 索引名称，如 qwen3_8b_text_v1
+            limit: 最多返回数量
+        
+        Returns:
+            缺少该索引的描述列表
+        """
+        with self.get_cursor() as cursor:
+            cursor.execute("""
+                SELECT d.image_sha256, d.method, d.content
+                FROM descriptions d
+                JOIN images i ON d.image_sha256 = i.sha256
+                LEFT JOIN vector_entries v ON d.image_sha256 = v.image_sha256 
+                    AND d.method = v.method AND v.index_name = ?
+                WHERE i.is_deleted = 0 
+                    AND d.content IS NOT NULL AND d.content != ''
+                    AND v.id IS NULL
+                LIMIT ?
+            """, (index_name, limit))
+            return [dict(row) for row in cursor.fetchall()]
 

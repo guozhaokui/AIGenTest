@@ -933,8 +933,9 @@ async function handleThumbnail(dataUrl) {
 
 /* 左侧输入区域 - 可被内容撑大 */
 .left-panel {
-  min-width: 400px;
-  max-width: 550px;
+  min-width: 500px;
+  max-width: 700px;
+  flex: 1.2;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;

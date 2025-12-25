@@ -265,6 +265,124 @@
           </el-alert>
         </div>
       </el-tab-pane>
+
+      <!-- 重建索引 -->
+      <el-tab-pane label="重建索引" name="rebuild">
+        <div class="rebuild-section">
+          <div class="section-header">
+            <h4>索引状态</h4>
+            <el-button size="small" @click="loadIndexStatus" :loading="loadingIndexStatus">
+              刷新状态
+            </el-button>
+          </div>
+          
+          <!-- 索引状态表格 -->
+          <el-table :data="indexStatus" v-loading="loadingIndexStatus" style="width: 100%; margin-bottom: 20px;">
+            <el-table-column prop="model" label="模型" width="180" />
+            <el-table-column prop="index_name" label="索引名称" width="160" />
+            <el-table-column prop="dimension" label="维度" width="80" align="center" />
+            <el-table-column prop="current_count" label="已索引" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag type="success" size="small">{{ row.current_count }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="missing_count" label="待补充" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.missing_count > 0 ? 'warning' : 'info'" size="small">
+                  {{ row.missing_count }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="状态" width="100" align="center">
+              <template #default="{ row }">
+                <el-tag :type="row.needs_rebuild ? 'danger' : 'success'" size="small">
+                  {{ row.needs_rebuild ? '需要重建' : '完整' }}
+                </el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120" align="center">
+              <template #default="{ row }">
+                <el-button 
+                  size="small" 
+                  type="primary" 
+                  :disabled="!row.needs_rebuild || rebuilding"
+                  @click="startRebuild(row.index_name)"
+                >
+                  重建
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <!-- 重建配置 -->
+          <el-form :model="rebuildForm" label-width="120px" class="import-form" v-if="rebuildingIndex">
+            <el-form-item label="目标索引">
+              <el-tag size="large">{{ rebuildingIndex }}</el-tag>
+            </el-form-item>
+            <el-form-item label="每批数量">
+              <el-input-number v-model="rebuildForm.limit" :min="100" :max="10000" :step="100" :disabled="rebuilding" />
+              <span class="form-tip">每次处理的描述数量</span>
+            </el-form-item>
+            <el-form-item label="并发数">
+              <el-input-number v-model="rebuildForm.concurrency" :min="1" :max="16" :disabled="rebuilding" />
+              <span class="form-tip">同时请求嵌入服务的数量</span>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" @click="handleRebuild" :loading="rebuilding">
+                {{ rebuilding ? '重建中...' : '开始重建' }}
+              </el-button>
+              <el-button v-if="rebuilding" @click="cancelRebuild" type="danger">取消</el-button>
+              <el-button v-if="!rebuilding" @click="rebuildingIndex = null">取消选择</el-button>
+            </el-form-item>
+          </el-form>
+
+          <!-- 进度显示 -->
+          <div v-if="rebuildProgress" class="progress-panel">
+            <div class="progress-header">
+              <span class="progress-title">重建进度 - {{ rebuildProgress.model || rebuildingIndex }}</span>
+              <span class="progress-stats">
+                {{ rebuildProgress.processed + rebuildProgress.failed }} / {{ rebuildProgress.total }}
+                <span class="speed" v-if="rebuildProgress.speed">{{ rebuildProgress.speed }} 条/秒</span>
+              </span>
+            </div>
+            <el-progress :percentage="rebuildProgress.percent || 0" :stroke-width="20" />
+            <div class="progress-info">
+              <div class="info-row">
+                <span class="label">成功:</span>
+                <el-tag type="success" size="small">{{ rebuildProgress.processed }}</el-tag>
+                <span class="label">失败:</span>
+                <el-tag type="danger" size="small">{{ rebuildProgress.failed }}</el-tag>
+              </div>
+              <div class="info-row">
+                <span class="label">已用时:</span>
+                <span>{{ formatTime(rebuildProgress.elapsed) }}</span>
+                <span class="label">预计剩余:</span>
+                <span>{{ formatTime(rebuildProgress.eta) }}</span>
+              </div>
+              <div class="current-item" v-if="rebuildProgress.current">
+                <span class="label">当前:</span>
+                <span class="filename">{{ rebuildProgress.current.sha256?.slice(0, 16) }}...</span>
+                <el-tag :type="rebuildProgress.current.status === 'success' ? 'success' : 'danger'" size="small">
+                  {{ rebuildProgress.current.status }}
+                </el-tag>
+              </div>
+            </div>
+          </div>
+
+          <!-- 完成结果 -->
+          <div v-if="rebuildResult && !rebuilding" class="import-result">
+            <el-alert 
+              :title="`重建完成: ${rebuildResult.processed} 成功, ${rebuildResult.failed} 失败`"
+              :type="rebuildResult.failed > 0 ? 'warning' : 'success'"
+              show-icon
+            >
+              <template #default>
+                <div>索引当前数量: {{ rebuildResult.index_count }}</div>
+              </template>
+            </el-alert>
+          </div>
+        </div>
+      </el-tab-pane>
     </el-tabs>
   </div>
 </template>
@@ -277,7 +395,9 @@ import {
   batchGenerateCaptionsStream, 
   batchRecomputeEmbeddingsStream, 
   getVlmPrompts, 
-  getVlmServices 
+  getVlmServices,
+  getRebuildIndexStatus,
+  rebuildIndexStream
 } from '@/services/imagemgr';
 
 const activeTab = ref('import');
@@ -329,6 +449,20 @@ const recomputing = ref(false);
 const embeddingProgress = ref(null);
 const embeddingResult = ref(null);
 let cancelEmbeddingsFn = null;
+
+// 重建索引
+const indexStatus = ref([]);
+const loadingIndexStatus = ref(false);
+const rebuildingIndex = ref(null);
+const rebuildForm = reactive({
+  limit: 1000,
+  concurrency: 4
+});
+const rebuilding = ref(false);
+const rebuildProgress = ref(null);
+const rebuildResult = ref(null);
+let cancelRebuildFn = null;
+let rebuildStartTime = null;
 
 const statusType = {
   imported: 'success',
@@ -461,9 +595,81 @@ function cancelEmbeddings() {
   ElMessage.info('已取消更新');
 }
 
+// 重建索引操作
+async function loadIndexStatus() {
+  loadingIndexStatus.value = true;
+  try {
+    const data = await getRebuildIndexStatus();
+    indexStatus.value = data.indexes || [];
+  } catch (e) {
+    ElMessage.error('加载索引状态失败: ' + e.message);
+  } finally {
+    loadingIndexStatus.value = false;
+  }
+}
+
+function startRebuild(indexName) {
+  rebuildingIndex.value = indexName;
+  rebuildProgress.value = null;
+  rebuildResult.value = null;
+}
+
+function handleRebuild() {
+  if (!rebuildingIndex.value) return;
+  
+  rebuilding.value = true;
+  rebuildProgress.value = null;
+  rebuildResult.value = null;
+  rebuildStartTime = Date.now();
+  
+  const options = {
+    index_name: rebuildingIndex.value,
+    limit: rebuildForm.limit,
+    concurrency: rebuildForm.concurrency
+  };
+  
+  cancelRebuildFn = rebuildIndexStream(
+    options,
+    (data) => {
+      const elapsed = (Date.now() - rebuildStartTime) / 1000;
+      const current = data.processed + data.failed;
+      const percent = data.total > 0 ? Math.round((current / data.total) * 100) : 0;
+      const speed = elapsed > 0 ? (current / elapsed).toFixed(1) : 0;
+      const remaining = data.total - current;
+      const eta = speed > 0 ? remaining / parseFloat(speed) : 0;
+      
+      rebuildProgress.value = {
+        ...data,
+        percent,
+        speed,
+        elapsed,
+        eta
+      };
+    },
+    (data) => {
+      rebuildResult.value = data;
+      rebuilding.value = false;
+      ElMessage.success(`重建完成: ${data.processed} 条`);
+      // 刷新索引状态
+      loadIndexStatus();
+    },
+    (err) => {
+      rebuilding.value = false;
+      ElMessage.error('重建失败: ' + err.message);
+    }
+  );
+}
+
+function cancelRebuild() {
+  if (cancelRebuildFn) cancelRebuildFn();
+  rebuilding.value = false;
+  ElMessage.info('已取消重建');
+}
+
 onMounted(() => {
   loadVlmServices();
   loadVlmPrompts();
+  loadIndexStatus();
 });
 
 onUnmounted(() => {
@@ -471,6 +677,7 @@ onUnmounted(() => {
   if (cancelImportFn) cancelImportFn();
   if (cancelCaptionsFn) cancelCaptionsFn();
   if (cancelEmbeddingsFn) cancelEmbeddingsFn();
+  if (cancelRebuildFn) cancelRebuildFn();
 });
 </script>
 
@@ -583,5 +790,22 @@ onUnmounted(() => {
   margin-left: 8px;
   color: #909399;
   font-size: 12px;
+}
+
+.rebuild-section {
+  padding: 0;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.section-header h4 {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
 }
 </style>

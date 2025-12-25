@@ -371,6 +371,51 @@ router.post('/batch/recompute-embeddings/stream', async (req, res, next) => {
   }
 });
 
+// ==================== 索引重建 ====================
+
+// 获取索引重建状态
+router.get('/batch/rebuild-index/status', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.get('/api/batch/rebuild-index/status');
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 批量重建索引
+router.post('/batch/rebuild-index', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post('/api/batch/rebuild-index', req.body, {
+      timeout: 600000
+    });
+    res.json(response.data);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// 流式批量重建索引
+router.post('/batch/rebuild-index/stream', async (req, res, next) => {
+  try {
+    const response = await imagemgrClient.post('/api/batch/rebuild-index/stream', req.body, {
+      responseType: 'stream',
+      timeout: 0
+    });
+    
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no'
+    });
+    
+    response.data.pipe(res);
+  } catch (err) {
+    next(err);
+  }
+});
+
 // ==================== VLM 配置 ====================
 
 router.get('/vlm/config', async (req, res, next) => {
