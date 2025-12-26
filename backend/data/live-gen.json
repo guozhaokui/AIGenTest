@@ -3423,5 +3423,91 @@
     },
     "createdAt": "2025-12-25T09:15:19.662Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "0af8fea1-5927-4e15-bd5a-6afb221a0544",
+    "prompt": "这张图片的预览部分与整个界面风格不一致，你来修改一下，生成一个风格一致和谐的效果",
+    "imagePath": "/imagedb/22/27/22276a37666cd885b4c15bb347b101ac.jpg",
+    "imageUrls": [
+      "imagedb/75/c2/75c2b6653d68a75eb195adebabd170b8.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 27087,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 281,
+      "candidatesTokenCount": 1284,
+      "totalTokenCount": 1768,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 23
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 203
+    },
+    "createdAt": "2025-12-26T03:06:16.360Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "a0ca0ea7-bfad-46ad-9118-a2652523d5a0",
+    "prompt": "这张图片的预览部分与整个界面风格不一致，你来修改一下，生成一个风格一致和谐的效果，主要改一下天空和地面的颜色",
+    "imagePath": "/imagedb/54/ba/54ba27321f1da417afc989662316add7.jpg",
+    "imageUrls": [
+      "imagedb/75/c2/75c2b6653d68a75eb195adebabd170b8.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 23759,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 290,
+      "candidatesTokenCount": 1246,
+      "totalTokenCount": 1745,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 32
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 209
+    },
+    "createdAt": "2025-12-26T03:13:37.022Z",
+    "dimensionScores": {}
   }
 ]
