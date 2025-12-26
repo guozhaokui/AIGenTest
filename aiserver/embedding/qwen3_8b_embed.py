@@ -59,7 +59,8 @@ def load_model():
     print(f"Using quantization: {USE_QUANTIZATION}")
     
     try:
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
+        # 注意：官方要求 padding_side='left'
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True, padding_side='left')
         
         if USE_QUANTIZATION:
             # 使用 INT8 量化
@@ -129,9 +130,10 @@ def health_check():
 
 def get_detailed_instruct(task_description: str, query: str) -> str:
     """
-    构造带任务指令的输入（Qwen3-Embedding 推荐格式）
+    构造带任务指令的输入（Qwen3-Embedding 官方格式）
+    注意：Query: 后面没有空格
     """
-    return f"Instruct: {task_description}\nQuery: {query}"
+    return f"Instruct: {task_description}\nQuery:{query}"
 
 
 @app.post("/embed/text")

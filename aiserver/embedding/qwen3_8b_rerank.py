@@ -13,9 +13,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import JSONResponse
 import uvicorn
-import numpy as np
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -40,15 +38,23 @@ tokenizer = None
 token_true_id = None
 token_false_id = None
 
+# 官方 prompt 模板
+PREFIX = "<|im_start|>system\nJudge whether the Document meets the requirements based on the Query and the Instruct provided. Note that the answer can only be \"yes\" or \"no\".<|im_end|>\n<|im_start|>user\n"
+SUFFIX = "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n"
+prefix_tokens = None
+suffix_tokens = None
+MAX_LENGTH = 8192
+
 
 def load_model():
     """加载 Qwen3-Reranker-8B 模型"""
-    global model, tokenizer, token_true_id, token_false_id
+    global model, tokenizer, token_true_id, token_false_id, prefix_tokens, suffix_tokens
     print(f"Loading Qwen3-Reranker-8B from {MODEL_PATH}...")
     print(f"Using quantization: {USE_QUANTIZATION}")
     
     try:
-        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True)
+        # 注意：官方要求 padding_side='left'
+        tokenizer = AutoTokenizer.from_pretrained(MODEL_PATH, trust_remote_code=True, padding_side='left')
         
         if USE_QUANTIZATION:
             # 使用 INT8 量化
@@ -74,8 +80,13 @@ def load_model():
         token_true_id = tokenizer.convert_tokens_to_ids("yes")
         token_false_id = tokenizer.convert_tokens_to_ids("no")
         
+        # 预处理 prefix 和 suffix tokens（官方用法）
+        prefix_tokens = tokenizer.encode(PREFIX, add_special_tokens=False)
+        suffix_tokens = tokenizer.encode(SUFFIX, add_special_tokens=False)
+        
         print(f"Qwen3-Reranker-8B loaded successfully.")
         print(f"Token IDs - yes: {token_true_id}, no: {token_false_id}")
+        print(f"Prefix tokens: {len(prefix_tokens)}, Suffix tokens: {len(suffix_tokens)}")
         
         # 打印显存使用
         if torch.cuda.is_available():
@@ -122,60 +133,79 @@ def health_check():
     }
 
 
-def format_rerank_prompt(query: str, document: str) -> str:
+def format_instruction(query: str, document: str, instruction: str = None) -> str:
     """
-    构造 Qwen3-Reranker 的输入格式
+    构造 Qwen3-Reranker 的输入格式（官方用法）
     
-    Qwen3-Reranker 使用 chat 格式，询问文档是否与查询相关
+    使用 <Instruct>, <Query>, <Document> 标签格式
     """
-    # 标准的 reranker prompt 格式
-    prompt = f"""Given a query and a document, determine if the document is relevant to the query. Answer only "yes" or "no".
-
-Query: {query}
-
-Document: {document}
-
-Is the document relevant to the query?"""
+    if instruction is None:
+        instruction = "Given a web search query, retrieve relevant passages that answer the query"
     
-    # 使用 chat 模板
-    messages = [{"role": "user", "content": prompt}]
-    text = tokenizer.apply_chat_template(
-        messages,
-        tokenize=False,
-        add_generation_prompt=True,
-        enable_thinking=False  # 禁用思考模式，直接输出答案
+    return f"<Instruct>: {instruction}\n<Query>: {query}\n<Document>: {document}"
+
+
+def process_inputs(pairs: List[str]):
+    """
+    处理输入文本，按照官方方式添加 prefix 和 suffix tokens
+    """
+    inputs = tokenizer(
+        pairs, 
+        padding=False, 
+        truncation='longest_first',
+        return_attention_mask=False, 
+        max_length=MAX_LENGTH - len(prefix_tokens) - len(suffix_tokens)
     )
-    return text
+    
+    # 添加 prefix 和 suffix tokens
+    for i, ele in enumerate(inputs['input_ids']):
+        inputs['input_ids'][i] = prefix_tokens + ele + suffix_tokens
+    
+    # Padding
+    inputs = tokenizer.pad(inputs, padding=True, return_tensors="pt", max_length=MAX_LENGTH)
+    
+    # Move to device
+    device = next(model.parameters()).device
+    for key in inputs:
+        inputs[key] = inputs[key].to(device)
+    
+    return inputs
+
+
+def compute_relevance_scores(queries: List[str], documents: List[str]) -> List[float]:
+    """
+    批量计算查询和文档的相关性分数（官方用法）
+    
+    使用 log_softmax + exp 计算概率
+    """
+    # 构造输入对
+    pairs = [format_instruction(q, d) for q, d in zip(queries, documents)]
+    
+    # 处理输入
+    inputs = process_inputs(pairs)
+    
+    with torch.no_grad():
+        # 获取最后一个 token 的 logits
+        batch_scores = model(**inputs).logits[:, -1, :]
+        
+        # 获取 yes 和 no 的 logits
+        true_vector = batch_scores[:, token_true_id]
+        false_vector = batch_scores[:, token_false_id]
+        
+        # 使用 log_softmax 然后 exp（官方用法）
+        batch_scores = torch.stack([false_vector, true_vector], dim=1)
+        batch_scores = torch.nn.functional.log_softmax(batch_scores, dim=1)
+        scores = batch_scores[:, 1].exp().tolist()
+    
+    return scores
 
 
 def compute_relevance_score(query: str, document: str) -> float:
     """
-    计算查询和文档的相关性分数
-    
-    使用模型对 "yes" 的置信度作为相关性分数
+    计算单个查询-文档对的相关性分数
     """
-    # 构造 prompt
-    text = format_rerank_prompt(query, document)
-    
-    # Tokenize
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=4096)
-    device = next(model.parameters()).device
-    inputs = {k: v.to(device) for k, v in inputs.items()}
-    
-    with torch.no_grad():
-        outputs = model(**inputs)
-        # 取最后一个位置的 logits
-        logits = outputs.logits[0, -1, :]
-        
-        # 获取 "yes" 和 "no" 的 logits
-        yes_logit = logits[token_true_id].float()
-        no_logit = logits[token_false_id].float()
-        
-        # Softmax 得到概率
-        probs = torch.softmax(torch.tensor([yes_logit, no_logit]), dim=0)
-        score = probs[0].item()
-    
-    return score
+    scores = compute_relevance_scores([query], [document])
+    return scores[0]
 
 
 @app.post("/rerank")
@@ -208,12 +238,10 @@ async def rerank(req: RerankRequest):
             doc_preview = doc[:50] + "..." if len(doc) > 50 else doc
             print(f"  [{i}] {doc_preview}")
         
-        # 计算每个文档的相关性分数
+        # 批量计算所有文档的相关性分数（更高效）
         print(f"\n[Rerank-8B] 计算相关性分数...")
-        scores = []
-        for doc in req.documents:
-            score = compute_relevance_score(req.query, doc)
-            scores.append(score)
+        queries = [req.query] * len(req.documents)
+        scores = compute_relevance_scores(queries, req.documents)
         
         # 打印每个分数
         print(f"\n[Rerank-8B] 相关性分数:")
