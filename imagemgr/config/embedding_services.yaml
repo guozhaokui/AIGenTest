@@ -40,6 +40,14 @@ indexes:
     service_name: qwen3_8b_embed
     description: 文本描述嵌入索引（8B 高精度）
 
+  # 文本嵌入索引 - SigLIP2（跨模态）
+  siglip2_text_v1:
+    model_name: siglip2-so400m-patch16-512
+    model_version: "1.0"
+    dimension: 1152
+    service_name: siglip2_local
+    description: SigLIP2 跨模态文本嵌入（与图片向量空间一致，支持文搜图）
+
 # -----------------------------------------------------------------------------
 # VLM 图片描述生成服务
 # -----------------------------------------------------------------------------
