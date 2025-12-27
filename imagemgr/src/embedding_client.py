@@ -263,17 +263,24 @@ class EmbeddingClient:
         """获取文本嵌入服务信息"""
         return self._get_service_config(self.text_service)
     
-    def get_all_text_services(self) -> List[dict]:
+    def get_all_text_services(self, include_siglip: bool = False) -> List[dict]:
         """
         获取所有启用的文本嵌入服务
+        
+        Args:
+            include_siglip: 是否包含 SigLIP2 服务（用于跨模态搜索）
         
         Returns:
             服务配置列表，每个元素包含 service_name 和配置信息
         """
         services = []
         for name, config in self.config.get("services", {}).items():
-            # 跳过图片嵌入服务（通过 endpoint 端口判断或模型名称）
-            if "siglip" in name.lower() or "image" in name.lower():
+            # 跳过图片专用服务（除非明确包含 SigLIP2）
+            if "siglip" in name.lower():
+                if not include_siglip:
+                    continue
+            # 跳过其他图片服务
+            if "image" in name.lower():
                 continue
             # 跳过未启用的服务
             if not config.get("is_enabled", True):

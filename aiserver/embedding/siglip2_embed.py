@@ -1,6 +1,7 @@
 """
-SigLIP-2 图片嵌入服务
-用于计算图片的视觉嵌入向量
+SigLIP-2 图片和文本嵌入服务
+用于计算图片的视觉嵌入向量和文本嵌入向量
+支持跨模态搜索（文搜图、图搜图）
 """
 import torch
 from transformers import AutoModel, AutoProcessor
@@ -10,12 +11,12 @@ import uvicorn
 from PIL import Image
 from io import BytesIO
 import numpy as np
-from typing import Optional
+from typing import Optional, List
 import base64
 from pydantic import BaseModel
 
 # Initialize FastAPI app
-app = FastAPI(title="SigLIP-2 Image Embedding API")
+app = FastAPI(title="SigLIP-2 Image & Text Embedding API")
 
 # Model configuration
 MODEL_PATH = "/mnt/hdd/models/siglip2-so400m-patch16-512"  # 1.14B 最强版本
@@ -51,6 +52,16 @@ class ImageBase64Request(BaseModel):
     image_base64: str
 
 
+class TextRequest(BaseModel):
+    """单个文本请求"""
+    text: str
+
+
+class TextsRequest(BaseModel):
+    """批量文本请求"""
+    texts: List[str]
+
+
 @app.on_event("startup")
 async def startup_event():
     load_model()
@@ -64,6 +75,7 @@ def health_check():
         "model": MODEL_NAME,
         "version": MODEL_VERSION,
         "dimension": DIMENSION,
+        "capabilities": ["image_embedding", "text_embedding", "cross_modal_search"],
         "device": str(next(model.parameters()).device) if model else "not loaded"
     }
 
@@ -157,6 +169,119 @@ def compute_image_embedding(image: Image.Image) -> np.ndarray:
     embedding = embedding / np.linalg.norm(embedding)
     
     return embedding
+
+
+def compute_text_embedding(text: str) -> np.ndarray:
+    """
+    计算文本嵌入向量
+    
+    Args:
+        text: 输入文本
+    
+    Returns:
+        归一化的嵌入向量
+    """
+    # 预处理文本
+    inputs = processor(text=text, return_tensors="pt", padding=True, truncation=True, max_length=64)
+    inputs = {k: v.to("cuda") for k, v in inputs.items()}
+    
+    # 计算嵌入
+    with torch.no_grad():
+        outputs = model.get_text_features(**inputs)
+    
+    # 归一化
+    embedding = outputs[0].float().cpu().numpy()
+    embedding = embedding / np.linalg.norm(embedding)
+    
+    return embedding
+
+
+def compute_text_embeddings_batch(texts: List[str]) -> np.ndarray:
+    """
+    批量计算文本嵌入向量
+    
+    Args:
+        texts: 输入文本列表
+    
+    Returns:
+        归一化的嵌入向量矩阵 (N, dimension)
+    """
+    # 预处理文本
+    inputs = processor(text=texts, return_tensors="pt", padding=True, truncation=True, max_length=64)
+    inputs = {k: v.to("cuda") for k, v in inputs.items()}
+    
+    # 计算嵌入
+    with torch.no_grad():
+        outputs = model.get_text_features(**inputs)
+    
+    # 归一化
+    embeddings = outputs.float().cpu().numpy()
+    norms = np.linalg.norm(embeddings, axis=1, keepdims=True)
+    embeddings = embeddings / norms
+    
+    return embeddings
+
+
+# ==================== 文本嵌入 API ====================
+
+@app.post("/embed/text")
+async def embed_text(req: TextRequest):
+    """
+    计算单个文本的嵌入向量
+    
+    SigLIP2 的文本嵌入与图片嵌入在同一向量空间，
+    可用于文字搜索图片（跨模态检索）
+    
+    Args:
+        text: 输入文本
+    
+    Returns:
+        embedding: 嵌入向量列表
+        dimension: 向量维度
+        model: 模型名称
+    """
+    try:
+        embedding = compute_text_embedding(req.text)
+        
+        return JSONResponse(content={
+            "embedding": embedding.tolist(),
+            "dimension": len(embedding),
+            "model": MODEL_NAME,
+            "version": MODEL_VERSION
+        })
+    
+    except Exception as e:
+        print(f"Error embedding text: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/embed/texts")
+async def embed_texts(req: TextsRequest):
+    """
+    批量计算文本的嵌入向量
+    
+    Args:
+        texts: 输入文本列表
+    
+    Returns:
+        embeddings: 嵌入向量列表
+        dimension: 向量维度
+        model: 模型名称
+    """
+    try:
+        embeddings = compute_text_embeddings_batch(req.texts)
+        
+        return JSONResponse(content={
+            "embeddings": embeddings.tolist(),
+            "dimension": embeddings.shape[1],
+            "count": len(req.texts),
+            "model": MODEL_NAME,
+            "version": MODEL_VERSION
+        })
+    
+    except Exception as e:
+        print(f"Error embedding texts: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":

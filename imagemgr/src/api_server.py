@@ -51,6 +51,13 @@ TEXT_INDEXES = {
         "model_name": "Qwen3-Embedding-8B",
         "model_version": "1.0",
         "service_name": "qwen3_8b_embed"
+    },
+    "siglip2_text_v1": {
+        "dimension": 1152,
+        "model_name": "siglip2-so400m-patch16-512",
+        "model_version": "1.0",
+        "service_name": "siglip2_local",
+        "description": "SigLIP2 跨模态文本嵌入（与图片在同一向量空间）"
     }
 }
 
