@@ -6,7 +6,7 @@
 
 | 服务 | 端口 | 模型 | 用途 | 维度/说明 |
 |------|------|------|------|------|
-| siglip2_embed.py | 6010 | SigLIP2-so400m-patch16-512 (1.14B) | 图片嵌入 | 1152 |
+| siglip2_embed.py | 6010 | SigLIP2-so400m-patch16-512 (1.14B) | 图片+文本嵌入（跨模态） | 1152 |
 | qwen3_4b_embed.py | 6011 | Qwen3-4B (ZImage-Turbo) | 文本嵌入（复用语言模型） | 2560 |
 | bge_embed.py | 6012 | BGE-Large-zh-v1.5 | 文本嵌入（轻量） | 1024 |
 | qwen3_4b_rerank.py | 6013 | Qwen3-4B (ZImage-Turbo) | 重排序（LLM logits） | - |
@@ -199,3 +199,64 @@ USE_QUANTIZATION = False  # 改为 False
 ```
 
 注意：FP16 需要约 16GB 显存/模型，两个 8B 模型需要 32GB。
+
+## ⚠️ SigLIP2 跨模态检索注意事项
+
+SigLIP2 支持**文搜图**（用文本搜索图片），但有几个关键配置必须正确：
+
+### 1. 文本 Padding 必须使用固定长度
+
+```python
+# ❌ 错误做法 - 会导致文本和图片嵌入不对齐！
+inputs = processor(text=text, padding=True, ...)
+
+# ✅ 正确做法 - 必须 pad 到固定长度 64
+inputs = processor(
+    text=text, 
+    padding="max_length",  # 必须是 "max_length"
+    max_length=64,         # 模型的 max_position_embeddings
+    truncation=True,
+    return_tensors="pt"
+)
+```
+
+**原因**：SigLIP2 模型训练时使用固定长度 64 的文本输入，如果使用可变长度 padding，文本嵌入和图片嵌入将不在同一向量空间，导致相似度接近 0。
+
+### 2. 文本长度限制
+
+| 参数 | 值 |
+|------|-----|
+| 最大 Token 数 | 64 |
+| 大约对应中文 | 40-50 字 |
+| 大约对应英文 | 50-60 词 |
+
+超过限制的文本会被自动截断。
+
+### 3. API 使用示例
+
+```bash
+# 获取文本嵌入（用于文搜图）
+curl -X POST http://localhost:6010/embed/text \
+  -H "Content-Type: application/json" \
+  -d '{"text": "a cute cat"}'
+
+# 获取图片嵌入
+curl -X POST http://localhost:6010/embed/image \
+  -F "file=@cat.jpg"
+```
+
+### 4. 跨模态搜索流程
+
+```
+1. 入库时：图片 → SigLIP2 → 图片嵌入向量 → 存入索引
+2. 搜索时：文本 → SigLIP2 → 文本嵌入向量 → 在图片索引中搜索
+3. 文本向量和图片向量在同一空间，可直接计算余弦相似度
+```
+
+### 5. 性能对比
+
+| 查询方式 | 模型 | 适用场景 |
+|---------|------|----------|
+| 文搜图 | SigLIP2 (文本→图片索引) | 用简短描述找图 |
+| 文搜文 | Qwen3-8B (文本→文本索引) | 用长描述匹配 |
+| 图搜图 | SigLIP2 (图片→图片索引) | 以图搜图 |
