@@ -180,9 +180,19 @@ def compute_text_embedding(text: str) -> np.ndarray:
     
     Returns:
         归一化的嵌入向量
+    
+    Note:
+        必须使用 padding="max_length" 和 max_length=64，
+        这是模型训练时的配置，否则跨模态匹配会失效！
     """
-    # 预处理文本
-    inputs = processor(text=text, return_tensors="pt", padding=True, truncation=True, max_length=64)
+    # 预处理文本 - 关键：必须 padding 到固定长度 64！
+    inputs = processor(
+        text=text, 
+        return_tensors="pt", 
+        padding="max_length",  # 必须是 max_length，不能是 True
+        max_length=64,         # 模型的 max_position_embeddings
+        truncation=True
+    )
     inputs = {k: v.to("cuda") for k, v in inputs.items()}
     
     # 计算嵌入
@@ -205,9 +215,19 @@ def compute_text_embeddings_batch(texts: List[str]) -> np.ndarray:
     
     Returns:
         归一化的嵌入向量矩阵 (N, dimension)
+    
+    Note:
+        必须使用 padding="max_length" 和 max_length=64，
+        这是模型训练时的配置，否则跨模态匹配会失效！
     """
-    # 预处理文本
-    inputs = processor(text=texts, return_tensors="pt", padding=True, truncation=True, max_length=64)
+    # 预处理文本 - 关键：必须 padding 到固定长度 64！
+    inputs = processor(
+        text=texts, 
+        return_tensors="pt", 
+        padding="max_length",  # 必须是 max_length，不能是 True
+        max_length=64,         # 模型的 max_position_embeddings
+        truncation=True
+    )
     inputs = {k: v.to("cuda") for k, v in inputs.items()}
     
     # 计算嵌入
