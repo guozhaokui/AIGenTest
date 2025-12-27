@@ -42,7 +42,7 @@ if pgrep -f "qwen3_embed.py" > /dev/null; then
     echo -e "${YELLOW}⚡ 文本嵌入服务 (6011): 已在运行${NC}"
 else
     echo -e "启动文本嵌入服务 (端口 6011)..."
-    nohup python "$SCRIPT_DIR/qwen3_embed.py" > "$LOG_DIR/qwen3_embed.log" 2>&1 &
+    nohup python "$SCRIPT_DIR/qwen3_4b_embed.py" > "$LOG_DIR/qwen3_4b_embed.log" 2>&1 &
     echo -e "${GREEN}  ✓ PID: $!${NC}"
 fi
 
@@ -66,11 +66,11 @@ fi
 
 # 启动 Qwen3 重排序服务 (6013) - 默认启动，使用 --no-rerank 跳过
 if [ "$1" != "--no-rerank" ]; then
-    if pgrep -f "qwen3_rerank.py" > /dev/null; then
+    if pgrep -f "qwen3_4b_rerank.py" > /dev/null; then
         echo -e "${YELLOW}⚡ 重排序服务 (6013): 已在运行${NC}"
     else
         echo -e "启动重排序服务 (端口 6013)..."
-        nohup python "$SCRIPT_DIR/qwen3_rerank.py" > "$LOG_DIR/qwen3_rerank.log" 2>&1 &
+        nohup python "$SCRIPT_DIR/qwen3_4b_rerank.py" > "$LOG_DIR/qwen3_4b_rerank.log" 2>&1 &
         echo -e "${GREEN}  ✓ PID: $!${NC}"
     fi
 fi
