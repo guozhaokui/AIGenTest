@@ -37,14 +37,14 @@ source /mnt/hdd/anaconda3/etc/profile.d/conda.sh
 conda activate $CONDA_ENV
 echo -e "${GREEN}✓ Conda 环境: $CONDA_ENV${NC}"
 
-# 启动文本嵌入服务 (6011)
-if pgrep -f "qwen3_embed.py" > /dev/null; then
-    echo -e "${YELLOW}⚡ 文本嵌入服务 (6011): 已在运行${NC}"
-else
-    echo -e "启动文本嵌入服务 (端口 6011)..."
-    nohup python "$SCRIPT_DIR/qwen3_4b_embed.py" > "$LOG_DIR/qwen3_4b_embed.log" 2>&1 &
-    echo -e "${GREEN}  ✓ PID: $!${NC}"
-fi
+# [已禁用] Qwen3-4B 嵌入服务 (6011) - 效果不好，节省显存
+# if pgrep -f "qwen3_embed.py" > /dev/null; then
+#     echo -e "${YELLOW}⚡ 文本嵌入服务 (6011): 已在运行${NC}"
+# else
+#     echo -e "启动文本嵌入服务 (端口 6011)..."
+#     nohup python "$SCRIPT_DIR/qwen3_4b_embed.py" > "$LOG_DIR/qwen3_4b_embed.log" 2>&1 &
+#     echo -e "${GREEN}  ✓ PID: $!${NC}"
+# fi
 
 # 启动图片嵌入服务 (6010)
 if pgrep -f "siglip2_embed.py" > /dev/null; then
@@ -95,7 +95,7 @@ check_service() {
 }
 
 check_service "图片嵌入服务 (SigLIP-2)" 6010
-check_service "文本嵌入服务 (Qwen3)" 6011
+# check_service "文本嵌入服务 (Qwen3)" 6011  # 已禁用
 check_service "文本嵌入服务 (BGE)" 6012
 if [ "$1" != "--no-rerank" ]; then
     check_service "重排序服务 (Qwen3)" 6013
@@ -108,7 +108,7 @@ echo -e "${CYAN}═════════════════════�
 echo ""
 echo -e "${GREEN}远程连接信息:${NC}"
 echo "  图片嵌入 (SigLIP-2): http://${SERVER_IP}:6010"
-echo "  文本嵌入 (Qwen3):    http://${SERVER_IP}:6011"
+# echo "  文本嵌入 (Qwen3):    http://${SERVER_IP}:6011"  # 已禁用
 echo "  文本嵌入 (BGE):      http://${SERVER_IP}:6012"
 if [ "$1" != "--no-rerank" ]; then
     echo "  重排序 (Qwen3):      http://${SERVER_IP}:6013"
