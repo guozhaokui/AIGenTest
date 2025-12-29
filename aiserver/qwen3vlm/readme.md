@@ -87,7 +87,7 @@ python test_client.py --interactive
 GPUS=1,2,3,4 ./start_multi.sh
 
 # 启动 6 个实例（GPU 1-6）
-GPUS=1,2,3,4,5,6 ./start_multi.sh
+GPUS=1,2,3,4,5,6,7 ./start_multi.sh
 
 # 停止所有实例
 ./stop_multi.sh
