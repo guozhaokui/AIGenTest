@@ -54,7 +54,7 @@ def download_model(model_id: str, cache_dir: str = None):
 
 def main():
 
-    download_model("Qwen/Qwen-Image-Layered", "/mnt/hdd/guo/AIGenTest/aiserver/models")
+    download_model("Qwen/Qwen-Image-Layered", "/data1/guo/AIGenTest/aiserver/models")
 
 
 if __name__ == "__main__":
