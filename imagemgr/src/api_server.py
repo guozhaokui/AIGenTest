@@ -116,6 +116,12 @@ class ImageSearchRequest(BaseModel):
     top_k: int = 100  # 默认返回100条结果
 
 
+class CrossModalSearchRequest(BaseModel):
+    """跨模态搜索请求（使用 SigLIP2 文本嵌入搜索图片）"""
+    query: str
+    top_k: int = 100  # 默认返回100条结果
+
+
 class AddDescriptionRequest(BaseModel):
     """添加描述请求"""
     method: str
@@ -824,8 +830,11 @@ def search_by_text(req: TextSearchRequest):
             failed_services.append({"index": index_name, "service": service_name, "model": model_name})
             continue
         
-        # 在对应索引中搜索
-        search_index = text_indexes[index_name]
+        # SigLIP2 跨模态搜索：在图片索引中搜索（而非文本索引）
+        if index_name == "siglip2_text_v1":
+            search_index = image_index  # 使用图片索引
+        else:
+            search_index = text_indexes[index_name]
         results = search_index.search_deduplicated(query_embedding, req.top_k)
         
         # 为每个结果添加索引和模型信息
@@ -921,6 +930,42 @@ def search_by_text(req: TextSearchRequest):
         "query": req.query, 
         "indexes_searched": used_models,
         "reranked": reranked,
+        "results": enriched_results
+    }
+
+
+@app.post("/api/search/crossmodal")
+def search_crossmodal(req: CrossModalSearchRequest):
+    """
+    跨模态搜索（使用 SigLIP2 文搜图）
+    
+    - 使用 SigLIP2 将文本嵌入到图片向量空间
+    - 在图片索引中直接搜索
+    - 无需图片有描述，可直接用自然语言搜索图片
+    """
+    # 使用 siglip2 服务获取文本嵌入
+    query_embedding = embedding_client.get_text_embedding_by_service(req.query, "siglip2_local")
+    if query_embedding is None:
+        raise HTTPException(status_code=503, detail="SigLIP2 文本嵌入服务不可用")
+    
+    # 在图片索引中搜索（而不是文本索引）
+    results = image_index.search_deduplicated(query_embedding, req.top_k)
+    
+    # 补充图片信息
+    enriched_results = []
+    for r in results:
+        image = db.get_image(r["sha256"])
+        if image:
+            enriched_results.append({
+                **r,
+                "width": image["width"],
+                "height": image["height"],
+                "matched_by": "crossmodal"
+            })
+    
+    return {
+        "query": req.query,
+        "method": "siglip2_crossmodal",
         "results": enriched_results
     }
 

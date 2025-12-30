@@ -3509,5 +3509,233 @@
     },
     "createdAt": "2025-12-26T03:13:37.022Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "151bb9b6-9e60-4bfe-8e68-1c569359194c",
+    "prompt": "这张图片的预览部分与整个界面风格不一致，你来修改一下，生成一个风格一致和谐的效果，主要改一下天空和地面的颜色。由于光照是白天，所以你要既符合整体风格，又能与光照一致",
+    "imagePath": "/imagedb/72/73/727306a7523edadda22740e3e1b30d1d.jpg",
+    "imageUrls": [
+      "imagedb/75/c2/75c2b6653d68a75eb195adebabd170b8.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 50992,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 309,
+      "candidatesTokenCount": 1282,
+      "totalTokenCount": 1787,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 51
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 196
+    },
+    "createdAt": "2025-12-26T03:18:04.014Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "880fb708-a5af-4d16-ba3f-681f438c9614",
+    "prompt": "这张图片的预览部分与整个界面风格不一致，你来修改一下，生成一个风格一致和谐的效果，去掉地面，背景改成尽量和谐的纯色",
+    "imagePath": "/imagedb/2d/d2/2dd222e562b6059a898b04129c02fd05.jpg",
+    "imageUrls": [
+      "imagedb/75/c2/75c2b6653d68a75eb195adebabd170b8.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 21208,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 292,
+      "candidatesTokenCount": 1255,
+      "totalTokenCount": 1676,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 34
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 129
+    },
+    "createdAt": "2025-12-26T03:20:50.325Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "dad9909f-5cda-4e0f-99ec-dbadaeae39df",
+    "prompt": "",
+    "imagePath": "/modeldb/39f6d794-9644-419f-8027-68b8b5cc6721/078f0595-e21d-4b7e-87cc-b5a0635e8371",
+    "imageUrls": [
+      "imagedb/37/16/37164804c787779d29c210ba7bf367f1.jpg"
+    ],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": "",
+      "modelSeed": -1
+    },
+    "duration": 52909,
+    "info3d": {
+      "modelDir": "/modeldb/39f6d794-9644-419f-8027-68b8b5cc6721/078f0595-e21d-4b7e-87cc-b5a0635e8371",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-26T03:30:09.972Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/39f6d794-9644-419f-8027-68b8b5cc6721/078f0595-e21d-4b7e-87cc-b5a0635e8371/thumbnail.jpg"
+  },
+  {
+    "id": "f5595d55-4297-451e-8181-77cc24a52f10",
+    "prompt": "",
+    "imagePath": "/modeldb/8ad90899-c21b-4c1c-a743-61b622f07a32/9220521b-0706-443d-b2c2-99a015d73fc2",
+    "imageUrls": [
+      "imagedb/d4/a7/d4a7c830e2a9a3dbd95d7b45d436443a.webp"
+    ],
+    "modelId": "tripo_3d",
+    "modelName": "",
+    "params": {
+      "modelVersion": "default",
+      "texture": "true",
+      "pbr": "true",
+      "faceLimit": 50000,
+      "orientation": "",
+      "modelSeed": -1
+    },
+    "duration": 53854,
+    "info3d": {
+      "modelDir": "/modeldb/8ad90899-c21b-4c1c-a743-61b622f07a32/9220521b-0706-443d-b2c2-99a015d73fc2",
+      "isSingleFile": true,
+      "modelPath": "model.glb"
+    },
+    "usage": null,
+    "createdAt": "2025-12-26T03:40:26.128Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/8ad90899-c21b-4c1c-a743-61b622f07a32/9220521b-0706-443d-b2c2-99a015d73fc2/thumbnail.jpg"
+  },
+  {
+    "id": "17e0a0dc-e533-4d10-8267-e567b45149e1",
+    "prompt": "把这张图的角色提取出来，放到纯绿色背景下，角色的原始颜色不要做任何修改，绿色背景为纯绿色0x00ff00, 我要用来做绿幕处理",
+    "imagePath": "/imagedb/40/59/4059bc97080d78ce1f7839d042deb6b8.jpg",
+    "imageUrls": [
+      "imagedb/b1/52/b152a0c2a1e36f0d119b7e28554c7b0e.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 21167,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 301,
+      "candidatesTokenCount": 1209,
+      "totalTokenCount": 1663,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 43
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 153
+    },
+    "createdAt": "2025-12-30T02:44:03.188Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2426b061-d9b1-4408-b89b-c5469100f09a",
+    "prompt": "把这张图的角色提取出来，放到纯蓝色背景下，角色的原始颜色不要做任何修改，绿色背景为纯绿色0x0000ff, 我要用来做抠图处理",
+    "imagePath": "/imagedb/bb/19/bb1913f422688a85446d5b421fa8a893.jpg",
+    "imageUrls": [
+      "imagedb/b1/52/b152a0c2a1e36f0d119b7e28554c7b0e.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 19911,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 301,
+      "candidatesTokenCount": 1222,
+      "totalTokenCount": 1657,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 43
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 134
+    },
+    "createdAt": "2025-12-30T02:45:28.168Z",
+    "dimensionScores": {}
   }
 ]

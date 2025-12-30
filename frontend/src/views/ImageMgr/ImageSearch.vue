@@ -40,7 +40,7 @@
       </div>
       <div class="search-options">
         <span class="option-label">嵌入模型：</span>
-        <el-select v-model="selectedIndex" placeholder="选择嵌入模型" style="width: 200px;">
+        <el-select v-model="selectedIndex" placeholder="选择嵌入模型" style="width: 280px;">
           <el-option label="全部模型" value="" />
           <el-option 
             v-for="idx in textIndexes" 
@@ -258,7 +258,7 @@ async function handleTextSearch() {
       ElMessage.info('未找到匹配的图片');
     }
   } catch (e) {
-    ElMessage.error('搜索失败');
+    ElMessage.error('搜索失败: ' + (e.response?.data?.detail || e.message));
     console.error(e);
   } finally {
     searching.value = false;

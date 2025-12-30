@@ -8,8 +8,14 @@
  * - 生成: https://platform.tripo3d.com/docs/generation
  * - 上传: https://platform.tripo3d.com/docs/upload
  * 
- * 流程:
+ * 流程（默认模式 - 上传文件）:
  * 1. 上传图片 -> 获取 image_token
+ * 2. 创建生成任务 -> 获取 task_id
+ * 3. 轮询任务状态 -> 获取模型 URL
+ * 4. 下载模型文件
+ * 
+ * 流程（Base64 URL 模式 - config.useBase64Url = true）:
+ * 1. 直接在 file.url 中传递 base64 Data URI
  * 2. 创建生成任务 -> 获取 task_id
  * 3. 轮询任务状态 -> 获取模型 URL
  * 4. 下载模型文件
@@ -50,6 +56,41 @@ async function downloadContent(url, dispatcher, apiKey) {
   const buffer = Buffer.from(arrayBuffer);
   const contentType = resp.headers.get('content-type');
   return { buffer, contentType };
+}
+
+/**
+ * 将 base64 转换为 Data URI
+ * 用于 useBase64Url 模式，直接在 file.url 中传递
+ */
+function toDataUri(base64, mimeType) {
+  return `data:${mimeType};base64,${base64}`;
+}
+
+/**
+ * 生成 payload 摘要（避免打印过长的 base64）
+ */
+function summarizePayload(payload) {
+  const summary = { ...payload };
+  
+  // 处理单个 file
+  if (summary.file && summary.file.url) {
+    summary.file = {
+      ...summary.file,
+      url: `[data URI, length=${summary.file.url.length}]`
+    };
+  }
+  
+  // 处理 files 数组
+  if (summary.files && Array.isArray(summary.files)) {
+    summary.files = summary.files.map((f, i) => {
+      if (f.url) {
+        return { ...f, url: `[data URI, length=${f.url.length}]` };
+      }
+      return f;
+    });
+  }
+  
+  return summary;
 }
 
 /**
@@ -135,7 +176,9 @@ async function uploadImage(imageBase64, mimeType, apiKey, dispatcher) {
 async function createTask(payload, apiKey, dispatcher) {
   const taskUrl = `${API_BASE}/task`;
   
-  console.log('[tripo] 创建任务:', JSON.stringify(payload, null, 2));
+  // 打印 payload 摘要（避免打印过长的 base64）
+  const payloadSummary = summarizePayload(payload);
+  console.log('[tripo] 创建任务:', JSON.stringify(payloadSummary, null, 2));
   
   const response = await fetch(taskUrl, {
     method: 'POST',
@@ -307,6 +350,13 @@ async function generate3D({ apiKey, model, prompt, images, config, dispatcher })
   let inputImages = []; // 保存输入图片信息
   
   if (hasImage) {
+    // 检查是否使用 Base64 URL 模式（跳过上传步骤）
+    const useBase64Url = config.useBase64Url === true || config.useBase64Url === 'true';
+    
+    console.log(`[tripo] ========================================`);
+    console.log(`[tripo] 图片传递模式: ${useBase64Url ? 'Base64 URL (直接传 data URI)' : '上传文件 (获取 file_token)'}`);
+    console.log(`[tripo] ========================================`);
+    
     // 检查是否有 imageSlots 配置（多视图模式）
     const imageSlots = config.imageSlots;
     const isMultiview = imageSlots && imageSlots.length > 0;
@@ -335,75 +385,167 @@ async function generate3D({ apiKey, model, prompt, images, config, dispatcher })
       
       console.log(`[tripo] 多视图模式，槽位映射:`, Object.keys(slotMap));
       
-      // 上传有图片的槽位
-      const slotTokens = {}; // slotName -> token
-      for (const slotName of Object.keys(slotMap)) {
-        const img = slotMap[slotName];
-        console.log(`[tripo] 上传 ${slotName} 视角图片...`);
-        const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
-        slotTokens[slotName] = token;
-        inputImages.push({
-          slot: slotName,
-          originalPath: img.originalPath || null,
-          mimeType: img.mimeType,
-          size: img.dataBase64.length,
-          fileToken: token
-        });
-      }
-      
-      // 构建 files 数组（始终 4 个元素，按 [front, left, back, right] 顺序）
-      const files = slotOrder.map(slotName => {
-        const token = slotTokens[slotName];
-        if (token) {
-          return { type: 'image', file_token: token };
-        } else {
-          // 没有该视角的图片，返回空对象（不含 file_token）
-          return { type: 'image' };
+      if (useBase64Url) {
+        // ========== Base64 URL 模式：直接传 data URI ==========
+        console.log(`[tripo] [Base64 URL] 多视图模式，构建 data URI...`);
+        
+        const slotDataUris = {}; // slotName -> dataUri
+        for (const slotName of Object.keys(slotMap)) {
+          const img = slotMap[slotName];
+          const dataUri = toDataUri(img.dataBase64, img.mimeType);
+          slotDataUris[slotName] = dataUri;
+          
+          console.log(`[tripo] [Base64 URL] ${slotName}: data URI 长度 = ${dataUri.length} 字符`);
+          console.log(`[tripo] [Base64 URL] ${slotName} 前100字符: ${dataUri.substring(0, 100)}...`);
+          
+          inputImages.push({
+            slot: slotName,
+            originalPath: img.originalPath || null,
+            mimeType: img.mimeType,
+            size: img.dataBase64.length,
+            mode: 'base64_url'
+          });
         }
-      });
-      
-      payload = {
-        type: 'multiview_to_model',
-        files: files
-      };
-      
-      console.log(`[tripo] 多视图 files 数组:`, files.map((f, i) => `${slotOrder[i]}: ${f.file_token ? '有' : '无'}`));
+        
+        // 构建 files 数组（始终 4 个元素，按 [front, left, back, right] 顺序）
+        const files = slotOrder.map(slotName => {
+          const dataUri = slotDataUris[slotName];
+          if (dataUri) {
+            return { type: 'image', url: dataUri };
+          } else {
+            // 没有该视角的图片，返回空对象
+            return { type: 'image' };
+          }
+        });
+        
+        payload = {
+          type: 'multiview_to_model',
+          files: files
+        };
+        
+        console.log(`[tripo] [Base64 URL] 多视图 files 数组:`, files.map((f, i) => `${slotOrder[i]}: ${f.url ? '有(url)' : '无'}`));
+        
+      } else {
+        // ========== 上传文件模式：获取 file_token ==========
+        const slotTokens = {}; // slotName -> token
+        for (const slotName of Object.keys(slotMap)) {
+          const img = slotMap[slotName];
+          console.log(`[tripo] 上传 ${slotName} 视角图片...`);
+          const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
+          slotTokens[slotName] = token;
+          inputImages.push({
+            slot: slotName,
+            originalPath: img.originalPath || null,
+            mimeType: img.mimeType,
+            size: img.dataBase64.length,
+            fileToken: token,
+            mode: 'upload'
+          });
+        }
+        
+        // 构建 files 数组（始终 4 个元素，按 [front, left, back, right] 顺序）
+        const files = slotOrder.map(slotName => {
+          const token = slotTokens[slotName];
+          if (token) {
+            return { type: 'image', file_token: token };
+          } else {
+            // 没有该视角的图片，返回空对象（不含 file_token）
+            return { type: 'image' };
+          }
+        });
+        
+        payload = {
+          type: 'multiview_to_model',
+          files: files
+        };
+        
+        console.log(`[tripo] 多视图 files 数组:`, files.map((f, i) => `${slotOrder[i]}: ${f.file_token ? '有(token)' : '无'}`));
+      }
       
     } else {
       // ========== 普通模式（单图或多图） ==========
-      console.log(`[tripo] 上传 ${images.length} 张图片...`);
-      for (let i = 0; i < images.length; i++) {
-        const img = images[i];
-        const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
-        uploadedTokens.push(token);
-        // 保存图片信息（原始路径和 file_token）
-        inputImages.push({
-          index: i,
-          originalPath: img.originalPath || null,
-          mimeType: img.mimeType,
-          size: img.dataBase64.length,
-          fileToken: token
-        });
-      }
       
-      if (images.length > 1) {
-        // 多图模式（非结构化的多视图，按顺序传递）
-        payload = {
-          type: 'multiview_to_model',
-          files: uploadedTokens.map(token => ({
-            type: 'image',
-            file_token: token
-          }))
-        };
+      if (useBase64Url) {
+        // ========== Base64 URL 模式：直接传 data URI ==========
+        console.log(`[tripo] [Base64 URL] 普通模式，处理 ${images.length} 张图片...`);
+        
+        const dataUris = [];
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i];
+          const dataUri = toDataUri(img.dataBase64, img.mimeType);
+          dataUris.push(dataUri);
+          
+          console.log(`[tripo] [Base64 URL] 图片 ${i + 1}: mimeType=${img.mimeType}, base64长度=${img.dataBase64.length}, dataUri长度=${dataUri.length}`);
+          console.log(`[tripo] [Base64 URL] data URI 前100字符: ${dataUri.substring(0, 100)}...`);
+          
+          inputImages.push({
+            index: i,
+            originalPath: img.originalPath || null,
+            mimeType: img.mimeType,
+            size: img.dataBase64.length,
+            mode: 'base64_url'
+          });
+        }
+        
+        if (images.length > 1) {
+          // 多图模式
+          payload = {
+            type: 'multiview_to_model',
+            files: dataUris.map(uri => ({
+              type: 'image',
+              url: uri
+            }))
+          };
+          console.log(`[tripo] [Base64 URL] 多图模式，files 数量: ${dataUris.length}`);
+        } else {
+          // 单图模式
+          payload = {
+            type: 'image_to_model',
+            file: {
+              type: 'image',
+              url: dataUris[0]
+            }
+          };
+          console.log(`[tripo] [Base64 URL] 单图模式，file.url 长度: ${dataUris[0].length}`);
+        }
+        
       } else {
-        // 单图模式
-        payload = {
-          type: 'image_to_model',
-          file: {
-            type: 'image',
-            file_token: uploadedTokens[0]
-          }
-        };
+        // ========== 上传文件模式：获取 file_token ==========
+        console.log(`[tripo] 上传 ${images.length} 张图片...`);
+        for (let i = 0; i < images.length; i++) {
+          const img = images[i];
+          const token = await uploadImage(img.dataBase64, img.mimeType, apiKey, dispatcher);
+          uploadedTokens.push(token);
+          // 保存图片信息（原始路径和 file_token）
+          inputImages.push({
+            index: i,
+            originalPath: img.originalPath || null,
+            mimeType: img.mimeType,
+            size: img.dataBase64.length,
+            fileToken: token,
+            mode: 'upload'
+          });
+        }
+        
+        if (images.length > 1) {
+          // 多图模式（非结构化的多视图，按顺序传递）
+          payload = {
+            type: 'multiview_to_model',
+            files: uploadedTokens.map(token => ({
+              type: 'image',
+              file_token: token
+            }))
+          };
+        } else {
+          // 单图模式
+          payload = {
+            type: 'image_to_model',
+            file: {
+              type: 'image',
+              file_token: uploadedTokens[0]
+            }
+          };
+        }
       }
     }
   } else {

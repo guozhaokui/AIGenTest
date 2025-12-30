@@ -399,6 +399,19 @@ export function searchByImage(file, topK = 100) {
 }
 
 /**
+ * 跨模态搜索（SigLIP2 文搜图）
+ * 使用 SigLIP2 将文本嵌入到图片向量空间，直接搜索图片
+ * @param {string} query 搜索文本
+ * @param {number} topK 返回数量
+ */
+export function searchCrossModal(query, topK = 100) {
+  return imagemgrApi.post('/search/crossmodal', {
+    query,
+    top_k: topK
+  }, { timeout: 60000 }).then(r => r.data);
+}
+
+/**
  * 通过 sha256 搜索相似图片
  * @param {string} sha256 图片的 sha256
  * @param {number} topK 返回数量

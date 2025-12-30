@@ -278,7 +278,8 @@
     },
     "output": "mesh",
     "options": {
-      "useProxy": false
+      "useProxy": false,
+      "useBase64Url": false 
     },
     "parameters": [
       {
