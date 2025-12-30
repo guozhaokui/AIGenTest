@@ -34,12 +34,12 @@ IMAGE_MODEL_VERSION = "1.0"
 
 # 索引配置 - 文本（多模型）
 TEXT_INDEXES = {
-    "qwen3_text_v1": {
-        "dimension": 2560,
-        "model_name": "Qwen3-4B",
-        "model_version": "1.0",
-        "service_name": "qwen3_embed_local"
-    },
+    # "qwen3_text_v1": {  # 已禁用 - 效果不好，节省显存
+    #     "dimension": 2560,
+    #     "model_name": "Qwen3-4B",
+    #     "model_version": "1.0",
+    #     "service_name": "qwen3_embed_local"
+    # },
     "bge_text_v1": {
         "dimension": 1024,
         "model_name": "bge-large-zh",
