@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpha计算服务 - 测试界面</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-input: #22222e;
+            --accent-cyan: #00d4aa;
+            --accent-magenta: #ff3366;
+            --accent-yellow: #ffd700;
+            --accent-blue: #4a9eff;
+            --text-primary: #e8e8f0;
+            --text-secondary: #8888a0;
+            --border-color: #2a2a3a;
+            --shadow-glow: 0 0 30px rgba(0, 212, 170, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            background-image: 
+                radial-gradient(ellipse at 20% 0%, rgba(0, 212, 170, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 100%, rgba(255, 51, 102, 0.08) 0%, transparent 50%);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .api-endpoint {
+            display: inline-block;
+            background: var(--bg-input);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            margin-top: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 14px 28px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .tab-btn:hover {
+            border-color: var(--accent-cyan);
+            color: var(--text-primary);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(74, 158, 255, 0.2));
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: var(--shadow-glow);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .panel-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+
+        .panel-icon.cyan { background: linear-gradient(135deg, rgba(0, 212, 170, 0.3), rgba(0, 212, 170, 0.1)); }
+        .panel-icon.magenta { background: linear-gradient(135deg, rgba(255, 51, 102, 0.3), rgba(255, 51, 102, 0.1)); }
+        .panel-icon.yellow { background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 215, 0, 0.1)); }
+
+        .panel-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .panel-desc {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .file-upload {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-input);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .file-upload:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 212, 170, 0.05);
+        }
+
+        .file-upload.has-file {
+            border-color: var(--accent-cyan);
+            border-style: solid;
+        }
+
+        .file-upload input {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .file-upload-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .file-upload-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .file-upload-name {
+            color: var(--accent-cyan);
+            font-size: 0.85rem;
+            margin-top: 8px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .preview-thumb {
+            max-width: 100%;
+            max-height: 120px;
+            margin-top: 10px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .preview-thumb.visible {
+            display: block;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px 16px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+        }
+
+        .color-input-wrapper {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        input[type="color"] {
+            width: 50px;
+            height: 44px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 0;
+        }
+
+        input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+        }
+
+        .slider-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--bg-input);
+            appearance: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--accent-cyan);
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 212, 170, 0.5);
+        }
+
+        .slider-value {
+            min-width: 45px;
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            color: var(--accent-cyan);
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 18px;
+            margin-top: 30px;
+            border: none;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: var(--bg-primary);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 170, 0.3);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .result-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .download-btn {
+            padding: 10px 20px;
+            border: 1px solid var(--accent-cyan);
+            background: transparent;
+            color: var(--accent-cyan);
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            display: none;
+        }
+
+        .download-btn.visible {
+            display: block;
+        }
+
+        .download-btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+        }
+
+        .result-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .result-box {
+            background: var(--bg-input);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .result-box-title {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 15px;
+        }
+
+        .result-preview {
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: 
+                linear-gradient(45deg, #222 25%, transparent 25%),
+                linear-gradient(-45deg, #222 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #222 75%),
+                linear-gradient(-45deg, transparent 75%, #222 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+            background-color: #333;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .result-preview img {
+            max-width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+        }
+
+        .placeholder-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            color: var(--accent-cyan);
+        }
+
+        .loading.visible {
+            display: flex;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--border-color);
+            border-top-color: var(--accent-cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-msg {
+            background: rgba(255, 51, 102, 0.1);
+            border: 1px solid var(--accent-magenta);
+            color: var(--accent-magenta);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .error-msg.visible {
+            display: block;
+        }
+
+        .success-msg {
+            background: rgba(0, 212, 170, 0.1);
+            border: 1px solid var(--accent-cyan);
+            color: var(--accent-cyan);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .success-msg.visible {
+            display: block;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        footer a {
+            color: var(--accent-cyan);
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            .panel { padding: 25px; }
+            .tab-btn { padding: 12px 20px; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎨 Alpha计算服务</h1>
+            <p class="subtitle">计算图片透明通道，输出带Alpha的PNG</p>
+            <div class="api-endpoint">
+                API: <span id="apiBase">http://localhost:6020</span>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="single">🖼️ 单图计算</button>
+            <button class="tab-btn" data-tab="dual">🔀 双图计算</button>
+            <button class="tab-btn" data-tab="mask">🎭 遮罩应用</button>
+        </div>
+
+        <!-- 单图计算 -->
+        <div id="tab-single" class="tab-content active">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon cyan">🖼️</div>
+                    <div>
+                        <div class="panel-title">单图 + 背景色计算</div>
+                        <div class="panel-desc">上传图片并指定背景色，自动计算Alpha通道</div>
+                    </div>
+                </div>
+
+                <form id="form-single" class="form-grid">
+                    <div class="form-group">
+                        <label>上传图片 *</label>
+                        <div class="file-upload" id="upload-single">
+                            <div class="file-upload-icon">📁</div>
+                            <div class="file-upload-text">点击或拖拽上传图片</div>
+                            <div class="file-upload-name"></div>
+                            <img class="preview-thumb" alt="">
+                            <input type="file" name="image" accept="image/*" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>背景色 *</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="color-single" value="#00FF00">
+                            <input type="text" id="colorText-single" value="#00FF00" placeholder="#RRGGBB">
+                        </div>
+
+                        <label style="margin-top: 20px;">容差 (Tolerance)</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="tolerance" min="0" max="1" step="0.05" value="0.3">
+                            <span class="slider-value" id="toleranceVal">0.30</span>
+                        </div>
+
+                        <label style="margin-top: 15px;">边缘柔化 (Edge Softness)</label>
+                        <div class="slider-wrapper">
+                            <input type="range" id="softness" min="0" max="1" step="0.05" value="0.1">
+                            <span class="slider-value" id="softnessVal">0.10</span>
+                        </div>
+                    </div>
+                </form>
+
+                <button type="button" class="submit-btn" id="submit-single">🚀 计算Alpha</button>
+
+                <div class="loading" id="loading-single">
+                    <div class="spinner"></div>
+                    <span>处理中...</span>
+                </div>
+
+                <div class="error-msg" id="error-single"></div>
+                <div class="success-msg" id="success-single"></div>
+
+                <div class="result-section">
+                    <div class="result-header">
+                        <div class="result-title">📤 结果预览</div>
+                        <button class="download-btn" id="download-single">⬇️ 下载PNG</button>
+                    </div>
+                    <div class="result-container">
+                        <div class="result-box">
+                            <div class="result-box-title">原图</div>
+                            <div class="result-preview" id="original-single">
+                                <span class="placeholder-text">等待上传...</span>
+                            </div>
+                        </div>
+                        <div class="result-box">
+                            <div class="result-box-title">处理结果（透明背景）</div>
+                            <div class="result-preview" id="result-single">
+                                <span class="placeholder-text">等待处理...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 双图计算 -->
+        <div id="tab-dual" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon magenta">🔀</div>
+                    <div>
+                        <div class="panel-title">双图 + 背景色计算</div>
+                        <div class="panel-desc">上传两张相同前景、不同背景的图片，精确计算Alpha</div>
+                    </div>
+                </div>
+
+                <form id="form-dual" class="form-grid">
+                    <div class="form-group">
+                        <label>图片1 *</label>
+                        <div class="file-upload" id="upload-dual1">
+                            <div class="file-upload-icon">📁</div>
+                            <div class="file-upload-text">点击上传第一张图</div>
+                            <div class="file-upload-name"></div>
+                            <img class="preview-thumb" alt="">
+                            <input type="file" name="image1" accept="image/*" required>
+                        </div>
+                        <label style="margin-top: 15px;">背景色1</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="color-dual1" value="#00FF00">
+                            <input type="text" id="colorText-dual1" value="#00FF00">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>图片2 *</label>
+                        <div class="file-upload" id="upload-dual2">
+                            <div class="file-upload-icon">📁</div>
+                            <div class="file-upload-text">点击上传第二张图</div>
+                            <div class="file-upload-name"></div>
+                            <img class="preview-thumb" alt="">
+                            <input type="file" name="image2" accept="image/*" required>
+                        </div>
+                        <label style="margin-top: 15px;">背景色2</label>
+                        <div class="color-input-wrapper">
+                            <input type="color" id="color-dual2" value="#0000FF">
+                            <input type="text" id="colorText-dual2" value="#0000FF">
+                        </div>
+
+                        <div class="hint-box" style="margin-top: 20px; padding: 12px; background: rgba(0,212,170,0.1); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary);">
+                            💡 <strong>提示：</strong>算法会自动计算精确的alpha值。半透明边缘的渐变效果来自真实的图像差异，无需手动调节。
+                        </div>
+                    </div>
+                </form>
+
+                <button type="button" class="submit-btn" id="submit-dual">🚀 计算Alpha</button>
+
+                <div class="loading" id="loading-dual">
+                    <div class="spinner"></div>
+                    <span>处理中...</span>
+                </div>
+
+                <div class="error-msg" id="error-dual"></div>
+                <div class="success-msg" id="success-dual"></div>
+
+                <div class="result-section">
+                    <div class="result-header">
+                        <div class="result-title">📤 结果预览</div>
+                        <button class="download-btn" id="download-dual">⬇️ 下载PNG</button>
+                    </div>
+                    <div class="result-container">
+                        <div class="result-box">
+                            <div class="result-box-title">图片1</div>
+                            <div class="result-preview" id="original-dual1">
+                                <span class="placeholder-text">等待上传...</span>
+                            </div>
+                        </div>
+                        <div class="result-box">
+                            <div class="result-box-title">图片2</div>
+                            <div class="result-preview" id="original-dual2">
+                                <span class="placeholder-text">等待上传...</span>
+                            </div>
+                        </div>
+                        <div class="result-box">
+                            <div class="result-box-title">处理结果（透明背景）</div>
+                            <div class="result-preview" id="result-dual">
+                                <span class="placeholder-text">等待处理...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 遮罩应用 -->
+        <div id="tab-mask" class="tab-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <div class="panel-icon yellow">🎭</div>
+                    <div>
+                        <div class="panel-title">原图 + 遮罩图</div>
+                        <div class="panel-desc">将黑白遮罩图作为Alpha通道应用到原图</div>
+                    </div>
+                </div>
+
+                <form id="form-mask" class="form-grid">
+                    <div class="form-group">
+                        <label>原始图片 *</label>
+                        <div class="file-upload" id="upload-mask-img">
+                            <div class="file-upload-icon">📁</div>
+                            <div class="file-upload-text">点击上传原图</div>
+                            <div class="file-upload-name"></div>
+                            <img class="preview-thumb" alt="">
+                            <input type="file" name="image" accept="image/*" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>遮罩图 *（白色=不透明，黑色=透明）</label>
+                        <div class="file-upload" id="upload-mask-alpha">
+                            <div class="file-upload-icon">🎭</div>
+                            <div class="file-upload-text">点击上传遮罩图</div>
+                            <div class="file-upload-name"></div>
+                            <img class="preview-thumb" alt="">
+                            <input type="file" name="mask" accept="image/*" required>
+                        </div>
+
+                        <div class="checkbox-wrapper">
+                            <input type="checkbox" id="invert-mask">
+                            <label for="invert-mask" style="cursor: pointer;">反转遮罩（黑白互换）</label>
+                        </div>
+                    </div>
+                </form>
+
+                <button type="button" class="submit-btn" id="submit-mask">🚀 应用遮罩</button>
+
+                <div class="loading" id="loading-mask">
+                    <div class="spinner"></div>
+                    <span>处理中...</span>
+                </div>
+
+                <div class="error-msg" id="error-mask"></div>
+                <div class="success-msg" id="success-mask"></div>
+
+                <div class="result-section">
+                    <div class="result-header">
+                        <div class="result-title">📤 结果预览</div>
+                        <button class="download-btn" id="download-mask">⬇️ 下载PNG</button>
+                    </div>
+                    <div class="result-container">
+                        <div class="result-box">
+                            <div class="result-box-title">原图</div>
+                            <div class="result-preview" id="original-mask-img">
+                                <span class="placeholder-text">等待上传...</span>
+                            </div>
+                        </div>
+                        <div class="result-box">
+                            <div class="result-box-title">遮罩图</div>
+                            <div class="result-preview" id="original-mask-alpha">
+                                <span class="placeholder-text">等待上传...</span>
+                            </div>
+                        </div>
+                        <div class="result-box">
+                            <div class="result-box-title">处理结果（透明背景）</div>
+                            <div class="result-preview" id="result-mask">
+                                <span class="placeholder-text">等待处理...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            Alpha计算服务 v1.0 · 
+            <a href="/docs" target="_blank">查看API文档</a>
+        </footer>
+    </div>
+
+    <script>
+        // 配置
+        const API_BASE = window.location.origin;
+        document.getElementById('apiBase').textContent = API_BASE;
+
+        // Tab切换
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+            });
+        });
+
+        // 文件上传预览
+        function setupFileUpload(uploadId, previewId) {
+            const uploadDiv = document.getElementById(uploadId);
+            const input = uploadDiv.querySelector('input[type="file"]');
+            const nameDiv = uploadDiv.querySelector('.file-upload-name');
+            const thumb = uploadDiv.querySelector('.preview-thumb');
+            const previewContainer = previewId ? document.getElementById(previewId) : null;
+
+            input.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    uploadDiv.classList.add('has-file');
+                    nameDiv.textContent = file.name;
+                    
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                        thumb.src = ev.target.result;
+                        thumb.classList.add('visible');
+                        
+                        if (previewContainer) {
+                            previewContainer.innerHTML = `<img src="${ev.target.result}" alt="预览">`;
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    uploadDiv.classList.remove('has-file');
+                    nameDiv.textContent = '';
+                    thumb.classList.remove('visible');
+                }
+            });
+        }
+
+        setupFileUpload('upload-single', 'original-single');
+        setupFileUpload('upload-dual1', 'original-dual1');
+        setupFileUpload('upload-dual2', 'original-dual2');
+        setupFileUpload('upload-mask-img', 'original-mask-img');
+        setupFileUpload('upload-mask-alpha', 'original-mask-alpha');
+
+        // 颜色选择器同步
+        function syncColor(colorId, textId) {
+            const colorInput = document.getElementById(colorId);
+            const textInput = document.getElementById(textId);
+
+            colorInput.addEventListener('input', () => {
+                textInput.value = colorInput.value.toUpperCase();
+            });
+
+            textInput.addEventListener('input', () => {
+                const val = textInput.value;
+                if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+                    colorInput.value = val;
+                }
+            });
+        }
+
+        syncColor('color-single', 'colorText-single');
+        syncColor('color-dual1', 'colorText-dual1');
+        syncColor('color-dual2', 'colorText-dual2');
+
+        // 滑块数值显示
+        function setupSlider(sliderId, valueId) {
+            const slider = document.getElementById(sliderId);
+            const valueSpan = document.getElementById(valueId);
+
+            slider.addEventListener('input', () => {
+                valueSpan.textContent = parseFloat(slider.value).toFixed(2);
+            });
+        }
+
+        setupSlider('tolerance', 'toleranceVal');
+        setupSlider('softness', 'softnessVal');
+
+        // 结果存储
+        let resultBlobs = {
+            single: null,
+            dual: null,
+            mask: null
+        };
+
+        // 显示加载状态
+        function showLoading(type) {
+            document.getElementById('loading-' + type).classList.add('visible');
+            document.getElementById('error-' + type).classList.remove('visible');
+            document.getElementById('success-' + type).classList.remove('visible');
+            document.getElementById('submit-' + type).disabled = true;
+        }
+
+        function hideLoading(type) {
+            document.getElementById('loading-' + type).classList.remove('visible');
+            document.getElementById('submit-' + type).disabled = false;
+        }
+
+        function showError(type, msg) {
+            const el = document.getElementById('error-' + type);
+            el.textContent = '❌ ' + msg;
+            el.classList.add('visible');
+        }
+
+        function showSuccess(type, msg) {
+            const el = document.getElementById('success-' + type);
+            el.textContent = '✅ ' + msg;
+            el.classList.add('visible');
+        }
+
+        // 显示结果图片
+        function showResult(type, blob) {
+            resultBlobs[type] = blob;
+            const url = URL.createObjectURL(blob);
+            document.getElementById('result-' + type).innerHTML = `<img src="${url}" alt="结果">`;
+            document.getElementById('download-' + type).classList.add('visible');
+        }
+
+        // 下载功能
+        function setupDownload(type) {
+            document.getElementById('download-' + type).addEventListener('click', () => {
+                if (resultBlobs[type]) {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(resultBlobs[type]);
+                    a.download = `alpha_result_${type}_${Date.now()}.png`;
+                    a.click();
+                }
+            });
+        }
+
+        setupDownload('single');
+        setupDownload('dual');
+        setupDownload('mask');
+
+        // ========== API调用 ==========
+
+        // 单图计算
+        document.getElementById('submit-single').addEventListener('click', async () => {
+            const fileInput = document.querySelector('#upload-single input[type="file"]');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showError('single', '请先上传图片');
+                return;
+            }
+
+            showLoading('single');
+
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('bg_color', document.getElementById('colorText-single').value);
+            formData.append('tolerance', document.getElementById('tolerance').value);
+            formData.append('edge_softness', document.getElementById('softness').value);
+
+            try {
+                const response = await fetch(API_BASE + '/api/alpha/single', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '请求失败');
+                }
+
+                const blob = await response.blob();
+                showResult('single', blob);
+                showSuccess('single', '处理完成！');
+            } catch (err) {
+                showError('single', err.message);
+            } finally {
+                hideLoading('single');
+            }
+        });
+
+        // 双图计算
+        document.getElementById('submit-dual').addEventListener('click', async () => {
+            const file1 = document.querySelector('#upload-dual1 input[type="file"]').files[0];
+            const file2 = document.querySelector('#upload-dual2 input[type="file"]').files[0];
+
+            if (!file1 || !file2) {
+                showError('dual', '请上传两张图片');
+                return;
+            }
+
+            showLoading('dual');
+
+            const formData = new FormData();
+            formData.append('image1', file1);
+            formData.append('image2', file2);
+            formData.append('bg_color1', document.getElementById('colorText-dual1').value);
+            formData.append('bg_color2', document.getElementById('colorText-dual2').value);
+
+            try {
+                const response = await fetch(API_BASE + '/api/alpha/dual', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '请求失败');
+                }
+
+                const blob = await response.blob();
+                showResult('dual', blob);
+                showSuccess('dual', '处理完成！');
+            } catch (err) {
+                showError('dual', err.message);
+            } finally {
+                hideLoading('dual');
+            }
+        });
+
+        // 遮罩应用
+        document.getElementById('submit-mask').addEventListener('click', async () => {
+            const imgFile = document.querySelector('#upload-mask-img input[type="file"]').files[0];
+            const maskFile = document.querySelector('#upload-mask-alpha input[type="file"]').files[0];
+
+            if (!imgFile || !maskFile) {
+                showError('mask', '请上传原图和遮罩图');
+                return;
+            }
+
+            showLoading('mask');
+
+            const formData = new FormData();
+            formData.append('image', imgFile);
+            formData.append('mask', maskFile);
+            formData.append('invert', document.getElementById('invert-mask').checked);
+
+            try {
+                const response = await fetch(API_BASE + '/api/alpha/mask', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || '请求失败');
+                }
+
+                const blob = await response.blob();
+                showResult('mask', blob);
+                showSuccess('mask', '处理完成！');
+            } catch (err) {
+                showError('mask', err.message);
+            } finally {
+                hideLoading('mask');
+            }
+        });
+    </script>
+</body>
+</html>
+

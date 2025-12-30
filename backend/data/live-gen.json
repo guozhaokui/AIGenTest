@@ -3737,5 +3737,521 @@
     },
     "createdAt": "2025-12-30T02:45:28.168Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "ba7cd891-f64f-4cd9-a0b0-176ed9277973",
+    "prompt": "提取出图片中的手办本身，包括透明的底座，去掉背景，并用纯绿色代替，设置背景色为0x00ff00, 用来做绿幕抠图",
+    "imagePath": "/imagedb/37/80/37805ec3b2ed4cf99bacab7aafeb3340.jpg",
+    "imageUrls": [
+      "imagedb/8d/fa/8dfa25ea335f08d74535dff4539bad7c.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 21753,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 301,
+      "candidatesTokenCount": 1211,
+      "totalTokenCount": 1655,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 43
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 143
+    },
+    "createdAt": "2025-12-30T03:06:23.086Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "29eda93f-9386-4322-883f-0317b7cb33e3",
+    "prompt": "提取出图片中的手办本身，包括透明的底座，去掉背景，并用纯绿色代替，设置背景色为0x00ff00, 用来做绿幕抠图，注意要考虑透明部分的效果，例如透明部分应该能看到绿色的背景",
+    "imagePath": "/imagedb/cd/be/cdbef03663955644545a2201fc657a8e.jpg",
+    "imageUrls": [
+      "imagedb/8d/fa/8dfa25ea335f08d74535dff4539bad7c.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 22569,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 318,
+      "candidatesTokenCount": 1221,
+      "totalTokenCount": 1688,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 60
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 149
+    },
+    "createdAt": "2025-12-30T03:07:28.987Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "81c8b757-7f15-4628-919a-c7a87bad0bc4",
+    "prompt": "提取出图片中的手办本身，包括透明的底座，去掉背景，并用纯绿色代替，设置背景色为0x00ff00, 用来做绿幕抠图，注意要考虑透明部分的效果，例如透明部分应该能看到绿色的背景，要保持前景部分完全没有改变",
+    "imagePath": "/imagedb/39/a9/39a963044af72795e2ae7f644c1023ac.jpg",
+    "imageUrls": [
+      "imagedb/8d/fa/8dfa25ea335f08d74535dff4539bad7c.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 31277,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 326,
+      "candidatesTokenCount": 1249,
+      "totalTokenCount": 1731,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 68
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 156
+    },
+    "createdAt": "2025-12-30T03:08:32.590Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "ac70eeea-1b1f-4051-9e05-16b50ef332d9",
+    "prompt": "计算这张图片的前景的透明通道",
+    "imagePath": "/imagedb/06/51/065103eb0c6a726158bf426d17651a43.jpg",
+    "imageUrls": [
+      "imagedb/8d/fa/8dfa25ea335f08d74535dff4539bad7c.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 20393,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 267,
+      "candidatesTokenCount": 1192,
+      "totalTokenCount": 1600,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 9
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 141
+    },
+    "createdAt": "2025-12-30T03:09:23.065Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "7f0254cb-7051-4153-9393-10e089f865c6",
+    "prompt": "计算这张图片的前景的透明通道，用黑白图片表示，0表示完全透明，1表示完全不透明",
+    "imagePath": "/imagedb/a5/bf/a5bfeff2913c3509764b831a53cb0bbf.jpg",
+    "imageUrls": [
+      "imagedb/8d/fa/8dfa25ea335f08d74535dff4539bad7c.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 26533,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 284,
+      "candidatesTokenCount": 1230,
+      "totalTokenCount": 1672,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 26
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 158
+    },
+    "createdAt": "2025-12-30T03:10:12.487Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "3f36d676-fcf2-49d1-8434-7b172068f934",
+    "prompt": "计算这张图片的前景的透明通道，用黑白图片表示，0表示完全透明，1表示完全不透明，注意柔和边缘，注意底盘是透明塑料",
+    "imagePath": "/imagedb/c9/f9/c9f9db833e59652db6d0de0c0242ff5c.jpg",
+    "imageUrls": [
+      "imagedb/8d/fa/8dfa25ea335f08d74535dff4539bad7c.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 17270,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 296,
+      "candidatesTokenCount": 1248,
+      "totalTokenCount": 1697,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 38
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 153
+    },
+    "createdAt": "2025-12-30T03:10:58.234Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "101da90d-2d7c-40b7-b855-e4a524d3d9f5",
+    "prompt": "计算这张图片的前景的透明通道，用黑白图片表示，0表示完全透明，1表示完全不透明，注意柔和边缘，注意底盘是透明塑料，应该有一个很低的透明度",
+    "imagePath": "/imagedb/4f/91/4f91180b71f16eb755620c1a411f0fea.jpg",
+    "imageUrls": [
+      "imagedb/8d/fa/8dfa25ea335f08d74535dff4539bad7c.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 17828,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 303,
+      "candidatesTokenCount": 1255,
+      "totalTokenCount": 1701,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 45
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 143
+    },
+    "createdAt": "2025-12-30T03:12:11.087Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "25e30cf9-f993-4e99-a8e4-9009ab446c94",
+    "prompt": "计算这张图片的前景的透明通道，用黑白图片表示，0表示完全透明，1表示完全不透明，注意柔和边缘，",
+    "imagePath": "/imagedb/c4/71/c47102819e28d7392e31a52042ebafe7.jpg",
+    "imageUrls": [
+      "imagedb/b1/52/b152a0c2a1e36f0d119b7e28554c7b0e.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 17672,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 290,
+      "candidatesTokenCount": 1256,
+      "totalTokenCount": 1708,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 32
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 162
+    },
+    "createdAt": "2025-12-30T03:13:44.236Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "b49e4ec5-094b-48be-b2dd-a4b677d3c9ee",
+    "prompt": "计算这张图片的前景的透明通道，用黑白图片表示，0表示完全透明，1表示完全不透明",
+    "imagePath": "/imagedb/e7/55/e755ab3cc86821d5a942653313d02346.jpg",
+    "imageUrls": [
+      "imagedb/b1/52/b152a0c2a1e36f0d119b7e28554c7b0e.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 19164,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 284,
+      "candidatesTokenCount": 1224,
+      "totalTokenCount": 1663,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 26
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 155
+    },
+    "createdAt": "2025-12-30T03:14:21.361Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "cbb0bc81-82b0-4c87-94d7-fa6b2edb21aa",
+    "prompt": "识别出这个图片的半透明部分，并用红色标注",
+    "imagePath": "/imagedb/1d/11/1d110e5c4e8bb295472862f8015ac9ee.jpg",
+    "imageUrls": [
+      "imagedb/b9/22/b9227efe932594ef0f881aa1e207acae.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 35370,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 271,
+      "candidatesTokenCount": 1232,
+      "totalTokenCount": 1653,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 13
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 150
+    },
+    "createdAt": "2025-12-30T03:35:11.017Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "a0626c43-4272-4221-9e49-f52c0be47843",
+    "prompt": "识别出这个图片的有机玻璃部分，并用红色标注",
+    "imagePath": "/imagedb/31/f4/31f4126fb31a0b8ec065721e25f591bf.jpg",
+    "imageUrls": [
+      "imagedb/b9/22/b9227efe932594ef0f881aa1e207acae.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 25125,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 271,
+      "candidatesTokenCount": 1206,
+      "totalTokenCount": 1601,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 13
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 124
+    },
+    "createdAt": "2025-12-30T03:36:14.998Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "27719eec-33d6-493a-a587-ab0b969cf75b",
+    "prompt": "识别出这个图片的有机玻璃部分，并用红色标注，红色的亮度表示能透过材质看到背景的能力",
+    "imagePath": "/imagedb/1b/63/1b635c567dcffe560eb9e27221c1a5d8.jpg",
+    "imageUrls": [
+      "imagedb/b9/22/b9227efe932594ef0f881aa1e207acae.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "3:4",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 17842,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 282,
+      "candidatesTokenCount": 1259,
+      "totalTokenCount": 1766,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 24
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 225
+    },
+    "createdAt": "2025-12-30T03:37:07.631Z",
+    "dimensionScores": {}
   }
 ]
