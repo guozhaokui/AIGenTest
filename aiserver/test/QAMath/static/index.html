@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QA 问答检索系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .search-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .search-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        #query {
+            flex: 1;
+            padding: 12px 16px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            outline: none;
+        }
+        #query:focus {
+            border-color: #007bff;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .options {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .options label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+        .options select, .options input[type="number"] {
+            padding: 6px 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .stats {
+            color: #666;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+        }
+        .results {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .result-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        .result-id {
+            font-weight: bold;
+            color: #007bff;
+        }
+        .result-score {
+            background: #28a745;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .result-match {
+            background: #6c757d;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+        .question {
+            margin-bottom: 10px;
+        }
+        .question-label {
+            font-weight: bold;
+            color: #dc3545;
+            margin-bottom: 5px;
+        }
+        .question-text {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .answer {
+            margin-top: 10px;
+        }
+        .answer-label {
+            font-weight: bold;
+            color: #28a745;
+            margin-bottom: 5px;
+        }
+        .answer-text {
+            background: #d4edda;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            overflow-x: auto;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .source-file {
+            color: #6c757d;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 QA 问答检索系统</h1>
+        
+        <div class="search-box">
+            <div class="search-row">
+                <input type="text" id="query" placeholder="输入问题进行搜索..." autofocus>
+                <button id="searchBtn" onclick="search()">搜索</button>
+            </div>
+            <div class="options">
+                <label>
+                    返回条数:
+                    <input type="number" id="topK" value="100" min="1" max="500" style="width: 80px;">
+                </label>
+                <label>
+                    搜索类型:
+                    <select id="searchType">
+                        <option value="question">按问题搜索</option>
+                        <option value="answer">按答案搜索</option>
+                        <option value="both">问题+答案</option>
+                    </select>
+                </label>
+            </div>
+        </div>
+        
+        <div id="stats" class="stats" style="display: none;"></div>
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="loading" class="loading" style="display: none;">搜索中...</div>
+        <div id="results" class="results"></div>
+    </div>
+    
+    <script>
+        // 按回车键搜索
+        document.getElementById('query').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                search();
+            }
+        });
+        
+        async function search() {
+            const query = document.getElementById('query').value.trim();
+            if (!query) {
+                alert('请输入查询内容');
+                return;
+            }
+            
+            const topK = parseInt(document.getElementById('topK').value) || 100;
+            const searchType = document.getElementById('searchType').value;
+            
+            const resultsDiv = document.getElementById('results');
+            const statsDiv = document.getElementById('stats');
+            const errorDiv = document.getElementById('error');
+            const loadingDiv = document.getElementById('loading');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            // 清空并显示加载状态
+            resultsDiv.innerHTML = '';
+            statsDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            loadingDiv.style.display = 'block';
+            searchBtn.disabled = true;
+            
+            try {
+                const startTime = Date.now();
+                
+                const response = await fetch('/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        top_k: topK,
+                        search_type: searchType
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                const elapsed = Date.now() - startTime;
+                
+                // 显示统计信息
+                statsDiv.innerHTML = `找到 <strong>${data.total}</strong> 条结果，耗时 <strong>${elapsed}ms</strong>`;
+                statsDiv.style.display = 'block';
+                
+                // 显示结果
+                if (data.results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="result-item">没有找到相关结果</div>';
+                } else {
+                    resultsDiv.innerHTML = data.results.map((item, index) => `
+                        <div class="result-item">
+                            <div class="result-header">
+                                <span>
+                                    <span class="result-id">#${index + 1} (ID: ${item.id})</span>
+                                    ${item.match_type ? `<span class="result-match">${item.match_type === 'question' ? '问题匹配' : '答案匹配'}</span>` : ''}
+                                </span>
+                                <span>
+                                    <span class="result-score">相似度: ${(item.score * 100).toFixed(2)}%</span>
+                                    <span class="source-file">${item.source_file}</span>
+                                </span>
+                            </div>
+                            <div class="question">
+                                <div class="question-label">问题:</div>
+                                <div class="question-text">${escapeHtml(item.instruction)}</div>
+                            </div>
+                            <div class="answer">
+                                <div class="answer-label">答案:</div>
+                                <div class="answer-text">${escapeHtml(item.output)}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+                
+            } catch (error) {
+                errorDiv.innerHTML = `搜索出错: ${error.message}`;
+                errorDiv.style.display = 'block';
+            } finally {
+                loadingDiv.style.display = 'none';
+                searchBtn.disabled = false;
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // 页面加载时检查服务状态
+        fetch('/health')
+            .then(res => res.json())
+            .then(data => {
+                console.log('服务状态:', data);
+            })
+            .catch(err => {
+                document.getElementById('error').innerHTML = '无法连接到搜索服务';
+                document.getElementById('error').style.display = 'block';
+            });
+    </script>
+</body>
+</html>
+
