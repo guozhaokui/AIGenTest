@@ -375,10 +375,12 @@ export function getTextIndexes() {
  * @param {number} topK 返回数量
  * @param {string} index 指定索引（可选）
  * @param {boolean} rerank 是否使用重排序（可选）
+ * @param {string} instruction 搜索指令（可选，用于 Qwen3-Embedding-8B）
  */
-export function searchByText(query, topK = 100, index = null, rerank = false) {
+export function searchByText(query, topK = 100, index = null, rerank = false, instruction = null) {
   const params = { query, top_k: topK, rerank };
   if (index) params.index = index;
+  if (instruction) params.instruction = instruction;
   // 开启重排序时需要更长的超时时间（5分钟）
   const timeout = rerank ? 300000 : 60000;
   return imagemgrApi.post('/search/text', params, { timeout }).then(r => r.data);

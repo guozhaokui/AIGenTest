@@ -309,13 +309,16 @@ class EmbeddingClient:
                     })
         return services
     
-    def get_text_embedding_by_service(self, text: str, service_name: str) -> Optional[np.ndarray]:
+    def get_text_embedding_by_service(self, text: str, service_name: str, 
+                                       instruction: str = None, is_query: bool = True) -> Optional[np.ndarray]:
         """
         使用指定服务获取文本嵌入
         
         Args:
             text: 文本内容
             service_name: 服务名称
+            instruction: 任务指令（仅对支持 instruction 的模型如 Qwen3-Embedding-8B 有效）
+            is_query: True 表示是查询，False 表示是文档
         
         Returns:
             嵌入向量
@@ -328,9 +331,14 @@ class EmbeddingClient:
         timeout = service.get("timeout", 30)
         
         try:
+            # 构建请求体
+            payload = {"text": text, "is_query": is_query}
+            if instruction:
+                payload["instruction"] = instruction
+            
             response = requests.post(
                 f"{endpoint}/embed/text",
-                json={"text": text},
+                json=payload,
                 timeout=timeout
             )
             response.raise_for_status()
@@ -340,12 +348,13 @@ class EmbeddingClient:
             print(f"使用 {service_name} 获取文本嵌入失败: {e}")
             return None
     
-    def get_all_text_embeddings(self, text: str) -> dict:
+    def get_all_text_embeddings(self, text: str, is_query: bool = False) -> dict:
         """
         使用所有启用的文本嵌入服务获取嵌入
         
         Args:
             text: 文本内容
+            is_query: True 表示是查询，False 表示是文档（默认 False，因为通常用于存储描述）
         
         Returns:
             字典 {service_name: {"embedding": np.ndarray, "model_name": str, "dimension": int}}
@@ -353,7 +362,10 @@ class EmbeddingClient:
         results = {}
         for service in self.get_all_text_services():
             service_name = service["service_name"]
-            embedding = self.get_text_embedding_by_service(text, service_name)
+            # 对于文档嵌入，不需要 instruction
+            embedding = self.get_text_embedding_by_service(
+                text, service_name, instruction=None, is_query=is_query
+            )
             if embedding is not None:
                 results[service_name] = {
                     "embedding": embedding,

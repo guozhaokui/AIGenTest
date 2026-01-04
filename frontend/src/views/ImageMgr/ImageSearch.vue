@@ -54,6 +54,30 @@
         </el-checkbox>
         <span class="option-tip">重排序可提高结果准确度，但会增加响应时间</span>
       </div>
+      <!-- 搜索指令选项（仅对 Qwen3-8B 有效） -->
+      <div class="instruction-options">
+        <span class="option-label">搜索指令：</span>
+        <el-select v-model="selectedInstruction" placeholder="选择预设指令" style="width: 320px;">
+          <el-option 
+            v-for="item in presetInstructions" 
+            :key="item.value" 
+            :label="item.label" 
+            :value="item.value"
+          />
+        </el-select>
+        <el-tooltip content="搜索指令可以帮助 Qwen3-Embedding-8B 模型更好地理解搜索意图" placement="top">
+          <el-icon style="margin-left: 4px; color: #909399; cursor: help;"><QuestionFilled /></el-icon>
+        </el-tooltip>
+      </div>
+      <!-- 自定义指令输入 -->
+      <div v-if="selectedInstruction === 'custom'" class="custom-instruction">
+        <el-input
+          v-model="customInstruction"
+          placeholder="输入自定义搜索指令，如：Find images related to the given query"
+          :rows="2"
+          type="textarea"
+        />
+      </div>
     </div>
 
     <!-- 以图搜图 -->
@@ -119,7 +143,7 @@
 import { ref, onMounted, onUnmounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import { UploadFilled } from '@element-plus/icons-vue';
+import { UploadFilled, QuestionFilled } from '@element-plus/icons-vue';
 import { 
   searchByText, 
   searchByImage, 
@@ -143,6 +167,54 @@ const results = ref([]);
 const textIndexes = ref([]);
 const selectedIndex = ref('');
 const useRerank = ref(false);
+
+// 搜索指令选项
+const selectedInstruction = ref('default');
+const customInstruction = ref('');
+
+// 预设指令列表
+const presetInstructions = [
+  { 
+    label: '默认（检索相关文档）', 
+    value: 'default',
+    instruction: null  // 使用后端默认指令
+  },
+  { 
+    label: '图片描述搜索', 
+    value: 'image_description',
+    instruction: 'Given a description of an image, retrieve images that match the description'
+  },
+  { 
+    label: '场景搜索', 
+    value: 'scene',
+    instruction: 'Given a scene description, retrieve images containing the described scene'
+  },
+  { 
+    label: '物体搜索', 
+    value: 'object',
+    instruction: 'Given an object name or description, retrieve images containing that object'
+  },
+  { 
+    label: '风格搜索', 
+    value: 'style',
+    instruction: 'Given a style or aesthetic description, retrieve images with that visual style'
+  },
+  { 
+    label: '概念搜索', 
+    value: 'concept',
+    instruction: 'Given an abstract concept, retrieve images that represent or illustrate the concept'
+  },
+  { 
+    label: '不使用指令', 
+    value: 'none',
+    instruction: ''  // 空字符串表示不使用指令
+  },
+  { 
+    label: '自定义指令', 
+    value: 'custom',
+    instruction: null  // 使用 customInstruction
+  }
+];
 
 // 相似图片搜索
 const similarSource = ref('');
@@ -239,6 +311,23 @@ function clearSimilar() {
   searched.value = false;
 }
 
+// 获取当前的 instruction
+function getCurrentInstruction() {
+  const preset = presetInstructions.find(p => p.value === selectedInstruction.value);
+  if (!preset) return null;
+  
+  if (preset.value === 'custom') {
+    return customInstruction.value.trim() || null;
+  }
+  if (preset.value === 'none') {
+    return '';  // 空字符串表示不使用指令
+  }
+  if (preset.value === 'default') {
+    return null;  // null 表示使用后端默认指令
+  }
+  return preset.instruction;
+}
+
 async function handleTextSearch() {
   if (!textQuery.value.trim()) {
     return ElMessage.warning('请输入搜索内容');
@@ -247,11 +336,13 @@ async function handleTextSearch() {
   searching.value = true;
   searched.value = true;
   try {
+    const instruction = getCurrentInstruction();
     const data = await searchByText(
       textQuery.value.trim(), 
       100, 
       selectedIndex.value || null,
-      useRerank.value
+      useRerank.value,
+      instruction
     );
     results.value = data.results || [];
     if (results.value.length === 0) {
@@ -357,6 +448,17 @@ function onSearchSimilar(sha256) {
 .option-tip {
   color: #909399;
   font-size: 12px;
+}
+
+.instruction-options {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.custom-instruction {
+  margin-top: 12px;
 }
 
 .image-input {

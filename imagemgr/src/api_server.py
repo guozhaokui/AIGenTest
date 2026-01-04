@@ -108,6 +108,7 @@ class TextSearchRequest(BaseModel):
     top_k: int = 100  # 默认返回100条结果
     index: Optional[str] = None  # 指定使用的索引，默认使用 8B 索引
     rerank: bool = True  # 默认启用重排序（使用 8B Reranker）
+    instruction: Optional[str] = None  # 可选的搜索指令（用于 Qwen3-Embedding-8B）
 
 
 class ImageSearchRequest(BaseModel):
@@ -819,12 +820,23 @@ def search_by_text(req: TextSearchRequest):
     used_models = []
     failed_services = []
     
+    # Qwen3-Embedding-8B 搜索时使用的默认 instruction
+    DEFAULT_SEARCH_INSTRUCTION = "Given a web search query, retrieve relevant passages that answer the query"
+    
     for index_name, index_config in indexes_to_search.items():
         service_name = index_config.get("service_name")
         model_name = index_config.get("model_name")
         
         # 使用对应服务获取文本嵌入
-        query_embedding = embedding_client.get_text_embedding_by_service(req.query, service_name)
+        # 对于搜索 Query，使用 is_query=True 和 instruction
+        # 用户可以通过 req.instruction 传入自定义指令，否则使用默认指令
+        if "8b" in service_name.lower():
+            instruction = req.instruction if req.instruction else DEFAULT_SEARCH_INSTRUCTION
+        else:
+            instruction = None
+        query_embedding = embedding_client.get_text_embedding_by_service(
+            req.query, service_name, instruction=instruction, is_query=True
+        )
         if query_embedding is None:
             print(f"警告: 文本嵌入服务 {service_name} 不可用，跳过索引 {index_name}")
             failed_services.append({"index": index_name, "service": service_name, "model": model_name})
@@ -944,6 +956,7 @@ def search_crossmodal(req: CrossModalSearchRequest):
     - 无需图片有描述，可直接用自然语言搜索图片
     """
     # 使用 siglip2 服务获取文本嵌入
+    # SigLIP2 是视觉-语言对齐模型，不需要 instruction 和 is_query 参数
     query_embedding = embedding_client.get_text_embedding_by_service(req.query, "siglip2_local")
     if query_embedding is None:
         raise HTTPException(status_code=503, detail="SigLIP2 文本嵌入服务不可用")
