@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NVIDIA NIM Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            height: 90vh;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #76b900 0%, #5a8f00 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .model-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .model-selector label {
+            font-size: 14px;
+        }
+
+        .model-selector select {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 8px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .message {
+            margin-bottom: 16px;
+            display: flex;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .thinking-section {
+            margin-bottom: 8px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            background: #f9f9f9;
+        }
+
+        .thinking-header {
+            padding: 8px 12px;
+            background: linear-gradient(135deg, #f0f0f0 0%, #e8e8e8 100%);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: #666;
+            user-select: none;
+        }
+
+        .thinking-header:hover {
+            background: linear-gradient(135deg, #e8e8e8 0%, #e0e0e0 100%);
+        }
+
+        .thinking-header .icon {
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+
+        .thinking-header .icon.expanded {
+            transform: rotate(90deg);
+        }
+
+        .thinking-content {
+            padding: 12px;
+            font-size: 13px;
+            color: #666;
+            font-style: italic;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+            background: #fafafa;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .thinking-content.expanded {
+            display: block;
+        }
+
+        .message-role {
+            font-size: 12px;
+            margin-bottom: 4px;
+            opacity: 0.7;
+        }
+
+        .input-container {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+
+        #messageInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #messageInput:focus {
+            border-color: #667eea;
+        }
+
+        #sendButton {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #76b900 0%, #5a8f00 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #sendButton:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(118, 185, 0, 0.4);
+        }
+
+        #sendButton:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #clearButton {
+            padding: 12px 24px;
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        #clearButton:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(244, 67, 54, 0.4);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #667eea;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .loading-dots {
+            display: inline-block;
+        }
+
+        .loading-dots span {
+            animation: blink 1.4s infinite;
+            animation-fill-mode: both;
+        }
+
+        .loading-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .loading-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes blink {
+            0%, 80%, 100% {
+                opacity: 0;
+            }
+            40% {
+                opacity: 1;
+            }
+        }
+
+        .model-info {
+            font-size: 11px;
+            opacity: 0.6;
+            margin-top: 4px;
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .welcome-message h2 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>NVIDIA NIM Chat</h1>
+            <div class="model-selector">
+                <label for="modelSelect">模型:</label>
+                <select id="modelSelect">
+                    <option value="">加载中...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chatContainer">
+            <div class="welcome-message">
+                <h2>欢迎使用 NVIDIA NIM Chat</h2>
+                <p>选择一个模型，然后开始对话</p>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="loading-dots">
+                正在思考<span>.</span><span>.</span><span>.</span>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <div class="input-wrapper">
+                <input
+                    type="text"
+                    id="messageInput"
+                    placeholder="输入消息..."
+                    onkeypress="handleKeyPress(event)"
+                >
+                <button id="clearButton" onclick="clearChat()">清空</button>
+                <button id="sendButton" onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let messageHistory = [];
+        let availableModels = [];
+        let currentModel = '';
+
+        // 加载可用模型
+        async function loadModels() {
+            try {
+                const response = await fetch('/api/models');
+                const data = await response.json();
+                availableModels = data.models;
+
+                const select = document.getElementById('modelSelect');
+                select.innerHTML = '';
+
+                availableModels.forEach(model => {
+                    const option = document.createElement('option');
+                    option.value = model.id;
+                    option.textContent = model.name;
+                    option.title = model.description;
+                    select.appendChild(option);
+                });
+
+                currentModel = availableModels[0].id;
+                select.value = currentModel;
+            } catch (error) {
+                console.error('加载模型失败:', error);
+                alert('加载模型列表失败，请检查服务器是否运行');
+            }
+        }
+
+        // 发送消息（流式）
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            const select = document.getElementById('modelSelect');
+            currentModel = select.value;
+
+            // 添加用户消息到历史
+            messageHistory.push({
+                role: 'user',
+                content: message
+            });
+
+            // 显示用户消息
+            displayMessage('user', message);
+            input.value = '';
+
+            // 禁用输入和按钮
+            setInputEnabled(false);
+
+            // 创建助手消息容器
+            const messageElements = createStreamingMessage();
+
+            let fullContent = '';
+            let fullReasoning = '';
+
+            try {
+                // 调用流式 API
+                const response = await fetch('/api/chat/stream', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: currentModel,
+                        messages: messageHistory,
+                        temperature: 0.7,
+                        max_tokens: 4096
+                    })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const text = decoder.decode(value, { stream: true });
+                    const lines = text.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(line.slice(6));
+
+                                if (data.error) {
+                                    alert('错误: ' + data.error);
+                                    break;
+                                }
+
+                                if (data.done) {
+                                    // 流式完成
+                                    break;
+                                }
+
+                                // 更新思考内容
+                                if (data.reasoning) {
+                                    fullReasoning += data.reasoning;
+                                    updateStreamingMessage(messageElements, fullReasoning, fullContent);
+                                }
+
+                                // 更新答案内容
+                                if (data.content) {
+                                    fullContent += data.content;
+                                    updateStreamingMessage(messageElements, fullReasoning, fullContent);
+                                }
+                            } catch (e) {
+                                // 忽略解析错误
+                            }
+                        }
+                    }
+                }
+
+                // 添加到消息历史
+                messageHistory.push({
+                    role: 'assistant',
+                    content: fullContent
+                });
+
+            } catch (error) {
+                console.error('发送消息失败:', error);
+                alert('发送消息失败: ' + error.message);
+            } finally {
+                setInputEnabled(true);
+                input.focus();
+            }
+        }
+
+        // 创建流式消息容器
+        function createStreamingMessage() {
+            const container = document.getElementById('chatContainer');
+
+            // 移除欢迎消息
+            const welcomeMessage = container.querySelector('.welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message assistant';
+
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'message-content';
+
+            // 思考区域（默认隐藏）
+            const thinkingSection = document.createElement('div');
+            thinkingSection.className = 'thinking-section';
+            thinkingSection.style.display = 'none';
+
+            const thinkingHeader = document.createElement('div');
+            thinkingHeader.className = 'thinking-header';
+            thinkingHeader.innerHTML = '<span class="icon expanded">▶</span><span>思考过程</span>';
+
+            const thinkingContent = document.createElement('div');
+            thinkingContent.className = 'thinking-content expanded';
+
+            thinkingHeader.onclick = function() {
+                const icon = thinkingHeader.querySelector('.icon');
+                if (thinkingContent.classList.contains('expanded')) {
+                    thinkingContent.classList.remove('expanded');
+                    icon.classList.remove('expanded');
+                } else {
+                    thinkingContent.classList.add('expanded');
+                    icon.classList.add('expanded');
+                }
+            };
+
+            thinkingSection.appendChild(thinkingHeader);
+            thinkingSection.appendChild(thinkingContent);
+            contentWrapper.appendChild(thinkingSection);
+
+            // 答案区域
+            const answerDiv = document.createElement('div');
+            answerDiv.className = 'answer-content';
+            contentWrapper.appendChild(answerDiv);
+
+            messageDiv.appendChild(contentWrapper);
+            container.appendChild(messageDiv);
+
+            // 滚动到底部
+            container.scrollTop = container.scrollHeight;
+
+            return {
+                thinkingSection,
+                thinkingContent,
+                answerDiv,
+                container
+            };
+        }
+
+        // 更新流式消息
+        function updateStreamingMessage(elements, reasoning, content) {
+            const { thinkingSection, thinkingContent, answerDiv, container } = elements;
+
+            // 更新思考内容
+            if (reasoning) {
+                thinkingSection.style.display = 'block';
+                thinkingContent.textContent = reasoning;
+            }
+
+            // 更新答案内容
+            if (content) {
+                answerDiv.textContent = content;
+            }
+
+            // 滚动到底部
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 显示消息
+        function displayMessage(role, content, thinking = null) {
+            const container = document.getElementById('chatContainer');
+
+            // 移除欢迎消息
+            const welcomeMessage = container.querySelector('.welcome-message');
+            if (welcomeMessage) {
+                welcomeMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${role}`;
+
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'message-content';
+
+            // 如果有思考内容，添加可折叠区域
+            if (thinking && role === 'assistant') {
+                const thinkingSection = document.createElement('div');
+                thinkingSection.className = 'thinking-section';
+
+                const thinkingHeader = document.createElement('div');
+                thinkingHeader.className = 'thinking-header';
+                thinkingHeader.innerHTML = '<span class="icon">▶</span><span>思考过程</span>';
+
+                const thinkingContent = document.createElement('div');
+                thinkingContent.className = 'thinking-content';
+                thinkingContent.textContent = thinking;
+
+                // 点击切换展开/折叠
+                thinkingHeader.onclick = function() {
+                    const icon = thinkingHeader.querySelector('.icon');
+                    if (thinkingContent.classList.contains('expanded')) {
+                        thinkingContent.classList.remove('expanded');
+                        icon.classList.remove('expanded');
+                    } else {
+                        thinkingContent.classList.add('expanded');
+                        icon.classList.add('expanded');
+                    }
+                };
+
+                thinkingSection.appendChild(thinkingHeader);
+                thinkingSection.appendChild(thinkingContent);
+                contentWrapper.appendChild(thinkingSection);
+            }
+
+            // 添加答案内容
+            const answerDiv = document.createElement('div');
+            answerDiv.textContent = content;
+            contentWrapper.appendChild(answerDiv);
+
+            messageDiv.appendChild(contentWrapper);
+            container.appendChild(messageDiv);
+
+            // 滚动到底部
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // 清空聊天
+        function clearChat() {
+            if (messageHistory.length === 0) return;
+
+            if (confirm('确定要清空聊天记录吗？')) {
+                messageHistory = [];
+                const container = document.getElementById('chatContainer');
+                container.innerHTML = `
+                    <div class="welcome-message">
+                        <h2>欢迎使用 NVIDIA NIM Chat</h2>
+                        <p>选择一个模型，然后开始对话</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 设置输入状态
+        function setInputEnabled(enabled) {
+            const input = document.getElementById('messageInput');
+            const sendButton = document.getElementById('sendButton');
+            const loading = document.getElementById('loading');
+
+            input.disabled = !enabled;
+            sendButton.disabled = !enabled;
+
+            if (enabled) {
+                loading.classList.remove('active');
+            } else {
+                loading.classList.add('active');
+            }
+        }
+
+        // 处理回车键
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 页面加载时初始化
+        window.onload = () => {
+            loadModels();
+            document.getElementById('messageInput').focus();
+        };
+    </script>
+</body>
+</html>
