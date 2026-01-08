@@ -113,6 +113,51 @@ export function listModels() {
   return api.get('/models').then(r => r.data);
 }
 
+// Knowledge Query API (separate service on port 5001)
+const knowledgeApi = axios.create({
+  baseURL: 'http://localhost:5001/api/knowledge',
+  timeout: 30000
+});
+
+export function getKnowledgeStatus() {
+  return knowledgeApi.get('/status').then(r => r.data);
+}
+
+export function scanDocuments(payload) {
+  // { path: string }
+  return knowledgeApi.post('/scan', payload).then(r => r.data);
+}
+
+export function indexDocuments(payload) {
+  // { files: string[] }
+  return knowledgeApi.post('/index', payload).then(r => r.data);
+}
+
+export function queryKnowledge(payload) {
+  // { question: string, model: string, top_k: number }
+  return knowledgeApi.post('/query', payload).then(r => r.data);
+}
+
+export function getKnowledgeModels() {
+  return knowledgeApi.get('/models').then(r => r.data);
+}
+
+export function clearKnowledge() {
+  return knowledgeApi.post('/clear').then(r => r.data);
+}
+
+export function deleteDocument(payload) {
+  // { source: string }
+  return knowledgeApi.post('/delete', payload).then(r => r.data);
+}
+
+export function getStats() {
+  return knowledgeApi.get('/stats').then(r => r.data);
+}
+
+// Alias for compatibility with MemoryManagement component
+export const getStatus = getKnowledgeStatus;
+
 export default api;
 
 

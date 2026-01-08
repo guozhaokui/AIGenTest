@@ -19,6 +19,12 @@ const ImageSearch = () => import('../views/ImageMgr/ImageSearch.vue');
 const ImageUpload = () => import('../views/ImageMgr/ImageUpload.vue');
 const BatchImport = () => import('../views/ImageMgr/BatchImport.vue');
 
+// 知识查询
+const KnowledgeIndex = () => import('../views/KnowledgeQuery/index.vue');
+const QueryInterface = () => import('../views/KnowledgeQuery/QueryInterface.vue');
+const DocumentManagement = () => import('../views/KnowledgeQuery/DocumentManagement.vue');
+const MemoryManagement = () => import('../views/KnowledgeQuery/MemoryManagement.vue');
+
 const routes = [
   { path: '/', redirect: '/admin' },
   {
@@ -59,6 +65,16 @@ const routes = [
       { path: 'search', name: 'ImageSearch', component: ImageSearch },
       { path: 'upload', name: 'ImageUpload', component: ImageUpload },
       { path: 'batch', name: 'BatchImport', component: BatchImport }
+    ]
+  },
+  {
+    path: '/knowledge',
+    component: KnowledgeIndex,
+    children: [
+      { path: '', redirect: '/knowledge/query' },
+      { path: 'query', name: 'QueryInterface', component: QueryInterface },
+      { path: 'docs', name: 'DocumentManagement', component: DocumentManagement },
+      { path: 'memory', name: 'MemoryManagement', component: MemoryManagement }
     ]
   }
 ];

@@ -1,0 +1,165 @@
+# 自演化知识管理系统配置文件
+
+# 文档路径配置
+documents:
+  # 主文档目录
+  paths:
+    - /path/to/your/work/logs
+    - /path/to/your/notes
+
+  # 排除的目录或文件
+  exclude:
+    - "**/private/**"
+    - "**/*密码*.md"
+    - "**/*secret*.md"
+    - "**/node_modules/**"
+    - "**/.git/**"
+
+  # 支持的文件类型
+  file_types:
+    - .md
+    - .txt
+    - .rst
+    # - .pdf   # 可选
+    # - .docx  # 可选
+
+  # 是否递归扫描子目录
+  recursive: true
+
+# 知识库配置
+knowledge_base:
+  # 数据库路径
+  db_path: .memory_db/knowledge.db
+
+  # 向量库路径
+  vector_db_path: .memory_db/vectors
+
+  # 学习日志路径
+  learning_log: .memory_db/learning.jsonl
+
+# 学习配置
+learning:
+  # 批量学习时的并发数
+  batch_concurrency: 4
+
+  # 自动学习模式
+  auto_learn:
+    enabled: false  # 是否启用文档监听
+    watch_interval: 5  # 检查间隔（秒）
+
+  # 实体提取策略
+  extraction:
+    strategies:
+      - rule_based      # 基于规则（快速）
+      - pattern_based   # 基于模式（中等）
+      # - llm_based     # 基于LLM（慢，但准确）
+
+  # 置信度阈值
+  confidence:
+    auto_accept: 0.9      # 自动接受的置信度
+    need_confirmation: 0.5 # 低于此值需要确认
+
+  # 主动学习配置
+  active_learning:
+    enabled: true
+    frequency: 10  # 每N次对话后主动询问
+    max_questions: 3  # 每次最多问几个问题
+
+# 查询配置
+query:
+  # 向量检索配置
+  vector_search:
+    top_k: 5  # 检索多少个文档片段
+    min_similarity: 0.3  # 最低相似度
+
+  # 是否包含背景知识
+  include_background: true
+
+  # 是否包含证据追踪
+  include_evidence: true
+
+# LLM配置
+llm:
+  # 使用的LLM服务
+  provider: nvidia  # nvidia | openai | local
+
+  # NVIDIA API配置
+  nvidia:
+    api_key_env: NVIDIA_API_KEY  # 环境变量名
+    base_url: https://integrate.api.nvidia.com/v1
+    model: deepseek-ai/deepseek-v3.2
+
+  # OpenAI API配置（可选）
+  openai:
+    api_key_env: OPENAI_API_KEY
+    base_url: https://api.openai.com/v1
+    model: gpt-4
+
+  # 本地LLM配置（可选）
+  local:
+    model_path: /path/to/local/model
+    # 使用Ollama
+    ollama_host: http://localhost:11434
+    ollama_model: llama3
+
+# Embedding配置
+embedding:
+  # 使用远程HTTP服务（推荐：复用现有的BGE服务）
+  provider: remote
+
+  # 远程HTTP服务（你的BGE服务）
+  remote:
+    base_url: http://192.168.0.100:6012  # BGE嵌入服务
+    timeout: 30.0  # 超时时间（秒）
+    batch_size: 32  # 批量大小（BGE服务限制32）
+
+  # 本地模型（备选）
+  local:
+    model_name: BAAI/bge-small-zh-v1.5  # 与远程BGE模型一致
+    # 或使用多语言模型
+    # model_name: sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+
+  # ChromaDB内置（最简单，但维度较小）
+  chromadb:
+    # 使用ChromaDB默认embedding（384维）
+    # 无需额外配置
+
+# API服务配置
+api:
+  host: 0.0.0.0
+  port: 8080
+  debug: false
+  cors_origins:
+    - http://localhost:5000  # NVIDIA聊天应用
+
+# 日志配置
+logging:
+  level: INFO  # DEBUG | INFO | WARNING | ERROR
+  file: .memory_db/app.log
+  max_size: 10MB
+  backup_count: 5
+
+# 备份配置
+backup:
+  enabled: true
+  auto_backup: true
+  interval: daily  # daily | weekly | monthly
+  path: backups/
+  keep_count: 30  # 保留最近N个备份
+
+# 高级配置
+advanced:
+  # 使用图数据库（可选）
+  use_graph_db: false
+  neo4j:
+    uri: bolt://localhost:7687
+    user: neo4j
+    password: password
+
+  # WebHook通知（可选）
+  webhooks:
+    enabled: false
+    events:
+      - entity_learned
+      - conflict_detected
+    url: http://your-server.com/webhook
