@@ -15,6 +15,6 @@ echo "启动 LTX-2 视频生成服务..."
 echo "端口: 6020"
 echo "环境: 8x3090 / conda: ltx"
 
-python ltx2_server.py --port 6020
+python ltx2_server.py --port 6070
 
 

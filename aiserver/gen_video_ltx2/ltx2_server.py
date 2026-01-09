@@ -30,7 +30,7 @@ import uvicorn
 # 服务配置
 SERVICE_NAME = "LTX-2 Video Generation"
 SERVICE_VERSION = "1.0.0"
-DEFAULT_PORT = 6020
+DEFAULT_PORT = 6070
 
 # 模型配置
 MODEL_ROOT = "/data1/MLLM/ltx-2/models/Lightricks/LTX-2"
