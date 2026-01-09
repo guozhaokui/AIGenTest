@@ -47,35 +47,68 @@ let gatewayProcess = null;
 function startGateway() {
   const gatewayPath = path.resolve(__dirname, '../aiserver/gateway');
   const logPath = path.resolve(__dirname, '../logs');
-  
+
   // 创建日志目录
   require('fs').mkdirSync(logPath, { recursive: true });
-  
+
   console.log('[gateway] Starting AI Gateway service...');
-  
+
   // 启动 Python 网关服务
   gatewayProcess = spawn('python', ['ai_gateway.py'], {
     cwd: gatewayPath,
     stdio: ['ignore', 'pipe', 'pipe'],
     env: { ...process.env }
   });
-  
+
   gatewayProcess.stdout.on('data', (data) => {
     console.log(`[gateway] ${data.toString().trim()}`);
   });
-  
+
   gatewayProcess.stderr.on('data', (data) => {
     // uvicorn 的普通日志也输出到 stderr，所以用 log 而不是 error
     console.log(`[gateway] ${data.toString().trim()}`);
   });
-  
+
   gatewayProcess.on('close', (code) => {
     console.log(`[gateway] Process exited with code ${code}`);
     gatewayProcess = null;
   });
-  
+
   gatewayProcess.on('error', (err) => {
     console.error('[gateway] Failed to start:', err.message);
+  });
+}
+
+// ==================== 启动知识查询服务 ====================
+let knowledgeProcess = null;
+
+function startKnowledge() {
+  const knowledgePath = path.resolve(__dirname, '../memory_system');
+
+  console.log('[knowledge] Starting Knowledge Query service...');
+
+  // 启动 Python 知识查询服务
+  knowledgeProcess = spawn('python', ['web_service.py'], {
+    cwd: knowledgePath,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env }
+  });
+
+  knowledgeProcess.stdout.on('data', (data) => {
+    console.log(`[knowledge] ${data.toString().trim()}`);
+  });
+
+  knowledgeProcess.stderr.on('data', (data) => {
+    console.log(`[knowledge] ${data.toString().trim()}`);
+  });
+
+  knowledgeProcess.on('close', (code) => {
+    console.log(`[knowledge] Process exited with code ${code}`);
+    knowledgeProcess = null;
+  });
+
+  knowledgeProcess.on('error', (err) => {
+    console.error('[knowledge] Failed to start:', err.message);
   });
 }
 
@@ -88,6 +121,10 @@ function cleanup() {
   if (gatewayProcess) {
     console.log('[gateway] Stopping AI Gateway service...');
     gatewayProcess.kill('SIGTERM');
+  }
+  if (knowledgeProcess) {
+    console.log('[knowledge] Stopping Knowledge Query service...');
+    knowledgeProcess.kill('SIGTERM');
   }
 }
 
@@ -103,6 +140,7 @@ process.on('SIGTERM', () => {
 
 // 启动 Python 服务
 startImagemgr();
+startKnowledge();
 // startGateway();  // 暂不启动，backend 直接访问各服务，不需要额外网关层
 
 // ==================== 启动 Express 服务 ====================

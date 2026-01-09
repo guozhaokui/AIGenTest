@@ -5,6 +5,7 @@
       <router-link to="/eval">评估端</router-link>
       <router-link to="/live">实时生成</router-link>
       <router-link to="/imagemgr">图片管理</router-link>
+      <router-link to="/knowledge">知识查询</router-link>
     </nav>
     <router-view />
   </div>

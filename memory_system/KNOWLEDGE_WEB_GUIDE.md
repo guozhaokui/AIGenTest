@@ -3,7 +3,7 @@
 ## 系统架构
 
 ```
-前端 (Vue.js)              后端服务
+前端 (Vue.js)              后端服务 (FastAPI)
 Port 5173/5174    ←→    Port 5001 (知识查询API)
    ↓                        ↓
 /knowledge/query          向量存储 (ChromaDB)
@@ -17,7 +17,41 @@ Port 5173/5174    ←→    Port 5001 (知识查询API)
 
 ## 快速启动
 
-### 1. 启动后端知识查询服务
+### 方式一：通过 pnpm 统一启动（推荐）
+
+**1. 安装 Python 依赖（首次运行）：**
+```bash
+# Windows
+cd memory_system
+install_dependencies.cmd
+
+# Linux/Mac
+cd memory_system
+./install_dependencies.sh
+```
+
+**2. 启动后端（包含知识查询服务）：**
+```bash
+# 在项目根目录
+pnpm dev:backend
+```
+
+这会同时启动：
+- Express 后端服务 (port 3000)
+- 图片管理服务 (port 5002)
+- **知识查询服务 (port 5001)** ✨
+
+**3. 启动前端：**
+```bash
+# 在项目根目录
+pnpm dev:frontend
+```
+
+前端将在 `http://localhost:5173` 或 `http://localhost:5174` 启动。
+
+### 方式二：独立启动知识查询服务
+
+如果只想单独测试知识查询服务：
 
 ```bash
 cd memory_system
@@ -41,15 +75,6 @@ python web_service.py
   文档: http://localhost:5001/api/knowledge/status
 ============================================================
 ```
-
-### 2. 启动前端开发服务器
-
-```bash
-cd frontend
-npm run dev
-```
-
-前端将在 `http://localhost:5173` 或 `http://localhost:5174` 启动。
 
 ### 3. 访问知识查询页面
 

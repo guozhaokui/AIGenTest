@@ -4253,5 +4253,971 @@
     },
     "createdAt": "2025-12-30T03:37:07.631Z",
     "dimensionScores": {}
+  },
+  {
+    "id": "1bec7b3b-7930-41b3-a1a6-43440d6a3b22",
+    "prompt": "把第一张图的脸换成第二张图，但是还是线条风格，尽量保留原始风格",
+    "imagePath": "/imagedb/73/31/7331936543f815093c494a4804c2392d.jpg",
+    "imageUrls": [
+      "imagedb/15/78/1578f4607e04763c4ba4ca5cb0598552.png",
+      "imagedb/1b/9e/1b9ebe0beceb060db5466ceb32099f4b.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 21017,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 538,
+      "candidatesTokenCount": 1265,
+      "totalTokenCount": 1964,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 22
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 516
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 161
+    },
+    "createdAt": "2026-01-04T09:06:35.877Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "7d360181-bbaf-48d6-8742-82ba263b24f0",
+    "prompt": "重现洛神赋的场景",
+    "imagePath": "/imagedb/6e/d1/6ed12f834e55a085e74e2521e330831f.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "16:9",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ALL",
+      "outputMimeType": "image/png",
+      "outputResolution": "2K"
+    },
+    "duration": 18854,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 8,
+      "candidatesTokenCount": 1271,
+      "totalTokenCount": 1508,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 8
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 229
+    },
+    "createdAt": "2026-01-06T07:37:51.594Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "401df108-3ee9-44fb-a09d-9f532f268b4e",
+    "prompt": "重现洛神赋的场景",
+    "imagePath": "/imagedb/ae/12/ae12275a7a46901da6b11fa17a3f9a2a.jpg",
+    "imageUrls": [],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "16:9",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ALL",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 22946,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 8,
+      "candidatesTokenCount": 1272,
+      "totalTokenCount": 1508,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 8
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 228
+    },
+    "createdAt": "2026-01-06T07:39:04.689Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "27408d99-2de8-425a-931f-f244f8d48162",
+    "prompt": "用红框标出这个图片中的耳机的位置",
+    "imagePath": "/imagedb/aa/3e/aa3e00be6d47c185c46a4e59baf31bd8.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 19025,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 269,
+      "candidatesTokenCount": 1188,
+      "totalTokenCount": 1579,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 11
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 122
+    },
+    "createdAt": "2026-01-07T02:34:11.945Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "e636ef3f-c61a-4003-859e-ecb27268708b",
+    "prompt": "这个图片中有一个纳西妲的吧唧框出来",
+    "imagePath": "/imagedb/06/29/0629233f590f4d97de631e48f3363bcd.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 17582,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 271,
+      "candidatesTokenCount": 1186,
+      "totalTokenCount": 1595,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 13
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 138
+    },
+    "createdAt": "2026-01-07T02:35:15.013Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "bf74c453-a444-492b-964b-bb9b8badd8f3",
+    "prompt": "以摄像机为原点，右边为正x，上为正y，前为正z，这个图片中的耳机的位置大约在什么位置，标出来，并写上坐标",
+    "imagePath": "/imagedb/8f/31/8f31879db3aec260cb70a628029422ef.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 18742,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 299,
+      "candidatesTokenCount": 1219,
+      "totalTokenCount": 1816,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 41
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 298
+    },
+    "createdAt": "2026-01-07T02:38:05.645Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "5ad5983f-dd02-450f-b34e-f68da6941453",
+    "prompt": "把这张图片改成第三视角，即假设有个摄像机在拍这个场景，你从另一个视角看这个摄像机和场景",
+    "imagePath": "/imagedb/1b/d0/1bd0e490d2654b5fbe5438b1104cca1c.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 24672,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 286,
+      "candidatesTokenCount": 1273,
+      "totalTokenCount": 1731,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 28
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 172
+    },
+    "createdAt": "2026-01-07T02:40:14.659Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "6f288f64-a2e5-4572-a52a-3a421fcc45a7",
+    "prompt": "有4个摄像机从不同角度在拍摄这个场景，恢复这四个摄像机的画面，形成一个监控墙",
+    "imagePath": "/imagedb/03/19/0319f31faf7fed31595d102b33fae079.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 18832,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 283,
+      "candidatesTokenCount": 1277,
+      "totalTokenCount": 1787,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 25
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 227
+    },
+    "createdAt": "2026-01-07T02:45:36.987Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "2836e013-51be-4296-8e26-53952f15624b",
+    "prompt": "有4个x射线摄像机从不同角度在拍摄这个场景，恢复这四个摄像机的画面，形成一个监控墙",
+    "imagePath": "/imagedb/23/3a/233a8ac468afe52b5d8f9251d1a8a216.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 17541,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 285,
+      "candidatesTokenCount": 1322,
+      "totalTokenCount": 1798,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 27
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 191
+    },
+    "createdAt": "2026-01-07T02:47:05.953Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "e11ee54c-0418-4976-805a-34ff7b69d58c",
+    "prompt": "在这个场景的桌面上放置一个xzy坐标轴，并设置刻度。有4个x射线摄像机从不同角度在拍摄这个场景，恢复这四个摄像机的画面，形成一个监控墙，",
+    "imagePath": "/imagedb/6e/51/6e51b8126a6121099dc03a4540523af7.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 19561,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 303,
+      "candidatesTokenCount": 1403,
+      "totalTokenCount": 1967,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 45
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 261
+    },
+    "createdAt": "2026-01-07T02:49:11.503Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "121e2ec4-1a40-4e2b-8cd0-8d1c02c2a925",
+    "prompt": "在这个场景的主要物体上加上xyz辅助线，标出刻度",
+    "imagePath": "/imagedb/58/36/5836bba84e396d5e50994b492f619206.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 17701,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 273,
+      "candidatesTokenCount": 1259,
+      "totalTokenCount": 1717,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 15
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 185
+    },
+    "createdAt": "2026-01-07T02:50:40.226Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "23ff7cc3-40f7-4425-a3a5-45825f757cf9",
+    "prompt": "在这个场景的可识别物体上加上xyz辅助线，标出刻度",
+    "imagePath": "/imagedb/59/1b/591bc47ab92c15bc7cdad3feed2ffba6.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 18674,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 274,
+      "candidatesTokenCount": 1249,
+      "totalTokenCount": 1683,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 16
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 160
+    },
+    "createdAt": "2026-01-07T02:51:24.834Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "d7bdeb32-fc34-4dc5-afff-8865485e46b7",
+    "prompt": "把这个场景变成3d模型的白模，并且有一个地面网格，网格与桌面对齐",
+    "imagePath": "/imagedb/ce/b0/ceb0b51598b1c1e4ed634582199c3e18.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 20451,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 281,
+      "candidatesTokenCount": 1262,
+      "totalTokenCount": 1715,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 23
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 172
+    },
+    "createdAt": "2026-01-07T02:53:19.713Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "d96ba70e-560a-4191-9c27-4daac17a3f8a",
+    "prompt": "把这个场景变成3d模型的纯线框模式，并且有一个地面网格，网格与桌面对齐",
+    "imagePath": "/imagedb/05/f9/05f98b5e52452cdfc537d5116254a56b.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 22351,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 283,
+      "candidatesTokenCount": 1283,
+      "totalTokenCount": 1753,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 25
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 187
+    },
+    "createdAt": "2026-01-07T02:55:55.483Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "5aae1f9c-3a91-4e32-b6fc-12cfc7ffaf9a",
+    "prompt": "用一个2x2的监控墙显示这个场景，分别是摄像机水平围绕显示器不同角度的画面",
+    "imagePath": "/imagedb/78/b5/78b5ad047e8cf7d4732182fc5a827ba4.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 20652,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 282,
+      "candidatesTokenCount": 1278,
+      "totalTokenCount": 1734,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 24
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 174
+    },
+    "createdAt": "2026-01-07T02:59:58.308Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "45e3b579-c09a-4da5-ae1e-bcc0b2203e46",
+    "prompt": "把这个场景用3dsmax的四个试图显示出来",
+    "imagePath": "/imagedb/df/a1/dfa16fa6efbc8bb8b210ac1078238d42.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 18425,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 271,
+      "candidatesTokenCount": 1301,
+      "totalTokenCount": 1791,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 13
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 219
+    },
+    "createdAt": "2026-01-07T03:01:37.449Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "b7b8b462-3821-4dad-bd8d-e6c53e02eed0",
+    "prompt": "把这个场景用类似3dsmax的四个视图显示出来，不要3dsmax的界面，每个物体用不同的颜色表示，要尽量保证他们位置的一致性，并在桌面放置一个统一的红绿蓝坐标轴",
+    "imagePath": "/imagedb/97/c4/97c421fb5baae309be9bb1b2d44fe590.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 19194,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 307,
+      "candidatesTokenCount": 1329,
+      "totalTokenCount": 1836,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 49
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 200
+    },
+    "createdAt": "2026-01-07T03:04:22.464Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "ee0205d6-046c-4a72-b145-60e25aa30345",
+    "prompt": "把这个场景用类似3dsmax的四个视图显示出来，不要3dsmax的界面，每个物体用不同的颜色表示，要尽量保证他们位置的一致性",
+    "imagePath": "/imagedb/01/1b/011bb0b28a8f3a1a8b18f567a982b464.jpg",
+    "imageUrls": [
+      "imagedb/ba/41/ba419761a4b32cd1515e5762438fcf44.webp"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 19129,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 295,
+      "candidatesTokenCount": 1300,
+      "totalTokenCount": 1829,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 37
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 234
+    },
+    "createdAt": "2026-01-07T03:11:41.796Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "40455e9c-4bec-414d-af8f-748e8f31a386",
+    "prompt": "根据拍摄场景（图1）纠正一下生成场景（图2）中的错误，例如物体是否存在，位置和朝向的统一，然后重新生成一下图2",
+    "imagePath": "/imagedb/56/2c/562c001b500c4ac5ff02069595126d95.jpg",
+    "imageUrls": [
+      "imagedb/7d/64/7d64cb38c3fc40352962f8ff55492bee.jpg",
+      "imagedb/97/c4/97c421fb5baae309be9bb1b2d44fe590.jpg"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 20246,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 553,
+      "candidatesTokenCount": 1292,
+      "totalTokenCount": 2088,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 37
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 516
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 243
+    },
+    "createdAt": "2026-01-07T03:18:50.220Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "a563f4b9-c34b-4b4e-a333-cf2eac71d41b",
+    "prompt": "把这个界面的不合理的地方框出来，例如不好看，不明意义，重复，多余，抢眼，并解释原因",
+    "imagePath": "/imagedb/44/b8/44b855512f85c53d3606701ebcef2eee.jpg",
+    "imageUrls": [
+      "imagedb/f1/47/f147a7da54ac49ecc77d956c5d3e311d.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 32693,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 287,
+      "candidatesTokenCount": 1605,
+      "totalTokenCount": 2692,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 29
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 800
+    },
+    "createdAt": "2026-01-07T03:46:24.465Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "61465cb6-650a-4720-bc14-e70a43faadf2",
+    "prompt": "美化一下这个界面，要看着和谐，重点突出，节奏合理",
+    "imagePath": "/imagedb/cc/36/cc36dc1457eabf9a05513123ccbbfe64.jpg",
+    "imageUrls": [
+      "imagedb/f1/47/f147a7da54ac49ecc77d956c5d3e311d.png"
+    ],
+    "modelId": "google_gemini_image2",
+    "modelName": "",
+    "params": {
+      "aspectRatio": "1:1",
+      "numberOfImages": "1",
+      "personGeneration": "ALLOW_ADULT",
+      "outputMimeType": "image/png",
+      "outputResolution": "1K"
+    },
+    "duration": 17735,
+    "info3d": null,
+    "usage": {
+      "promptTokenCount": 274,
+      "candidatesTokenCount": 1301,
+      "totalTokenCount": 1757,
+      "promptTokensDetails": [
+        {
+          "modality": "TEXT",
+          "tokenCount": 16
+        },
+        {
+          "modality": "IMAGE",
+          "tokenCount": 258
+        }
+      ],
+      "candidatesTokensDetails": [
+        {
+          "modality": "IMAGE",
+          "tokenCount": 1120
+        }
+      ],
+      "thoughtsTokenCount": 182
+    },
+    "createdAt": "2026-01-07T03:48:13.331Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "fece8cda-b83f-4b62-aab4-b3f2566de553",
+    "prompt": "",
+    "imagePath": "/modeldb/01c5f635-6350-4c35-8f1b-afe813735b3e/8f9c4b99-8caf-4ad6-9071-83fc1b7cc714",
+    "imageUrls": [
+      "imagedb/47/3c/473c313d03349fbc39a331bb6e6f7dfa.png"
+    ],
+    "modelId": "doubao_seed3d",
+    "modelName": "",
+    "params": {
+      "textParams": "--subdivisionlevel medium --fileformat glb"
+    },
+    "duration": 435187,
+    "info3d": {
+      "modelDir": "/modeldb/01c5f635-6350-4c35-8f1b-afe813735b3e/8f9c4b99-8caf-4ad6-9071-83fc1b7cc714"
+    },
+    "usage": {
+      "completion_tokens": 30000,
+      "total_tokens": 30000
+    },
+    "createdAt": "2026-01-08T10:02:50.339Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/01c5f635-6350-4c35-8f1b-afe813735b3e/8f9c4b99-8caf-4ad6-9071-83fc1b7cc714/thumbnail.jpg"
+  },
+  {
+    "id": "58103de8-def3-47d6-b853-346d9bc46e17",
+    "prompt": "孙悟空",
+    "imagePath": "/modeldb/2c347d42-c564-4ab4-9c43-070562dd03a4/c91c56c5-d2b8-4194-af43-2846b491818f",
+    "imageUrls": [],
+    "modelId": "hyper3d_text_to_3d",
+    "modelName": "",
+    "params": {
+      "tier": "Gen-2",
+      "meshMode": "Raw",
+      "material": "PBR",
+      "qualityOverride": 10000
+    },
+    "duration": 116468,
+    "info3d": {
+      "modelDir": "/modeldb/2c347d42-c564-4ab4-9c43-070562dd03a4/c91c56c5-d2b8-4194-af43-2846b491818f",
+      "isSingleFile": true,
+      "modelPath": "base_basic_pbr.glb"
+    },
+    "usage": null,
+    "createdAt": "2026-01-09T08:37:38.468Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/2c347d42-c564-4ab4-9c43-070562dd03a4/c91c56c5-d2b8-4194-af43-2846b491818f/thumbnail.jpg"
+  },
+  {
+    "id": "8255ebc2-61e5-46f4-8152-61dde4f61baa",
+    "prompt": "",
+    "imagePath": "/modeldb/cf3c7515-909d-4a2d-9e0c-72372cf2ba02/bd53ccc7-164c-481e-89f9-bc9473a57bf9",
+    "imageUrls": [
+      "imagedb/47/3c/473c313d03349fbc39a331bb6e6f7dfa.png"
+    ],
+    "modelId": "hyper3d_image_to_3d",
+    "modelName": "",
+    "params": {
+      "tier": "Gen-2",
+      "meshMode": "Raw",
+      "material": "PBR",
+      "qualityOverride": 500000
+    },
+    "duration": 220301,
+    "info3d": {
+      "modelDir": "/modeldb/cf3c7515-909d-4a2d-9e0c-72372cf2ba02/bd53ccc7-164c-481e-89f9-bc9473a57bf9",
+      "isSingleFile": true,
+      "modelPath": "base_basic_pbr.glb"
+    },
+    "usage": null,
+    "createdAt": "2026-01-09T08:42:30.414Z",
+    "dimensionScores": {}
   }
 ]

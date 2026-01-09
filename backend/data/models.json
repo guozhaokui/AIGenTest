@@ -693,6 +693,116 @@
     ]
   },
   {
+    "id": "hyper3d_text_to_3d",
+    "name": "Hyper3D 文本转3D (Gen-2)",
+    "driver": "hyper3d",
+    "input": {
+      "types": ["text"],
+      "mode": "single"
+    },
+    "output": "mesh",
+    "options": {
+      "useProxy": false
+    },
+    "parameters": [
+      {
+        "name": "tier",
+        "label": "生成等级",
+        "type": "select",
+        "default": "Gen-2",
+        "options": [
+          { "label": "Gen-2 (高质量)", "value": "Gen-2" },
+          { "label": "Regular (Gen-1.5)", "value": "Regular" }
+        ]
+      },
+      {
+        "name": "meshMode",
+        "label": "网格模式",
+        "type": "select",
+        "default": "Raw",
+        "options": [
+          { "label": "Raw (原始)", "value": "Raw" },
+          { "label": "Quad (四边形)", "value": "Quad" }
+        ]
+      },
+      {
+        "name": "material",
+        "label": "材质类型",
+        "type": "select",
+        "default": "PBR",
+        "options": [
+          { "label": "PBR (物理渲染)", "value": "PBR" },
+          { "label": "Unlit (无光照)", "value": "Unlit" }
+        ]
+      },
+      {
+        "name": "qualityOverride",
+        "label": "面数",
+        "type": "number",
+        "default": 500000,
+        "min": 10000,
+        "max": 2000000,
+        "step": 10000,
+        "description": "输出模型的目标面数"
+      }
+    ]
+  },
+  {
+    "id": "hyper3d_image_to_3d",
+    "name": "Hyper3D 图片转3D (Gen-2)",
+    "driver": "hyper3d",
+    "input": {
+      "types": ["image"],
+      "mode": "single"
+    },
+    "output": "mesh",
+    "options": {
+      "useProxy": false
+    },
+    "parameters": [
+      {
+        "name": "tier",
+        "label": "生成等级",
+        "type": "select",
+        "default": "Gen-2",
+        "options": [
+          { "label": "Gen-2 (高质量)", "value": "Gen-2" },
+          { "label": "Regular (Gen-1.5)", "value": "Regular" }
+        ]
+      },
+      {
+        "name": "meshMode",
+        "label": "网格模式",
+        "type": "select",
+        "default": "Raw",
+        "options": [
+          { "label": "Raw (原始)", "value": "Raw" },
+          { "label": "Quad (四边形)", "value": "Quad" }
+        ]
+      },
+      {
+        "name": "material",
+        "label": "材质类型",
+        "type": "select",
+        "default": "PBR",
+        "options": [
+          { "label": "PBR (物理渲染)", "value": "PBR" },
+          { "label": "Unlit (无光照)", "value": "Unlit" }
+        ]
+      },
+      {
+        "name": "qualityOverride",
+        "label": "面数",
+        "type": "number",
+        "default": 500000,
+        "min": 10000,
+        "max": 2000000,
+        "step": 10000,
+        "description": "输出模型的目标面数"
+      }
+    ]
+  },
+  {
     "id": "trellis2_image_to_3d",
     "name": "TRELLIS.2 (本地3D)",
     "driver": "trellis",

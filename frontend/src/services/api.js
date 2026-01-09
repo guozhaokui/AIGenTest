@@ -155,6 +155,11 @@ export function getStats() {
   return knowledgeApi.get('/stats').then(r => r.data);
 }
 
+export function chat(payload) {
+  // { message: string, model: string, history: array, system_prompt: string }
+  return knowledgeApi.post('/chat', payload).then(r => r.data);
+}
+
 // Alias for compatibility with MemoryManagement component
 export const getStatus = getKnowledgeStatus;
 

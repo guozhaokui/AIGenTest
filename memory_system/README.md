@@ -93,10 +93,11 @@ memory_system/
 ## 技术栈
 
 - Python 3.9+
+- FastAPI + uvicorn（Web服务）
 - ChromaDB（向量存储）
 - SQLite（结构化知识）
 - sentence-transformers（本地embedding）
-- FastAPI（API服务）
+- OpenAI SDK（NVIDIA NIM API调用）
 
 ## 许可证
 
