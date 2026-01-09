@@ -850,5 +850,178 @@
         "description": "是否重新网格化以优化拓扑"
       }
     ]
+  },
+  {
+    "id": "ltx2_text_to_video",
+    "name": "LTX-2 文生视频",
+    "driver": "ltx2",
+    "input": {
+      "types": ["text"],
+      "mode": "single"
+    },
+    "output": "video",
+    "options": {
+      "url": "http://localhost:6070",
+      "useProxy": false
+    },
+    "parameters": [
+      {
+        "name": "width",
+        "label": "宽度",
+        "type": "select",
+        "default": "768",
+        "options": [
+          { "label": "512", "value": "512" },
+          { "label": "640", "value": "640" },
+          { "label": "768", "value": "768" },
+          { "label": "896", "value": "896" },
+          { "label": "1024", "value": "1024" }
+        ],
+        "description": "视频宽度"
+      },
+      {
+        "name": "height",
+        "label": "高度",
+        "type": "select",
+        "default": "512",
+        "options": [
+          { "label": "384", "value": "384" },
+          { "label": "480", "value": "480" },
+          { "label": "512", "value": "512" },
+          { "label": "576", "value": "576" },
+          { "label": "640", "value": "640" }
+        ],
+        "description": "视频高度"
+      },
+      {
+        "name": "numFrames",
+        "label": "帧数",
+        "type": "select",
+        "default": "25",
+        "options": [
+          { "label": "25帧 (1秒)", "value": "25" },
+          { "label": "49帧 (2秒)", "value": "49" },
+          { "label": "97帧 (4秒)", "value": "97" }
+        ],
+        "description": "生成帧数 (公式: 8*K+1)"
+      },
+      {
+        "name": "frameRate",
+        "label": "帧率",
+        "type": "number",
+        "default": 25,
+        "min": 10,
+        "max": 60,
+        "step": 1,
+        "description": "视频帧率"
+      },
+      {
+        "name": "seed",
+        "label": "随机种子",
+        "type": "number",
+        "default": -1,
+        "min": -1,
+        "max": 2147483647,
+        "step": 1,
+        "description": "-1 表示随机"
+      },
+      {
+        "name": "gpuId",
+        "label": "GPU编号",
+        "type": "number",
+        "default": 0,
+        "min": 0,
+        "max": 7,
+        "step": 1,
+        "description": "使用的GPU编号 (0-7)"
+      }
+    ]
+  },
+  {
+    "id": "ltx2_image_to_video",
+    "name": "LTX-2 图生视频",
+    "driver": "ltx2",
+    "input": {
+      "types": ["text", "image"],
+      "mode": "combined",
+      "default": "image"
+    },
+    "output": "video",
+    "options": {
+      "url": "http://localhost:6070",
+      "useProxy": false
+    },
+    "parameters": [
+      {
+        "name": "width",
+        "label": "宽度",
+        "type": "select",
+        "default": "768",
+        "options": [
+          { "label": "512", "value": "512" },
+          { "label": "640", "value": "640" },
+          { "label": "768", "value": "768" },
+          { "label": "896", "value": "896" },
+          { "label": "1024", "value": "1024" }
+        ],
+        "description": "视频宽度"
+      },
+      {
+        "name": "height",
+        "label": "高度",
+        "type": "select",
+        "default": "512",
+        "options": [
+          { "label": "384", "value": "384" },
+          { "label": "480", "value": "480" },
+          { "label": "512", "value": "512" },
+          { "label": "576", "value": "576" },
+          { "label": "640", "value": "640" }
+        ],
+        "description": "视频高度"
+      },
+      {
+        "name": "numFrames",
+        "label": "帧数",
+        "type": "select",
+        "default": "25",
+        "options": [
+          { "label": "25帧 (1秒)", "value": "25" },
+          { "label": "49帧 (2秒)", "value": "49" },
+          { "label": "97帧 (4秒)", "value": "97" }
+        ],
+        "description": "生成帧数 (公式: 8*K+1)"
+      },
+      {
+        "name": "frameRate",
+        "label": "帧率",
+        "type": "number",
+        "default": 25,
+        "min": 10,
+        "max": 60,
+        "step": 1,
+        "description": "视频帧率"
+      },
+      {
+        "name": "seed",
+        "label": "随机种子",
+        "type": "number",
+        "default": -1,
+        "min": -1,
+        "max": 2147483647,
+        "step": 1,
+        "description": "-1 表示随机"
+      },
+      {
+        "name": "gpuId",
+        "label": "GPU编号",
+        "type": "number",
+        "default": 0,
+        "min": 0,
+        "max": 7,
+        "step": 1,
+        "description": "使用的GPU编号 (0-7)"
+      }
+    ]
   }
 ]

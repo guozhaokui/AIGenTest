@@ -13,6 +13,8 @@ const UPLOAD_DIR = path.resolve(__dirname, '../../imagedb');
 const MODEL_DIR = path.resolve(__dirname, '../../modeldb');
 // 新增：音频存储目录
 const SOUND_DIR = path.resolve(__dirname, '../../sounddb');
+// 新增：视频存储目录
+const VIDEO_DIR = path.resolve(__dirname, '../../videodb');
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY || process.env.GENAI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
 const MODELS_FILE = path.resolve(__dirname, '../../data/models.json');
 const { readJson } = require('../utils/jsonStore');
@@ -226,6 +228,8 @@ router.post('/', upload.any(), async (req, res, next) => {
         apiKey = process.env.MESHY_API_KEY;
       } else if (selected.driver === 'hyper3d') {
         apiKey = process.env.HYPER3D_API_KEY;
+      } else if (selected.driver === 'ltx2') {
+        apiKey = null; // LTX2 是本地服务，不需要 API Key
       }
 
       const startT = Date.now();
@@ -324,13 +328,60 @@ router.post('/', upload.any(), async (req, res, next) => {
           usage
         });
       } else {
-        // Regular file handling (images, single 3D models, sounds)
+        // Regular file handling (images, single 3D models, sounds, videos)
         const sub2 = hash.slice(2, 4);
         // ext 已在前面定义
         
-        // 判断是存入 imagedb, modeldb 还是 sounddb
+        // 判断是存入 imagedb, modeldb, sounddb 还是 videodb
         const isModel = ['.glb', '.gltf', '.fbx', '.obj'].includes(ext);
         const isSound = ['.mp3', '.wav', '.ogg', '.flac'].includes(ext);
+        const isVideo = ['.mp4', '.webm', '.mov', '.avi'].includes(ext);
+        
+        // 对于视频，使用与 3D 模型相似的目录结构
+        if (isVideo) {
+          const questionUuid = req.body.questionId || crypto.randomUUID();
+          const resultUuid = crypto.randomUUID();
+          
+          const baseDir = path.resolve(__dirname, '../../videodb');
+          const outputDir = path.join(baseDir, questionUuid, resultUuid);
+          
+          await fs.mkdir(outputDir, { recursive: true });
+          
+          // 从驱动返回的 videoPath 获取视频文件名，默认为 video.mp4
+          const videoFilename = out.videoPath || 'video.mp4';
+          const abs = path.join(outputDir, videoFilename);
+          await fs.writeFile(abs, buf);
+          
+          const videoDir = `/videodb/${questionUuid}/${resultUuid}`;
+          console.log(`[generate] Video saved to ${videoDir}/${videoFilename}`);
+          
+          // 保存 meta.json 元数据文件（使用本地时间）
+          const metaData = {
+            generatedAt: getLocalTimeString(),
+            modelId: selected.id,
+            driver: selected.driver,
+            prompt: prompt || null,
+            inputImageCount: inputImages.length,
+            duration: duration,
+            usage: usage,
+            // 来自驱动的元数据（如 LTX2 的 taskId 等）
+            ...(out.meta || {})
+          };
+          
+          const metaPath = path.join(outputDir, 'meta.json');
+          await fs.writeFile(metaPath, JSON.stringify(metaData, null, 2), 'utf-8');
+          console.log(`[generate] Meta saved to ${videoDir}/meta.json`);
+          
+          return res.json({ 
+            imagePath: videoDir,
+            duration,
+            infoVideo: { 
+              videoDir,
+              videoPath: videoFilename  // 返回视频文件相对路径
+            },
+            usage
+          });
+        }
         
         // 对于 3D 模型，使用与 ZIP 相同的目录结构
         if (isModel) {
@@ -479,6 +530,11 @@ function mimeToExt(mime) {
   if (mime === 'audio/mpeg') return '.mp3';
   if (mime === 'audio/wav' || mime === 'audio/x-wav') return '.wav';
   if (mime === 'audio/ogg') return '.ogg';
+  // 新增：视频 MIME 支持
+  if (mime === 'video/mp4') return '.mp4';
+  if (mime === 'video/webm') return '.webm';
+  if (mime === 'video/quicktime') return '.mov';
+  if (mime === 'video/x-msvideo') return '.avi';
   return '.png'; // 默认回退
 }
 

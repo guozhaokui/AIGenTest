@@ -629,6 +629,67 @@ def delete_documents(request: DeleteRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+class SearchRequest(BaseModel):
+    """纯向量检索请求"""
+    query: str
+    top_k: int = 5
+
+
+@app.post("/api/knowledge/search")
+def search_documents(request: SearchRequest):
+    """
+    纯向量检索接口（不调用LLM）
+    
+    用于快速检索相关文档，方便调试和性能分析
+    """
+    if not vector_store:
+        raise HTTPException(status_code=503, detail="向量存储未初始化")
+
+    if not request.query.strip():
+        return {
+            "success": False,
+            "error": "查询内容不能为空"
+        }
+
+    try:
+        import time
+        
+        # 记录开始时间
+        start_time = time.time()
+        
+        # 向量检索
+        results = vector_store.search(request.query, top_k=request.top_k)
+        
+        # 计算耗时
+        search_time = time.time() - start_time
+        
+        # 构建结果
+        docs = []
+        for i, result in enumerate(results, 1):
+            docs.append({
+                "index": i,
+                "source": result.metadata.get("source", "unknown"),
+                "content": result.content,
+                "similarity": result.similarity,
+                "metadata": result.metadata
+            })
+
+        return {
+            "success": True,
+            "data": {
+                "query": request.query,
+                "results": docs,
+                "total": len(docs),
+                "search_time_ms": round(search_time * 1000, 2)
+            }
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @app.get("/api/knowledge/stats")
 def get_stats():
     """获取统计信息"""

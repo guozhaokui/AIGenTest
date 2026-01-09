@@ -1,6 +1,6 @@
 <template>
   <div class="knowledge-query-layout">
-    <el-container style="height: 100vh">
+    <el-container style="height: 100%">
       <el-aside width="250px" style="background-color: #f5f7fa; padding: 20px;">
         <h3 style="margin: 0 0 20px 0;">知识查询</h3>
         <el-menu
@@ -10,6 +10,10 @@
           <el-menu-item index="query">
             <el-icon><Search /></el-icon>
             <span>智能问答</span>
+          </el-menu-item>
+          <el-menu-item index="search">
+            <el-icon><Connection /></el-icon>
+            <span>纯检索</span>
           </el-menu-item>
           <el-menu-item index="docs">
             <el-icon><Document /></el-icon>
@@ -49,7 +53,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Search, Document, Memo } from '@element-plus/icons-vue';
+import { Search, Document, Memo, Connection } from '@element-plus/icons-vue';
 import { getStats } from '@/services/api';
 
 const router = useRouter();
@@ -89,7 +93,7 @@ onMounted(() => {
 
 <style scoped>
 .knowledge-query-layout {
-  height: 100vh;
+  height: calc(100vh - 48px); /* 减去顶部导航栏高度 */
 }
 
 .stats-item {

@@ -60,7 +60,7 @@ router.post('/', async (req, res, next) => {
     await ensureDataFile();
     const items = await readJson(DATA_FILE);
     
-    const { prompt, imagePath, imageUrls, modelId, modelName, params, duration, info3d, usage } = req.body;
+    const { prompt, imagePath, imageUrls, modelId, modelName, params, duration, info3d, infoVideo, usage } = req.body;
     const now = new Date().toISOString();
     
     // 根据模型的 input 配置决定是否保存 prompt
@@ -99,6 +99,7 @@ router.post('/', async (req, res, next) => {
       params: params || {}, // Store generation parameters
       duration: duration || 0, // Store generation duration in ms
       info3d: info3d || null, // Store 3D model info (modelDir, pbrPath, rgbPath, etc.)
+      infoVideo: infoVideo || null, // Store video info (videoDir, videoPath, etc.)
       usage: usage || null, // Store token usage (completion_tokens, total_tokens)
       createdAt: now,
       dimensionScores: {} // Stores score per dimension ID
@@ -241,7 +242,35 @@ router.delete('/:id', async (req, res, next) => {
               } catch (e) {
                   console.warn(`[live-gen] failed to delete 3D model for ${id}:`, e.message);
               }
-          } else if (targetItem.imagePath) {
+          } 
+          // 检查是否是视频（有 videoDir）
+          else if (targetItem.infoVideo && targetItem.infoVideo.videoDir) {
+              try {
+                  // 删除整个视频目录
+                  let relPath = targetItem.infoVideo.videoDir;
+                  if (relPath.startsWith('/')) relPath = relPath.slice(1);
+                  const absPath = path.resolve(__dirname, '../..', relPath);
+                  
+                  // 递归删除目录
+                  await fs.rm(absPath, { recursive: true, force: true });
+                  console.log(`[live-gen] deleted video directory: ${absPath}`);
+                  
+                  // 检查问题目录是否为空，如果是则也删除
+                  const questionDir = path.dirname(absPath);
+                  try {
+                      const files = await fs.readdir(questionDir);
+                      if (files.length === 0) {
+                          await fs.rmdir(questionDir);
+                          console.log(`[live-gen] deleted empty question directory: ${questionDir}`);
+                      }
+                  } catch (e) {
+                      // 忽略
+                  }
+              } catch (e) {
+                  console.warn(`[live-gen] failed to delete video for ${id}:`, e.message);
+              }
+          }
+          else if (targetItem.imagePath) {
               // 普通图片/音频，删除生成的文件
               try {
                   let relPath = targetItem.imagePath;
@@ -363,6 +392,11 @@ router.post('/:id/export', async (req, res, next) => {
     // Export 3D model directory if exists
     if (targetItem.info3d && targetItem.info3d.modelDir) {
       await copyDirToExports(targetItem.info3d.modelDir, exportsDir);
+    }
+    
+    // Export video directory if exists
+    if (targetItem.infoVideo && targetItem.infoVideo.videoDir) {
+      await copyDirToExports(targetItem.infoVideo.videoDir, exportsDir);
     }
     
     // Export generated image

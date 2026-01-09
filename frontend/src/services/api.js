@@ -160,6 +160,12 @@ export function chat(payload) {
   return knowledgeApi.post('/chat', payload).then(r => r.data);
 }
 
+export function searchDocuments(payload) {
+  // { query: string, top_k: number }
+  // 纯向量检索，不调用LLM
+  return knowledgeApi.post('/search', payload).then(r => r.data);
+}
+
 // Alias for compatibility with MemoryManagement component
 export const getStatus = getKnowledgeStatus;
 

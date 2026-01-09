@@ -22,6 +22,7 @@ const BatchImport = () => import('../views/ImageMgr/BatchImport.vue');
 // 知识查询
 const KnowledgeIndex = () => import('../views/KnowledgeQuery/index.vue');
 const QueryInterface = () => import('../views/KnowledgeQuery/QueryInterface.vue');
+const VectorSearch = () => import('../views/KnowledgeQuery/VectorSearch.vue');
 const DocumentManagement = () => import('../views/KnowledgeQuery/DocumentManagement.vue');
 const MemoryManagement = () => import('../views/KnowledgeQuery/MemoryManagement.vue');
 
@@ -73,6 +74,7 @@ const routes = [
     children: [
       { path: '', redirect: '/knowledge/query' },
       { path: 'query', name: 'QueryInterface', component: QueryInterface },
+      { path: 'search', name: 'VectorSearch', component: VectorSearch },
       { path: 'docs', name: 'DocumentManagement', component: DocumentManagement },
       { path: 'memory', name: 'MemoryManagement', component: MemoryManagement }
     ]

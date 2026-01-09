@@ -237,6 +237,20 @@
               <ModelViewer :info3d="result.info3d" :recordId="result.id" @thumbnail="handleThumbnail" />
             </template>
 
+            <!-- 视频播放 -->
+            <template v-else-if="result.infoVideo || isVideo(result.imagePath)">
+              <div class="video-wrapper">
+                <video 
+                  controls 
+                  :src="getVideoUrl(result)" 
+                  class="result-video"
+                  preload="metadata"
+                >
+                  您的浏览器不支持视频播放
+                </video>
+              </div>
+            </template>
+
             <!-- 音频播放 -->
             <template v-else-if="isSound(result.imagePath)">
               <div class="audio-wrapper">
@@ -481,7 +495,7 @@ onMounted(async () => {
         form.value.questionId = data.info3d.questionUuid;
       }
       // 恢复之前的生成结果
-      if (data.imagePath || data.info3d) {
+      if (data.imagePath || data.info3d || data.infoVideo) {
         result.value = {
           id: data.id,
           imagePath: data.imagePath,
@@ -491,6 +505,7 @@ onMounted(async () => {
           params: data.params || {},
           duration: data.duration || 0,
           info3d: data.info3d || null,
+          infoVideo: data.infoVideo || null,
           usage: data.usage || null,
           dimensionScores: data.dimensionScores || {}, // 恢复评分信息
           comment: data.comment || '' // 恢复主观评价
@@ -823,6 +838,8 @@ async function handleGenerate() {
       timestamp: new Date().toISOString(),
       // 保存 3D 模型信息
       info3d: res.info3d || null,
+      // 保存视频信息
+      infoVideo: res.infoVideo || null,
       // 保存 token 使用信息
       usage: res.usage || null
     };
@@ -889,6 +906,22 @@ function isSound(path) {
   return /\.(mp3|wav|ogg|flac)$/i.test(path);
 }
 
+function isVideo(path) {
+  if (!path) return false;
+  return /\.(mp4|webm|mov|avi)$/i.test(path);
+}
+
+function getVideoUrl(result) {
+  if (result.infoVideo) {
+    // 从 infoVideo 构建完整路径
+    const videoDir = result.infoVideo.videoDir;
+    const videoPath = result.infoVideo.videoPath || 'video.mp4';
+    return normalizeUrl(`${videoDir}/${videoPath}`);
+  }
+  // 回退到 imagePath
+  return normalizeUrl(result.imagePath);
+}
+
 // 处理3D模型缩略图
 async function handleThumbnail(dataUrl) {
   if (!result.value?.id) return;
@@ -915,7 +948,8 @@ async function handleThumbnail(dataUrl) {
 .live-gen-container {
   padding: 12px 16px;
   background: #f5f7fa;
-  min-height: calc(100vh - 48px);
+  height: 100%;
+  box-sizing: border-box;
   color: #303133;
 }
 
@@ -923,7 +957,7 @@ async function handleThumbnail(dataUrl) {
 .main-layout {
   display: flex;
   gap: 20px;
-  height: calc(100vh - 72px);
+  height: calc(100% - 24px); /* 减去容器的上下 padding (12px * 2) */
 }
 
 /* 无结果时居中显示左侧面板 */
@@ -1305,6 +1339,24 @@ async function handleThumbnail(dataUrl) {
 
 .audio-wrapper audio {
   width: 100%;
+}
+
+/* 视频播放器样式 */
+.video-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  min-height: 400px;
+  background: #1a1a1a;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.result-video {
+  width: 100%;
+  max-height: 600px;
+  object-fit: contain;
 }
 
 .unsupported {

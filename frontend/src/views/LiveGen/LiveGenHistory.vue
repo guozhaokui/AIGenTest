@@ -17,7 +17,7 @@
     </div>
 
     <el-table :data="items" v-loading="loading" style="width: 100%" :row-class-name="tableRowClassName">
-      <el-table-column label="图片" width="120">
+      <el-table-column label="预览" width="120">
         <template #default="{ row }">
           <!-- 3D模型：优先显示缩略图，否则显示图标 -->
           <template v-if="is3DModel(row)">
@@ -35,6 +35,17 @@
                  title="点击查看3D模型">
               <el-icon :size="40"><Box /></el-icon>
               <span class="model-label">3D</span>
+            </div>
+          </template>
+          <!-- 视频：显示视频缩略图或图标 -->
+          <template v-else-if="isVideo(row)">
+            <div 
+              class="video-thumbnail" 
+              @click="handlePlayVideo(row)"
+              title="点击播放视频"
+            >
+              <el-icon :size="40"><VideoPlay /></el-icon>
+              <span class="video-label">视频</span>
             </div>
           </template>
           <!-- 普通图片 -->
@@ -129,7 +140,7 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { Search, ArrowDown, Box, ChatDotRound } from '@element-plus/icons-vue';
+import { Search, ArrowDown, Box, ChatDotRound, VideoPlay } from '@element-plus/icons-vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { listDimensions, listModels, createQuestion } from '../../services/api';
 
@@ -323,6 +334,8 @@ function handleReEdit(row) {
     params: row.params || {},
     // 传递 info3d，以便再次生成时可以使用同一个 questionId
     info3d: row.info3d || null,
+    // 传递 infoVideo，以便再次生成时可以使用同一个 questionId
+    infoVideo: row.infoVideo || null,
     // 传递生成结果，以便在编辑页显示
     imagePath: row.imagePath || null,
     duration: row.duration || 0,
@@ -344,6 +357,23 @@ function handleReEdit(row) {
 // 判断是否为3D模型
 function is3DModel(row) {
   return !!(row.info3d?.modelDir);
+}
+
+// 判断是否为视频
+function isVideo(row) {
+  return !!(row.infoVideo?.videoDir);
+}
+
+// 播放视频
+function handlePlayVideo(row) {
+  const infoVideo = row.infoVideo;
+  if (!infoVideo?.videoDir) return;
+  
+  const videoPath = infoVideo.videoPath || 'video.mp4';
+  const videoUrl = `${infoVideo.videoDir}/${videoPath}`;
+  
+  // 在新窗口中打开视频
+  window.open(normalizeUrl(videoUrl), '_blank');
 }
 
 // 查看3D模型
@@ -433,6 +463,27 @@ function handleView3D(row) {
   transform: scale(1.05);
 }
 .model-label {
+  font-size: 12px;
+  font-weight: bold;
+  margin-top: 4px;
+}
+.video-thumbnail {
+  width: 80px;
+  height: 80px;
+  border-radius: 4px;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  color: white;
+  transition: transform 0.2s;
+}
+.video-thumbnail:hover {
+  transform: scale(1.05);
+}
+.video-label {
   font-size: 12px;
   font-weight: bold;
   margin-top: 4px;

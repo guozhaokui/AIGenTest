@@ -5218,6 +5218,61 @@
     },
     "usage": null,
     "createdAt": "2026-01-09T08:42:30.414Z",
+    "dimensionScores": {},
+    "thumbnailPath": "/modeldb/cf3c7515-909d-4a2d-9e0c-72372cf2ba02/bd53ccc7-164c-481e-89f9-bc9473a57bf9/thumbnail.jpg"
+  },
+  {
+    "id": "fb0b4802-673d-42b1-ba5a-c3ee78fe5901",
+    "prompt": "走路",
+    "imagePath": "/videodb/d6099b92-f0ec-4d0a-b9b1-a4142343dde3/29b7d059-c7f4-4158-8cfe-4696d28cc34b",
+    "imageUrls": [
+      "imagedb/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "ltx2_image_to_video",
+    "modelName": "",
+    "params": {
+      "width": "768",
+      "height": "512",
+      "numFrames": "25",
+      "frameRate": 25,
+      "seed": -1,
+      "gpuId": 0
+    },
+    "duration": 61783,
+    "info3d": null,
+    "infoVideo": {
+      "videoDir": "/videodb/d6099b92-f0ec-4d0a-b9b1-a4142343dde3/29b7d059-c7f4-4158-8cfe-4696d28cc34b",
+      "videoPath": "i2v_20260109_190530_ecbd4469.mp4"
+    },
+    "usage": null,
+    "createdAt": "2026-01-09T11:06:32.000Z",
+    "dimensionScores": {}
+  },
+  {
+    "id": "014318ce-fa78-4495-9192-72d40c74c844",
+    "prompt": "走路",
+    "imagePath": "/videodb/2c6cb41e-951e-46bf-8444-6cae51512dd8/c7ec7c04-3979-4aac-963c-7e7d00b39f04",
+    "imageUrls": [
+      "imagedb/7c/51/7c51f88f6dc8649b5cad5f1596b7d6e5.jpg"
+    ],
+    "modelId": "ltx2_image_to_video",
+    "modelName": "",
+    "params": {
+      "width": "768",
+      "height": "512",
+      "numFrames": "97",
+      "frameRate": 25,
+      "seed": -1,
+      "gpuId": 0
+    },
+    "duration": 73574,
+    "info3d": null,
+    "infoVideo": {
+      "videoDir": "/videodb/2c6cb41e-951e-46bf-8444-6cae51512dd8/c7ec7c04-3979-4aac-963c-7e7d00b39f04",
+      "videoPath": "i2v_20260109_191028_cf57364d.mp4"
+    },
+    "usage": null,
+    "createdAt": "2026-01-09T11:11:41.625Z",
     "dimensionScores": {}
   }
 ]

@@ -45,7 +45,7 @@ const isHistory = computed(() => route.path === '/live/history');
 <style scoped>
 .live-layout {
   display: flex;
-  min-height: 100vh;
+  height: calc(100vh - 48px); /* 减去顶部导航栏高度 */
   background: #f5f7fa;
 }
 
@@ -107,7 +107,7 @@ const isHistory = computed(() => route.path === '/live/history');
 
 .live-main {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden; /* 让子元素控制滚动 */
   background: #f5f7fa;
 }
 </style>

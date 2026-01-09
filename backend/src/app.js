@@ -36,6 +36,8 @@ app.use('/imagedb', express.static(path.resolve(__dirname, '..', 'imagedb')));
 app.use('/modeldb', express.static(path.resolve(__dirname, '..', 'modeldb')));
 // 新增：开启音频文件的静态服务
 app.use('/sounddb', express.static(path.resolve(__dirname, '..', 'sounddb')));
+// 新增：开启视频文件的静态服务
+app.use('/videodb', express.static(path.resolve(__dirname, '..', 'videodb')));
 
 // API
 const dimensions = require('./routes/dimensions');

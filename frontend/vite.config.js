@@ -32,6 +32,10 @@ export default defineConfig({
       '/modeldb': {
         target: 'http://localhost:3000',
         changeOrigin: true
+      },
+      '/videodb': {
+        target: 'http://localhost:3000',
+        changeOrigin: true
       }
     }
   },
