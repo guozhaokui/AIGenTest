@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(scp:*)",
+      "Bash(ssh:*)",
+      "Bash(chmod:*)",
+      "Bash(/mnt/d/work/AIGenTest/memory_system/AI讨论/run_remote_test.sh)",
+      "Bash(/mnt/d/work/AIGenTest/memory_system/AI讨论/run_sliding_test.sh 8 4)",
+      "Bash(/mnt/d/work/AIGenTest/memory_system/AI讨论/run_attention_test.sh)",
+      "Bash(./run_relation_test.sh:*)",
+      "Bash(dos2unix:*)",
+      "Bash(bash:*)"
+    ]
+  }
+}
