@@ -50,6 +50,7 @@ const generate = require('./routes/generate');
 const models = require('./routes/models');
 const liveGen = require('./routes/live-gen');
 const imagemgr = require('./routes/imagemgr');
+const tasks = require('./routes/tasks');
 
 app.use('/api/dimensions', dimensions);
 app.use('/api/questions', questions);
@@ -61,6 +62,7 @@ app.use('/api/generate', generate);
 app.use('/api/models', models);
 app.use('/api/live-gen', liveGen);
 app.use('/api/imagemgr', imagemgr);
+app.use('/api/tasks', tasks);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 

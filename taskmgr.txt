@@ -1,0 +1,990 @@
+
+╭─── Claude Code v2.1.2 ───────────────────────────────────────────────────────╮
+│                                         │ Tips for getting started           │
+│       Welcome back AlbertEinsten!       │ Run /init to create a CLAUDE.md f… │
+│                                         │ ────────────────────────────────── │
+│                 ▐▛███▜▌                 │ Recent activity                    │
+│                ▝▜█████▛▘                │ No recent activity                 │
+│                  ▘▘ ▝▝                  │                                    │
+│                                         │                                    │
+│   Opus 4.1 · API Usage Billing · laya   │                                    │
+│            D:\work\AIGenTest            │                                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+  /model to try Opus 4.5. Note: you may need to request access from your cloud 
+  provider
+
+❯ /model opus 
+  ⎿  Set model to opus (us.anthropic.claude-opus-4-1-20250805-v1:0)
+
+❯ D:\work\AIGenTest\docs\基于task的任务管理.md 讨论一下这个文档中的问题 
+
+● I'll read the document about task-based task management and discuss the issues it presents.
+
+● Read(docs\基于task的任务管理.md)
+  ⎿  Read 6 lines
+
+● 这个文档提出了一个很实际的异步任务管理问题。让我先查看一下现有的代码结构，以便更好地理解问题并提供建议。
+
+● Search(pattern: "backend/data/*.json")
+  ⎿  Found 0 files 
+
+● Search(pattern: "backend/src/services/modelDrivers/**/*.{js,ts,py}")
+  ⎿  Found 0 files 
+
+● Bash(ls -la backend/)
+  ⎿  total 93                                      
+     drwxr-xr-x 1 DELL 197121    0  1月  9 18:15 .
+     drwxr-xr-x 1 DELL 197121    0  1月  9 16:23 ..
+     … +12 lines (ctrl+o to expand)
+
+● Search(pattern: "backend/src/**/*.{js,ts}")
+  ⎿  Found 0 files 
+
+● Bash(find backend/src -type f -name "*.js" -o -name "*.ts" -o -name "*.py" |
+      head -20)
+  ⎿  backend/src/app.js               
+     backend/src/routes/dimensions.js
+     backend/src/routes/evaluations.js
+     … +17 lines (ctrl+o to expand)
+
+● Read(backend\src\routes\live-gen.js)
+  ⎿  Read 422 lines
+
+● Read(backend\src\services\modelDrivers\meshy.js)
+  ⎿  Read 100 lines
+
+● Read(backend\src\services\modelDrivers\meshy.js)
+  ⎿  Read 100 lines
+
+● Read(backend\src\services\modelDrivers\google.js)
+  ⎿  Read 107 lines
+
+● Read(backend\src\routes\generate.js)
+  ⎿  Read 200 lines
+
+● Search(pattern: "driver\.generate|pollTask|taskId", path:
+        "backend\src\routes\generate.js", output_mode: "content")
+  ⎿  Found 17 lines (ctrl+o to expand)
+
+● 基于对您文档和现有代码的分析，我来详细讨论这个任务管理问题：
+
+  问题分析
+
+  当前系统的痛点
+
+  1. 同步阻塞问题：现在的 generate.js 调用 driver.generate() 会一直等待结果，对于慢速生成（如3D模型、视频），用户体验很差
+  2. 驱动异构性：有些驱动（如 Meshy、LTX2）原生支持任务ID，而有些（如 Google）是同步的
+  3. 状态管理缺失：没有统一的任务状态跟踪机制，用户无法查看进行中的任务
+
+  两种方案对比
+
+  方案A：直接在 live-gen.json 添加状态字段
+
+  优点：
+  - 实现简单，只需修改现有数据结构
+  - 历史记录和任务状态在同一个地方
+  - 不需要额外的数据迁移逻辑
+
+  缺点：
+  - 混淆了"进行中任务"和"已完成历史"的概念
+  - 频繁更新大文件可能有性能问题
+  - 难以区分失败任务和成功记录
+
+  方案B：独立的任务队列系统
+
+  优点：
+  - 清晰的职责分离：任务队列负责执行，live-gen.json 只存储成功结果
+  - 更好的并发控制和错误处理
+  - 便于实现任务优先级、重试等高级功能
+  - 可以轻松添加任务取消功能
+
+  缺点：
+  - 实现相对复杂
+  - 需要维护两套数据结构
+
+  推荐方案：混合模式
+
+● 我建议采用混合模式，结合两种方案的优点：
+
+  架构设计
+
+  // backend/data/tasks.json - 活跃任务队列
+  {
+    "tasks": [
+      {
+        "id": "task-uuid",
+        "type": "image|3d|video|audio",
+        "status": "pending|running|completed|failed",
+        "modelId": "meshy_3d",
+        "driverTaskId": "meshy-task-123", // 驱动返回的任务ID（如果有）
+        "prompt": "...",
+        "params": {...},
+        "createdAt": "2024-01-20T10:00:00Z",
+        "startedAt": "2024-01-20T10:00:01Z",
+        "progress": 50, // 百分比
+        "error": null,
+        "result": null // 完成后存储结果路径
+      }
+    ]
+  }
+
+  // backend/data/live-gen.json - 保持不变，只存储完成的记录
+
+  实现要点
+
+  1. 统一的任务API
+  // POST /api/tasks - 创建任务
+  // GET /api/tasks/:id - 查询任务状态
+  // GET /api/tasks - 列出所有任务
+  // DELETE /api/tasks/:id - 取消任务
+
+  2. 驱动适配器模式
+  class TaskAdapter {
+    async createTask(driver, params) {
+      if (driver.supportsTask) {
+        // 任务型驱动：立即返回taskId
+        return await driver.createTask(params);
+      } else {
+        // 同步型驱动：包装成异步任务
+        return this.wrapSyncDriver(driver, params);
+      }
+    }
+
+    wrapSyncDriver(driver, params) {
+      // 创建内部任务ID
+      const taskId = generateTaskId();
+      // 在后台线程执行
+      setImmediate(async () => {
+        try {
+          const result = await driver.generate(params);
+          await this.updateTaskStatus(taskId, 'completed', result);
+        } catch (error) {
+          await this.updateTaskStatus(taskId, 'failed', null, error);
+        }
+      });
+      return taskId;
+    }
+  }
+
+  3. 任务轮询服务
+  // backend/src/services/taskPoller.js
+  class TaskPoller {
+    async start() {
+      setInterval(() => {
+        this.pollPendingTasks();
+        this.cleanupCompletedTasks();
+      }, 5000); // 每5秒检查一次
+    }
+
+    async pollPendingTasks() {
+      const tasks = await readJson(TASKS_FILE);
+      for (const task of tasks.filter(t => t.status === 'running')) {
+        if (task.driverTaskId) {
+          // 查询驱动任务状态
+          const status = await this.queryDriverStatus(task);
+          if (status.completed) {
+            // 保存到 live-gen.json
+            await this.saveToHistory(task, status.result);
+            // 更新任务状态
+            task.status = 'completed';
+          }
+        }
+      }
+    }
+  }
+
+  4. 前端实时更新
+  // 使用 WebSocket 或 SSE 推送任务状态
+  // 或者前端轮询 /api/tasks/:id
+
+  具体实施步骤
+
+  1. 第一阶段：创建 tasks.json，实现基础任务队列
+  2. 第二阶段：改造现有驱动，支持任务模式
+  3. 第三阶段：添加任务管理UI
+  4. 第四阶段：优化性能，添加高级功能（优先级、批处理等）
+
+  关键优势
+
+  - 向后兼容：live-gen.json 结构不变，现有功能不受影响
+  - 渐进式改进：可以逐步迁移各个驱动
+  - 用户体验好：立即响应，后台执行，实时更新
+  - 易于扩展：便于添加任务队列、优先级、并发控制等功能
+
+● 额外考虑事项
+
+  错误处理策略
+
+  对于任务系统，建议实现：
+  - 自动重试机制：对于网络错误等临时故障，自动重试3次
+  - 失败任务保留：失败的任务保留24小时供用户查看错误信息
+  - 部分成功处理：如批量生成时，记录哪些成功哪些失败
+
+  性能优化
+
+  - 任务批处理：相同模型的多个请求可以合并处理
+  - 资源池管理：限制并发任务数，避免资源耗尽
+  - 增量更新：只更新变化的任务状态，不重写整个文件
+
+  数据持久化
+
+  建议将来考虑：
+  - 使用 SQLite 或 LevelDB 替代 JSON 文件，提高并发性能
+  - 实现任务日志，便于调试和审计
+  - 定期归档旧任务，保持活跃队列精简
+
+  示例代码结构
+
+  backend/
+  ├── data/
+  │   ├── tasks.json          # 活跃任务
+  │   ├── live-gen.json       # 完成历史
+  │   └── tasks-archive/      # 归档任务
+  ├── src/
+  │   ├── routes/
+  │   │   ├── tasks.js        # 任务API
+  │   │   └── generate.js     # 改造为创建任务
+  │   ├── services/
+  │   │   ├── taskManager.js  # 任务管理核心
+  │   │   ├── taskPoller.js   # 轮询服务
+  │   │   └── modelDrivers/
+  │   │       └── [各驱动适配]
+  │   └── utils/
+  │       └── taskAdapter.js  # 驱动适配器
+
+  这个方案能够很好地解决您提出的问题，既保持了系统的简洁性，又提供了强大的异步任务管理能力。实施时可以分阶段进行，确保系统稳定性。
+
+✻ Cooked for 5m 43s
+
+❯ 如何实施比较好？先实现api？用简单前端测试任务管理功能？ 
+
+● 非常好的想法！分阶段实施确实是最稳妥的方案。我建议按以下顺序实施：
+
+  分阶段实施方案
+
+  第一阶段：最小可行产品（MVP）- 2天
+
+  1. 创建任务管理核心 (Day 1 上午)
+
+  // backend/src/services/taskManager.js
+  class TaskManager {
+    constructor() {
+      this.tasksFile = path.resolve(__dirname, '../../data/tasks.json');
+      this.ensureTaskFile();
+    }
+
+    async createTask(params) {
+      const task = {
+        id: randomUUID(),
+        type: params.type,
+        status: 'pending',
+        modelId: params.modelId,
+        prompt: params.prompt,
+        params: params.params,
+        createdAt: new Date().toISOString(),
+        progress: 0
+      };
+
+      const tasks = await this.getTasks();
+      tasks.push(task);
+      await this.saveTasks(tasks);
+
+      // 立即返回任务ID给前端
+      return task;
+    }
+
+    async updateTaskStatus(taskId, status, progress, result, error) {
+      const tasks = await this.getTasks();
+      const task = tasks.find(t => t.id === taskId);
+      if (task) {
+        task.status = status;
+        task.progress = progress || task.progress;
+        task.result = result || task.result;
+        task.error = error || task.error;
+        task.updatedAt = new Date().toISOString();
+        await this.saveTasks(tasks);
+      }
+      return task;
+    }
+  }
+
+  2. 实现基础任务API (Day 1 下午)
+
+  // backend/src/routes/tasks.js
+  const express = require('express');
+  const router = express.Router();
+  const taskManager = new TaskManager();
+
+  // 创建任务
+  router.post('/', async (req, res) => {
+    try {
+      const task = await taskManager.createTask(req.body);
+
+      // 模拟异步执行（第一阶段用setTimeout模拟）
+      setTimeout(async () => {
+        // 模拟进度更新
+        for (let i = 1; i <= 10; i++) {
+          await taskManager.updateTaskStatus(task.id, 'running', i * 10);
+          await new Promise(r => setTimeout(r, 1000));
+        }
+        await taskManager.updateTaskStatus(task.id, 'completed', 100, {
+          imagePath: '/imagedb/test/result.png'
+        });
+      }, 100);
+
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  // 查询任务状态
+  router.get('/:id', async (req, res) => {
+    const task = await taskManager.getTask(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    res.json(task);
+  });
+
+  // 列出所有任务
+  router.get('/', async (req, res) => {
+    const tasks = await taskManager.getTasks();
+    res.json(tasks);
+  });
+
+  3. 创建简单测试页面 (Day 2 上午)
+
+  <!-- backend/public/task-test.html -->
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>任务系统测试</title>
+    <style>
+      body { font-family: Arial; padding: 20px; }
+      .task {
+        border: 1px solid #ddd;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+      }
+      .status-pending { background: #fff3cd; }
+      .status-running { background: #cff4fc; }
+      .status-completed { background: #d1e7dd; }
+      .status-failed { background: #f8d7da; }
+      .progress-bar {
+        width: 100%;
+        height: 20px;
+        background: #f0f0f0;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+      .progress-fill {
+        height: 100%;
+        background: #0d6efd;
+        transition: width 0.3s;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>任务管理系统测试</h1>
+
+    <div>
+      <h2>创建新任务</h2>
+      <button onclick="createTask('image')">创建图片生成任务</button>
+      <button onclick="createTask('3d')">创建3D生成任务</button>
+      <button onclick="createTask('video')">创建视频生成任务</button>
+    </div>
+
+    <div>
+      <h2>任务列表</h2>
+      <button onclick="refreshTasks()">刷新</button>
+      <div id="taskList"></div>
+    </div>
+
+    <script>
+      let tasks = [];
+
+      async function createTask(type) {
+        const response = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type: type,
+            modelId: 'test_model',
+            prompt: `测试${type}生成任务`,
+            params: {}
+          })
+        });
+        const task = await response.json();
+        console.log('创建任务:', task);
+
+        // 开始轮询任务状态
+        pollTask(task.id);
+        refreshTasks();
+      }
+
+      async function pollTask(taskId) {
+        const interval = setInterval(async () => {
+          const response = await fetch(`/api/tasks/${taskId}`);
+          const task = await response.json();
+
+          console.log(`任务 ${taskId} 状态:`, task.status, `进度: ${task.progress}%`);
+          updateTaskDisplay(task);
+
+          if (task.status === 'completed' || task.status === 'failed') {
+            clearInterval(interval);
+          }
+        }, 1000);
+      }
+
+      async function refreshTasks() {
+        const response = await fetch('/api/tasks');
+        tasks = await response.json();
+        renderTasks();
+      }
+
+      function renderTasks() {
+        const container = document.getElementById('taskList');
+        container.innerHTML = tasks.map(task => `
+          <div class="task status-${task.status}" id="task-${task.id}">
+            <h3>任务 ${task.id.slice(0, 8)}</h3>
+            <p>类型: ${task.type} | 状态: ${task.status}</p>
+            <p>创建时间: ${new Date(task.createdAt).toLocaleString()}</p>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width: ${task.progress}%"></div>
+            </div>
+            <p>进度: ${task.progress}%</p>
+            ${task.error ? `<p style="color:red">错误: ${task.error}</p>` : ''}
+            ${task.result ? `<p style="color:green">结果: ${JSON.stringify(task.result)}</p>` : ''}
+          </div>
+        `).join('');
+      }
+
+      function updateTaskDisplay(task) {
+        const taskEl = document.getElementById(`task-${task.id}`);
+        if (taskEl) {
+          taskEl.className = `task status-${task.status}`;
+          taskEl.querySelector('.progress-fill').style.width = `${task.progress}%`;
+        }
+      }
+
+      // 初始加载
+      refreshTasks();
+    </script>
+  </body>
+  </html>
+
+  第二阶段：集成真实驱动（第3-4天）
+
+  选择一个支持任务的驱动作为试点（如 Meshy）
+
+  // backend/src/services/taskExecutor.js
+  class TaskExecutor {
+    async executeTask(task) {
+      const driver = this.getDriver(task.modelId);
+
+      if (driver.supportsTask) {
+        // 原生支持任务的驱动
+        const driverTaskId = await driver.createTask(task.params);
+        await taskManager.updateTaskStatus(task.id, 'running', 0, null, null, {
+          driverTaskId
+        });
+
+        // 轮询驱动任务状态
+        this.pollDriverTask(task.id, driverTaskId, driver);
+      } else {
+        // 同步驱动，在后台执行
+        this.executeSyncDriver(task, driver);
+      }
+    }
+
+    async pollDriverTask(taskId, driverTaskId, driver) {
+      const interval = setInterval(async () => {
+        try {
+          const status = await driver.getTaskStatus(driverTaskId);
+
+          await taskManager.updateTaskStatus(
+            taskId,
+            status.status,
+            status.progress
+          );
+
+          if (status.status === 'completed') {
+            clearInterval(interval);
+            // 下载结果并保存
+            const result = await this.saveResult(status.result);
+            await taskManager.updateTaskStatus(taskId, 'completed', 100, result);
+            // 写入 live-gen.json
+            await this.saveToHistory(taskId, result);
+          }
+        } catch (error) {
+          clearInterval(interval);
+          await taskManager.updateTaskStatus(taskId, 'failed', 0, null, error.message);
+        }
+      }, 5000);
+    }
+  }
+
+  第三阶段：Server-Sent Events 实时推送（第5天）
+
+  // backend/src/routes/tasks.js
+  // 添加 SSE 端点
+  router.get('/:id/stream', (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive'
+    });
+
+    const taskId = req.params.id;
+    const interval = setInterval(async () => {
+      const task = await taskManager.getTask(taskId);
+      if (task) {
+        res.write(`data: ${JSON.stringify(task)}\n\n`);
+
+        if (task.status === 'completed' || task.status === 'failed') {
+          clearInterval(interval);
+          res.end();
+        }
+      }
+    }, 1000);
+
+    req.on('close', () => {
+      clearInterval(interval);
+    });
+  });
+
+  第四阶段：生产级改进（第6-7天）
+
+  1. 任务队列管理
+    - 并发控制
+    - 优先级队列
+    - 失败重试
+  2. 持久化优化
+    - 使用 SQLite 替代 JSON
+    - 任务归档机制
+  3. 监控和日志
+    - 任务执行日志
+    - 性能监控
+    - 错误追踪
+
+  测试策略
+
+  单元测试
+
+  // test/taskManager.test.js
+  describe('TaskManager', () => {
+    it('should create task', async () => {
+      const task = await taskManager.createTask({
+        type: 'image',
+        modelId: 'test'
+      });
+      expect(task.id).toBeDefined();
+      expect(task.status).toBe('pending');
+    });
+
+    it('should update task status', async () => {
+      const task = await taskManager.createTask({});
+      await taskManager.updateTaskStatus(task.id, 'running', 50);
+      const updated = await taskManager.getTask(task.id);
+      expect(updated.status).toBe('running');
+      expect(updated.progress).toBe(50);
+    });
+  });
+
+  集成测试
+
+  - 测试不同驱动的任务执行
+  - 测试错误处理和重试
+  - 测试并发任务
+
+  快速开始建议
+
+● 第一天就能看到效果：
+  1. 上午创建 taskManager.js (1-2小时)
+  2. 下午实现 tasks.js API (1-2小时)
+  3. 晚上创建测试页面，立即能看到任务创建、进度更新的效果
+
+  这种渐进式实施的好处：
+  - 快速验证：第一天就能验证方案可行性
+  - 风险可控：每个阶段独立，出问题易回滚
+  - 持续交付：每个阶段都能提供价值
+  - 易于调试：从简单到复杂，问题定位容易
+
+  关键决策点
+
+  1. 是否使用消息队列？
+
+  - 初期不需要：用内存队列 + 定时器足够
+  - 后期可考虑：Redis/RabbitMQ 提供更强大的队列能力
+
+  2. 任务存储选择？
+
+  - MVP阶段：JSON 文件，简单直接
+  - 生产阶段：SQLite（单机）或 PostgreSQL（分布式）
+
+  3. 实时通信方案？
+
+  - SSE：实现简单，单向推送，适合状态更新
+  - WebSocket：双向通信，适合需要取消任务等交互场景
+  - 轮询：最简单，适合 MVP 测试
+
+  我建议先用最简单的方案（JSON + 轮询）快速实现 MVP，验证业务逻辑正确后，再逐步升级技术栈。这样能在 1-2 天内就看到实际效果，快速收集反馈，避免过度设计。
+
+  需要我帮您开始创建第一个文件（taskManager.js）吗？
+
+● 我看到您使用了 /rename 和 /status 命令。让我继续为您提供任务系统实施方案的具体建议。
+
+  立即开始：创建第一个可运行的版本
+
+  让我们从最简单的实现开始，您可以在30分钟内就看到效果：
+
+  步骤1：创建任务管理器（10分钟）
+
+  // backend/src/services/taskManager.js
+  const fs = require('fs/promises');
+  const path = require('path');
+  const { randomUUID } = require('crypto');
+
+  class TaskManager {
+    constructor() {
+      this.tasksFile = path.resolve(__dirname, '../../data/tasks.json');
+      this.tasks = [];
+      this.init();
+    }
+
+    async init() {
+      try {
+        const data = await fs.readFile(this.tasksFile, 'utf-8');
+        this.tasks = JSON.parse(data);
+      } catch {
+        this.tasks = [];
+        await this.save();
+      }
+    }
+
+    async save() {
+      await fs.writeFile(this.tasksFile, JSON.stringify(this.tasks, null, 2));
+    }
+
+    async createTask(params) {
+      const task = {
+        id: randomUUID(),
+        ...params,
+        status: 'pending',
+        progress: 0,
+        createdAt: new Date().toISOString()
+      };
+
+      this.tasks.push(task);
+      await this.save();
+
+      // 模拟异步执行
+      this.simulateExecution(task.id);
+
+      return task;
+    }
+
+    async simulateExecution(taskId) {
+      // 模拟任务执行
+      for (let i = 1; i <= 10; i++) {
+        await new Promise(r => setTimeout(r, 1000));
+        await this.updateTask(taskId, {
+          status: 'running',
+          progress: i * 10
+        });
+      }
+
+      await this.updateTask(taskId, {
+        status: 'completed',
+        progress: 100,
+        result: { imagePath: `/imagedb/test/${taskId}.png` }
+      });
+    }
+
+    async updateTask(taskId, updates) {
+      const task = this.tasks.find(t => t.id === taskId);
+      if (task) {
+        Object.assign(task, updates);
+        task.updatedAt = new Date().toISOString();
+        await this.save();
+      }
+      return task;
+    }
+
+    getTask(taskId) {
+      return this.tasks.find(t => t.id === taskId);
+    }
+
+    getTasks() {
+      return this.tasks;
+    }
+  }
+
+  module.exports = new TaskManager();
+
+  步骤2：添加API路由（10分钟）
+
+  // backend/src/routes/tasks.js
+  const express = require('express');
+  const router = express.Router();
+  const taskManager = require('../services/taskManager');
+
+  router.post('/', async (req, res) => {
+    try {
+      const task = await taskManager.createTask(req.body);
+      res.json(task);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  router.get('/', (req, res) => {
+    res.json(taskManager.getTasks());
+  });
+
+  router.get('/:id', (req, res) => {
+    const task = taskManager.getTask(req.params.id);
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
+    res.json(task);
+  });
+
+  module.exports = router;
+
+  步骤3：注册路由（2分钟）
+
+  在 backend/src/app.js 中添加：
+
+  const tasksRouter = require('./routes/tasks');
+  app.use('/api/tasks', tasksRouter);
+
+  步骤4：创建测试页面（8分钟）
+
+  <!-- backend/public/test-tasks.html -->
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>任务测试</title>
+    <meta charset="utf-8">
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        font-family: system-ui, -apple-system, sans-serif;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover { background: #0056b3; }
+      .task-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+      }
+      .task-card {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .progress {
+        width: 100%;
+        height: 24px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin: 10px 0;
+      }
+      .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745, #20c997);
+        transition: width 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+      }
+      .status-pending { border-left: 4px solid #ffc107; }
+      .status-running { border-left: 4px solid #17a2b8; }
+      .status-completed { border-left: 4px solid #28a745; }
+      .status-failed { border-left: 4px solid #dc3545; }
+    </style>
+  </head>
+  <body>
+    <h1>🚀 任务管理系统测试</h1>
+
+    <div>
+      <button onclick="createTask('image', 'google')">创建 Google 图片任务</button>
+      <button onclick="createTask('3d', 'meshy')">创建 Meshy 3D任务</button>
+      <button onclick="createTask('video', 'ltx2')">创建 LTX2 视频任务</button>
+      <button onclick="location.reload()">🔄 刷新页面</button>
+    </div>
+
+    <div class="task-grid" id="tasks"></div>
+
+    <script>
+      const activeTasks = new Set();
+
+      async function createTask(type, driver) {
+        const task = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            type,
+            driver,
+            prompt: `测试 ${type} 生成 - ${new Date().toLocaleTimeString()}`,
+            modelId: `${driver}_${type}`
+          })
+        }).then(r => r.json());
+
+        activeTasks.add(task.id);
+        pollTask(task.id);
+        renderTasks();
+      }
+
+      async function pollTask(taskId) {
+        const poll = async () => {
+          const task = await fetch(`/api/tasks/${taskId}`).then(r => r.json());
+          updateTaskCard(task);
+
+          if (task.status === 'running' || task.status === 'pending') {
+            setTimeout(poll, 1000);
+          } else {
+            activeTasks.delete(taskId);
+          }
+        };
+        poll();
+      }
+
+      async function renderTasks() {
+        const tasks = await fetch('/api/tasks').then(r => r.json());
+        const container = document.getElementById('tasks');
+
+        container.innerHTML = tasks.slice(-12).reverse().map(task => `
+          <div class="task-card status-${task.status}" id="task-${task.id}">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <strong>${task.type?.toUpperCase() || 'TASK'}</strong>
+              <span style="
+                background: ${
+                  task.status === 'completed' ? '#28a745' :
+                  task.status === 'running' ? '#17a2b8' :
+                  task.status === 'failed' ? '#dc3545' : '#ffc107'
+                };
+                color: white;
+                padding: 2px 8px;
+                border-radius: 12px;
+                font-size: 12px;
+              ">${task.status}</span>
+            </div>
+            <div style="color: #666; font-size: 12px; margin: 5px 0;">
+              ${task.driver || 'default'} | ${new Date(task.createdAt).toLocaleTimeString()}
+            </div>
+            <div class="progress">
+              <div class="progress-bar" style="width: ${task.progress || 0}%">
+                ${task.progress || 0}%
+              </div>
+            </div>
+            <div style="font-size: 12px; color: #666;">
+              ${task.prompt || ''}
+            </div>
+            ${task.result ? `
+              <div style="margin-top: 10px; padding: 10px; background: #e7f5ff; border-radius: 4px;">
+                <strong>结果:</strong> ${JSON.stringify(task.result)}
+              </div>
+            ` : ''}
+          </div>
+        `).join('');
+
+        // 对活跃任务继续轮询
+        activeTasks.forEach(pollTask);
+      }
+
+      function updateTaskCard(task) {
+        const card = document.getElementById(`task-${task.id}`);
+        if (card) {
+          const progressBar = card.querySelector('.progress-bar');
+          if (progressBar) {
+            progressBar.style.width = `${task.progress || 0}%`;
+            progressBar.textContent = `${task.progress || 0}%`;
+          }
+
+          // 更新状态样式
+          card.className = `task-card status-${task.status}`;
+        }
+      }
+
+      // 初始加载
+      renderTasks();
+
+      // 定期刷新（每5秒）
+      setInterval(renderTasks, 5000);
+    </script>
+  </body>
+  </html>
+
+  运行测试
+
+  1. 启动服务器：
+  cd backend
+  node server.js
+
+  2. 打开测试页面：
+  http://localhost:3000/test-tasks.html
+
+  3. 点击按钮创建任务，即可看到：
+    - 任务立即创建并返回ID
+    - 进度条实时更新
+    - 状态变化动画
+    - 多任务并行执行
+
+  这个MVP版本的优势
+
+  1. 极简实现：总共不到200行代码
+  2. 立即可见：30分钟内就能看到效果
+  3. 易于扩展：结构清晰，便于后续改进
+  4. 零依赖：只用了 Node.js 内置模块
+
+  下一步改进
+
+  验证基本流程后，可以：
+
+  1. 替换模拟执行为真实驱动调用
+  2. 添加任务持久化到 live-gen.json
+  3. 实现任务取消功能
+  4. 添加错误处理和重试机制
+  5. 优化UI，添加更多交互功能
+
+  这样的实施方案能让您快速验证想法，有问题及时调整，避免过度设计。要我帮您创建这些文件吗？
+
+✻ Churned for 5m 45s
+
+❯ 这是一个基于pnpm的系统，你来直接修改吧，注意结构化设计。在backend目录中开 
+  始吧                                                                      
+
+● 好的，我来为您直接实现这个任务管理系统。我会按照结构化设计原则，在 backend 目录中创建完整的任务管理功能。
+
+❯ 你好 
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ 继续 
+
+● 好的，我现在开始在 backend 目录中实现任务管理系统。首先创建核心的任务管理模块。
+  ⎿  Interrupted · What should Claude do instead?
+
+
+

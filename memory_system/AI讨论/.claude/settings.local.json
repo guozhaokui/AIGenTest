@@ -9,7 +9,16 @@
       "Bash(/mnt/d/work/AIGenTest/memory_system/AI讨论/run_attention_test.sh)",
       "Bash(./run_relation_test.sh:*)",
       "Bash(dos2unix:*)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "WebFetch(domain:mp.weixin.qq.com)",
+      "WebSearch",
+      "WebFetch(domain:www.zhihu.com)",
+      "WebFetch(domain:blog.csdn.net)",
+      "WebFetch(domain:zhuanlan.zhihu.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:news.qq.com)",
+      "WebFetch(domain:introl.com)",
+      "WebFetch(domain:arxiv.org)"
     ]
   }
 }
