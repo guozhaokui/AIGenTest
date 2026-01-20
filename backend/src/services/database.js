@@ -63,35 +63,6 @@ class DatabaseService {
       CREATE INDEX IF NOT EXISTS idx_gen_status ON generations(status);
     `);
 
-    // 创建任务归档表 (替代 tasks-archive.json)
-    this.db.exec(`
-      CREATE TABLE IF NOT EXISTS archived_tasks (
-        id TEXT PRIMARY KEY,
-        type TEXT NOT NULL,
-        status TEXT NOT NULL,
-        model_id TEXT,
-        driver_id TEXT,
-        prompt TEXT,
-        params TEXT,
-        progress INTEGER DEFAULT 0,
-        result TEXT,
-        error TEXT,
-        driver_task_id TEXT,
-        created_at TEXT NOT NULL,
-        updated_at TEXT,
-        started_at TEXT,
-        completed_at TEXT,
-        archived_at TEXT NOT NULL,
-        metadata TEXT
-      )
-    `);
-
-    // 创建索引
-    this.db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_arch_status ON archived_tasks(status);
-      CREATE INDEX IF NOT EXISTS idx_arch_type ON archived_tasks(type);
-      CREATE INDEX IF NOT EXISTS idx_arch_archived ON archived_tasks(archived_at);
-    `);
 
     // 创建统计表（可选，用于快速查询）
     this.db.exec(`
@@ -148,25 +119,6 @@ class DatabaseService {
         FROM generations
       `),
 
-      // 插入归档任务
-      insertArchivedTask: this.db.prepare(`
-        INSERT INTO archived_tasks (
-          id, type, status, model_id, driver_id, prompt, params,
-          progress, result, error, driver_task_id,
-          created_at, updated_at, started_at, completed_at, archived_at, metadata
-        ) VALUES (
-          @id, @type, @status, @model_id, @driver_id, @prompt, @params,
-          @progress, @result, @error, @driver_task_id,
-          @created_at, @updated_at, @started_at, @completed_at, @archived_at, @metadata
-        )
-      `),
-
-      // 查询归档任务
-      getArchivedTasks: this.db.prepare(`
-        SELECT * FROM archived_tasks
-        ORDER BY archived_at DESC
-        LIMIT ?
-      `),
 
       // 清理旧记录
       deleteOldGenerations: this.db.prepare(`
@@ -174,10 +126,6 @@ class DatabaseService {
         WHERE datetime(created_at) < datetime('now', '-' || ? || ' days')
       `),
 
-      deleteOldArchivedTasks: this.db.prepare(`
-        DELETE FROM archived_tasks
-        WHERE datetime(archived_at) < datetime('now', '-' || ? || ' days')
-      `),
 
       // Update generation record
       updateGeneration: this.db.prepare(`
@@ -189,12 +137,6 @@ class DatabaseService {
       // Delete specific generation by ID
       deleteGeneration: this.db.prepare(`
         DELETE FROM generations
-        WHERE id = ?
-      `),
-
-      // Delete specific archived task by ID
-      deleteArchivedTask: this.db.prepare(`
-        DELETE FROM archived_tasks
         WHERE id = ?
       `)
     };
@@ -279,18 +221,6 @@ class DatabaseService {
     }
   }
 
-  // 删除特定归档任务
-  async deleteArchivedTaskById(id) {
-    if (!this.initialized) await this.init();
-
-    try {
-      const result = this.statements.deleteArchivedTask.run(id);
-      return result.changes > 0;
-    } catch (error) {
-      console.error('Failed to delete archived task:', error);
-      throw error;
-    }
-  }
 
   // 获取生成记录
   async getGenerations(limit = 100, filter = {}) {
@@ -331,57 +261,6 @@ class DatabaseService {
     }
   }
 
-  // 保存归档任务
-  async saveArchivedTask(task) {
-    if (!this.initialized) await this.init();
-
-    try {
-      const record = {
-        id: task.id,
-        type: task.type,
-        status: task.status,
-        model_id: task.modelId || task.model_id || null,
-        driver_id: task.driverId || task.driver_id || null,
-        prompt: task.prompt,
-        params: JSON.stringify(task.params || {}),
-        progress: task.progress || 0,
-        result: JSON.stringify(task.result || null),
-        error: task.error || null,
-        driver_task_id: task.driverTaskId || task.driver_task_id || null,
-        created_at: task.createdAt || task.created_at,
-        updated_at: task.updatedAt || task.updated_at,
-        started_at: task.startedAt || task.started_at,
-        completed_at: task.completedAt || task.completed_at,
-        archived_at: task.archivedAt || task.archived_at || new Date().toISOString(),
-        metadata: JSON.stringify(task.metadata || {})
-      };
-
-      this.statements.insertArchivedTask.run(record);
-      return true;
-    } catch (error) {
-      console.error('Failed to save archived task:', error);
-      throw error;
-    }
-  }
-
-  // 获取归档任务
-  async getArchivedTasks(limit = 100) {
-    if (!this.initialized) await this.init();
-
-    try {
-      const records = this.statements.getArchivedTasks.all(limit);
-
-      return records.map(record => ({
-        ...record,
-        params: JSON.parse(record.params || '{}'),
-        result: JSON.parse(record.result || 'null'),
-        metadata: JSON.parse(record.metadata || '{}')
-      }));
-    } catch (error) {
-      console.error('Failed to get archived tasks:', error);
-      throw error;
-    }
-  }
 
   // 清理旧数据
   async cleanup(daysToKeep = 30) {
@@ -389,12 +268,10 @@ class DatabaseService {
 
     try {
       const genResult = this.statements.deleteOldGenerations.run(daysToKeep);
-      const archResult = this.statements.deleteOldArchivedTasks.run(daysToKeep);
 
-      console.log(`Cleaned up ${genResult.changes} old generations and ${archResult.changes} old archived tasks`);
+      console.log(`Cleaned up ${genResult.changes} old generations`);
       return {
-        generations: genResult.changes,
-        archivedTasks: archResult.changes
+        generations: genResult.changes
       };
     } catch (error) {
       console.error('Failed to cleanup:', error);
@@ -420,8 +297,7 @@ class DatabaseService {
       path: this.dbPath,
       size: fs.statSync(this.dbPath).size,
       tables: this.db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all(),
-      generations: this.db.prepare("SELECT COUNT(*) as count FROM generations").get().count,
-      archivedTasks: this.db.prepare("SELECT COUNT(*) as count FROM archived_tasks").get().count
+      generations: this.db.prepare("SELECT COUNT(*) as count FROM generations").get().count
     };
 
     return info;

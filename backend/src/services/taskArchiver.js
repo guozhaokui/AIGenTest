@@ -3,8 +3,8 @@ const database = require('./database');
 
 /**
  * 任务归档服务
- * 负责将完成/失败/取消的任务移动到归档，保持活跃任务列表清洁
- * 现在使用 SQLite 数据库存储数据
+ * 负责将完成/失败/取消的任务保存到历史记录，并从活跃任务列表中删除
+ * 简化版：所有任务都保存到 generations 表
  */
 class TaskArchiver {
   constructor() {
@@ -19,10 +19,7 @@ class TaskArchiver {
     try {
       await database.init();
       this.initialized = true;
-
-      // 获取归档统计
-      const stats = await this.getArchiveStats();
-      console.log('TaskArchiver initialized with database, archived tasks:', stats.total);
+      console.log('TaskArchiver initialized with database');
     } catch (error) {
       console.error('Failed to initialize TaskArchiver:', error);
       throw error;
@@ -30,7 +27,7 @@ class TaskArchiver {
   }
 
   /**
-   * 归档任务（从活跃列表移到归档）
+   * 归档任务（保存到历史记录并从活跃列表删除）
    * @param {string} taskId - 任务ID
    * @param {boolean} immediate - 是否立即归档（默认false，有延迟）
    */
@@ -76,31 +73,20 @@ class TaskArchiver {
         return;
       }
 
-      // 添加归档信息
-      const archivedTask = {
-        ...task,
-        archivedAt: new Date().toISOString()
-      };
-
-      // 保存到数据库的归档表
-      await database.saveArchivedTask(archivedTask);
-
-      // 如果是成功完成的任务，也保存到数据库的生成记录表
-      if (task.status === 'completed' && task.result) {
-        await this.saveToGenerations(task);
-      }
+      // 保存到数据库的生成记录表（所有状态的任务都保存）
+      await this.saveToGenerations(task);
 
       // 从活跃任务列表中删除
       await taskManager.deleteTask(taskId);
 
-      console.log(`Task ${taskId} archived successfully to database`);
+      console.log(`Task ${taskId} archived successfully (status: ${task.status})`);
     } catch (error) {
       console.error(`Failed to archive task ${taskId}:`, error);
     }
   }
 
   /**
-   * 保存成功完成的任务到数据库生成记录表
+   * 保存任务到数据库生成记录表
    */
   async saveToGenerations(task) {
     try {
@@ -112,14 +98,17 @@ class TaskArchiver {
         prompt: task.prompt,
         params: task.params,
         result: task.result,
-        status: 'completed',
+        status: task.status, // 保存实际状态：completed/failed/cancelled
         createdAt: task.createdAt,
         completedAt: task.completedAt || new Date().toISOString(),
-        metadata: task.metadata || {}
+        metadata: {
+          ...task.metadata,
+          archivedAt: new Date().toISOString()
+        }
       };
 
       await database.saveGeneration(generation);
-      console.log(`Task ${task.id} saved to database generations table`);
+      console.log(`Task ${task.id} saved to generations table (status: ${task.status})`);
     } catch (error) {
       // 如果是重复ID错误，忽略（可能已经存在）
       if (error.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
@@ -142,141 +131,12 @@ class TaskArchiver {
   }
 
   /**
-   * 获取归档任务
-   */
-  async getArchivedTasks(filter = {}) {
-    await this.init();
-
-    try {
-      // 使用数据库查询
-      const limit = filter.limit || 100;
-      let tasks = await database.getArchivedTasks(limit);
-
-      // 应用过滤器（在内存中过滤，后续可优化为SQL查询）
-      if (filter.status) {
-        tasks = tasks.filter(t => t.status === filter.status);
-      }
-      if (filter.type) {
-        tasks = tasks.filter(t => t.type === filter.type);
-      }
-      if (filter.dateFrom) {
-        const fromDate = new Date(filter.dateFrom);
-        tasks = tasks.filter(t => new Date(t.archived_at) >= fromDate);
-      }
-      if (filter.dateTo) {
-        const toDate = new Date(filter.dateTo);
-        tasks = tasks.filter(t => new Date(t.archived_at) <= toDate);
-      }
-
-      return tasks;
-    } catch (error) {
-      console.error('Failed to get archived tasks:', error);
-      return [];
-    }
-  }
-
-  /**
-   * 清理旧归档
-   */
-  async cleanupOldArchives(maxAge = 30 * 24 * 60 * 60 * 1000) { // 默认30天
-    await this.init();
-
-    try {
-      const daysToKeep = Math.floor(maxAge / (24 * 60 * 60 * 1000));
-      const result = await database.cleanup(daysToKeep);
-
-      console.log(`Cleaned up ${result.archivedTasks} old archived tasks`);
-      return result.archivedTasks;
-    } catch (error) {
-      console.error('Failed to cleanup old archives:', error);
-      return 0;
-    }
-  }
-
-  /**
-   * 获取归档统计
-   */
-  async getArchiveStats() {
-    await this.init();
-
-    try {
-      // 从数据库获取统计
-      const dbInfo = database.getDatabaseInfo();
-      const archives = await database.getArchivedTasks(1000); // 获取最近1000条用于统计
-
-      const stats = {
-        total: dbInfo ? dbInfo.archivedTasks : 0,
-        completed: 0,
-        failed: 0,
-        cancelled: 0,
-        byType: {},
-        byDriver: {},
-        lastArchived: null
-      };
-
-      archives.forEach(task => {
-        // 按状态统计
-        if (stats[task.status] !== undefined) {
-          stats[task.status]++;
-        }
-
-        // 按类型统计
-        stats.byType[task.type] = (stats.byType[task.type] || 0) + 1;
-
-        // 按驱动统计
-        if (task.driver_id) {
-          stats.byDriver[task.driver_id] = (stats.byDriver[task.driver_id] || 0) + 1;
-        }
-      });
-
-      // 最后归档时间
-      if (archives.length > 0) {
-        stats.lastArchived = archives[0].archived_at; // 已按时间倒序排列
-      }
-
-      return stats;
-    } catch (error) {
-      console.error('Failed to get archive stats:', error);
-      return {
-        total: 0,
-        completed: 0,
-        failed: 0,
-        cancelled: 0,
-        byType: {},
-        byDriver: {},
-        lastArchived: null
-      };
-    }
-  }
-
-  /**
    * 设置归档延迟时间
    */
   setArchiveDelay(delayMs) {
-    this.archiveDelay = Math.max(0, delayMs);
-    console.log(`Archive delay set to ${this.archiveDelay}ms`);
-  }
-
-  /**
-   * 立即归档所有符合条件的任务
-   */
-  async archiveAllCompleted() {
-    await this.init();
-
-    const tasks = await taskManager.getTasks();
-    let archivedCount = 0;
-
-    for (const task of tasks) {
-      if (['completed', 'failed', 'cancelled'].includes(task.status)) {
-        await this.performArchive(task.id);
-        archivedCount++;
-      }
-    }
-
-    console.log(`Archived ${archivedCount} completed tasks to database`);
-    return archivedCount;
+    this.archiveDelay = delayMs;
+    console.log(`Archive delay set to ${delayMs}ms`);
   }
 }
 
-// 导出单例
 module.exports = new TaskArchiver();
