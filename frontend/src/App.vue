@@ -15,9 +15,13 @@
 </script>
 
 <style>
-body, html, #app {
+body, html {
   margin: 0;
-  height: 100%;
+  padding: 0;
+}
+#app {
+  margin: 0;
+  min-height: 100vh;
 }
 nav a.router-link-active {
   font-weight: bold;

@@ -48,9 +48,10 @@ const questionSets = require('./routes/question-sets');
 const runs = require('./routes/runs');
 const generate = require('./routes/generate');
 const models = require('./routes/models');
-const liveGen = require('./routes/live-gen');
+const liveGen = require('./routes/live-gen-db'); // Using database-backed version
 const imagemgr = require('./routes/imagemgr');
 const tasks = require('./routes/tasks');
+const generations = require('./routes/generations');
 
 app.use('/api/dimensions', dimensions);
 app.use('/api/questions', questions);
@@ -63,6 +64,7 @@ app.use('/api/models', models);
 app.use('/api/live-gen', liveGen);
 app.use('/api/imagemgr', imagemgr);
 app.use('/api/tasks', tasks);
+app.use('/api/generations', generations);
 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 

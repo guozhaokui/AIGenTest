@@ -1,16 +1,13 @@
-const fs = require('fs').promises;
-const path = require('path');
 const taskManager = require('./taskManager');
+const database = require('./database');
 
 /**
  * 任务归档服务
  * 负责将完成/失败/取消的任务移动到归档，保持活跃任务列表清洁
+ * 现在使用 SQLite 数据库存储数据
  */
 class TaskArchiver {
   constructor() {
-    this.archiveFile = path.resolve(__dirname, '../../data/tasks-archive.json');
-    this.liveGenFile = path.resolve(__dirname, '../../data/live-gen.json');
-    this.archives = [];
     this.initialized = false;
     this.archiveDelay = 5000; // 归档延迟时间（毫秒）
     this.pendingArchives = new Map(); // 待归档任务的定时器
@@ -20,24 +17,16 @@ class TaskArchiver {
     if (this.initialized) return;
 
     try {
-      const data = await fs.readFile(this.archiveFile, 'utf-8');
-      this.archives = JSON.parse(data);
+      await database.init();
+      this.initialized = true;
+
+      // 获取归档统计
+      const stats = await this.getArchiveStats();
+      console.log('TaskArchiver initialized with database, archived tasks:', stats.total);
     } catch (error) {
-      // 文件不存在，创建空归档
-      this.archives = [];
-      await this.saveArchives();
+      console.error('Failed to initialize TaskArchiver:', error);
+      throw error;
     }
-
-    this.initialized = true;
-    console.log('TaskArchiver initialized with', this.archives.length, 'archived tasks');
-  }
-
-  async saveArchives() {
-    await fs.writeFile(
-      this.archiveFile,
-      JSON.stringify(this.archives, null, 2),
-      'utf-8'
-    );
   }
 
   /**
@@ -93,40 +82,29 @@ class TaskArchiver {
         archivedAt: new Date().toISOString()
       };
 
-      // 保存到归档
-      this.archives.push(archivedTask);
-      await this.saveArchives();
+      // 保存到数据库的归档表
+      await database.saveArchivedTask(archivedTask);
 
-      // 如果是成功完成的任务，也保存到 live-gen.json
+      // 如果是成功完成的任务，也保存到数据库的生成记录表
       if (task.status === 'completed' && task.result) {
-        await this.saveToLiveGen(task);
+        await this.saveToGenerations(task);
       }
 
       // 从活跃任务列表中删除
       await taskManager.deleteTask(taskId);
 
-      console.log(`Task ${taskId} archived successfully`);
+      console.log(`Task ${taskId} archived successfully to database`);
     } catch (error) {
       console.error(`Failed to archive task ${taskId}:`, error);
     }
   }
 
   /**
-   * 保存成功完成的任务到 live-gen.json
+   * 保存成功完成的任务到数据库生成记录表
    */
-  async saveToLiveGen(task) {
+  async saveToGenerations(task) {
     try {
-      let liveGen = [];
-      try {
-        const data = await fs.readFile(this.liveGenFile, 'utf-8');
-        liveGen = JSON.parse(data);
-      } catch (error) {
-        // 文件不存在或格式错误
-        liveGen = [];
-      }
-
-      // 添加到历史记录
-      liveGen.push({
+      const generation = {
         id: task.id,
         type: task.type,
         modelId: task.modelId,
@@ -134,24 +112,21 @@ class TaskArchiver {
         prompt: task.prompt,
         params: task.params,
         result: task.result,
+        status: 'completed',
         createdAt: task.createdAt,
-        completedAt: task.completedAt || new Date().toISOString()
-      });
+        completedAt: task.completedAt || new Date().toISOString(),
+        metadata: task.metadata || {}
+      };
 
-      // 限制历史记录数量
-      if (liveGen.length > 1000) {
-        liveGen = liveGen.slice(-1000);
-      }
-
-      await fs.writeFile(
-        this.liveGenFile,
-        JSON.stringify(liveGen, null, 2),
-        'utf-8'
-      );
-
-      console.log(`Task ${task.id} saved to live-gen.json`);
+      await database.saveGeneration(generation);
+      console.log(`Task ${task.id} saved to database generations table`);
     } catch (error) {
-      console.error('Failed to save to live-gen.json:', error);
+      // 如果是重复ID错误，忽略（可能已经存在）
+      if (error.code === 'SQLITE_CONSTRAINT_PRIMARYKEY') {
+        console.log(`Task ${task.id} already exists in generations table`);
+      } else {
+        console.error('Failed to save to generations table:', error);
+      }
     }
   }
 
@@ -172,33 +147,32 @@ class TaskArchiver {
   async getArchivedTasks(filter = {}) {
     await this.init();
 
-    let tasks = [...this.archives];
+    try {
+      // 使用数据库查询
+      const limit = filter.limit || 100;
+      let tasks = await database.getArchivedTasks(limit);
 
-    // 应用过滤器
-    if (filter.status) {
-      tasks = tasks.filter(t => t.status === filter.status);
-    }
-    if (filter.type) {
-      tasks = tasks.filter(t => t.type === filter.type);
-    }
-    if (filter.dateFrom) {
-      const fromDate = new Date(filter.dateFrom);
-      tasks = tasks.filter(t => new Date(t.archivedAt) >= fromDate);
-    }
-    if (filter.dateTo) {
-      const toDate = new Date(filter.dateTo);
-      tasks = tasks.filter(t => new Date(t.archivedAt) <= toDate);
-    }
+      // 应用过滤器（在内存中过滤，后续可优化为SQL查询）
+      if (filter.status) {
+        tasks = tasks.filter(t => t.status === filter.status);
+      }
+      if (filter.type) {
+        tasks = tasks.filter(t => t.type === filter.type);
+      }
+      if (filter.dateFrom) {
+        const fromDate = new Date(filter.dateFrom);
+        tasks = tasks.filter(t => new Date(t.archived_at) >= fromDate);
+      }
+      if (filter.dateTo) {
+        const toDate = new Date(filter.dateTo);
+        tasks = tasks.filter(t => new Date(t.archived_at) <= toDate);
+      }
 
-    // 按归档时间倒序排列
-    tasks.sort((a, b) => new Date(b.archivedAt) - new Date(a.archivedAt));
-
-    // 限制返回数量
-    if (filter.limit) {
-      tasks = tasks.slice(0, filter.limit);
+      return tasks;
+    } catch (error) {
+      console.error('Failed to get archived tasks:', error);
+      return [];
     }
-
-    return tasks;
   }
 
   /**
@@ -207,22 +181,16 @@ class TaskArchiver {
   async cleanupOldArchives(maxAge = 30 * 24 * 60 * 60 * 1000) { // 默认30天
     await this.init();
 
-    const now = Date.now();
-    const originalCount = this.archives.length;
+    try {
+      const daysToKeep = Math.floor(maxAge / (24 * 60 * 60 * 1000));
+      const result = await database.cleanup(daysToKeep);
 
-    this.archives = this.archives.filter(task => {
-      const taskAge = now - new Date(task.archivedAt).getTime();
-      return taskAge <= maxAge;
-    });
-
-    if (this.archives.length < originalCount) {
-      await this.saveArchives();
-      const deleted = originalCount - this.archives.length;
-      console.log(`Cleaned up ${deleted} old archived tasks`);
-      return deleted;
+      console.log(`Cleaned up ${result.archivedTasks} old archived tasks`);
+      return result.archivedTasks;
+    } catch (error) {
+      console.error('Failed to cleanup old archives:', error);
+      return 0;
     }
-
-    return 0;
   }
 
   /**
@@ -231,37 +199,54 @@ class TaskArchiver {
   async getArchiveStats() {
     await this.init();
 
-    const stats = {
-      total: this.archives.length,
-      completed: 0,
-      failed: 0,
-      cancelled: 0,
-      byType: {},
-      byDriver: {},
-      lastArchived: null
-    };
+    try {
+      // 从数据库获取统计
+      const dbInfo = database.getDatabaseInfo();
+      const archives = await database.getArchivedTasks(1000); // 获取最近1000条用于统计
 
-    this.archives.forEach(task => {
-      // 按状态统计
-      stats[task.status]++;
+      const stats = {
+        total: dbInfo ? dbInfo.archivedTasks : 0,
+        completed: 0,
+        failed: 0,
+        cancelled: 0,
+        byType: {},
+        byDriver: {},
+        lastArchived: null
+      };
 
-      // 按类型统计
-      stats.byType[task.type] = (stats.byType[task.type] || 0) + 1;
+      archives.forEach(task => {
+        // 按状态统计
+        if (stats[task.status] !== undefined) {
+          stats[task.status]++;
+        }
 
-      // 按驱动统计
-      stats.byDriver[task.driverId] = (stats.byDriver[task.driverId] || 0) + 1;
-    });
+        // 按类型统计
+        stats.byType[task.type] = (stats.byType[task.type] || 0) + 1;
 
-    // 最后归档时间
-    if (this.archives.length > 0) {
-      const lastArchived = this.archives.reduce((latest, task) => {
-        const taskTime = new Date(task.archivedAt);
-        return taskTime > latest ? taskTime : latest;
-      }, new Date(0));
-      stats.lastArchived = lastArchived.toISOString();
+        // 按驱动统计
+        if (task.driver_id) {
+          stats.byDriver[task.driver_id] = (stats.byDriver[task.driver_id] || 0) + 1;
+        }
+      });
+
+      // 最后归档时间
+      if (archives.length > 0) {
+        stats.lastArchived = archives[0].archived_at; // 已按时间倒序排列
+      }
+
+      return stats;
+    } catch (error) {
+      console.error('Failed to get archive stats:', error);
+      return {
+        total: 0,
+        completed: 0,
+        failed: 0,
+        cancelled: 0,
+        byType: {},
+        byDriver: {},
+        lastArchived: null
+      };
     }
-
-    return stats;
   }
 
   /**
@@ -276,6 +261,8 @@ class TaskArchiver {
    * 立即归档所有符合条件的任务
    */
   async archiveAllCompleted() {
+    await this.init();
+
     const tasks = await taskManager.getTasks();
     let archivedCount = 0;
 
@@ -286,7 +273,7 @@ class TaskArchiver {
       }
     }
 
-    console.log(`Archived ${archivedCount} completed tasks`);
+    console.log(`Archived ${archivedCount} completed tasks to database`);
     return archivedCount;
   }
 }

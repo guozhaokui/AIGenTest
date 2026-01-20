@@ -107,7 +107,7 @@ const isHistory = computed(() => route.path === '/live/history');
 
 .live-main {
   flex: 1;
-  overflow: hidden; /* 让子元素控制滚动 */
+  overflow-y: auto; /* 允许垂直滚动 */
   background: #f5f7fa;
 }
 </style>
