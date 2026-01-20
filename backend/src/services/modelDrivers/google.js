@@ -58,10 +58,10 @@ async function generate({ apiKey, model, prompt, images, config = {} }) {
     generationConfig.imageConfig.personGeneration = config.personGeneration;
   }
 
-  // 输出格式
-  if (config.outputMimeType) {
-    generationConfig.imageConfig.outputMimeType = config.outputMimeType;
-  }
+  // 输出格式 - Gemini API 不支持此参数，注释掉避免错误
+  // if (config.outputMimeType) {
+  //   generationConfig.imageConfig.outputMimeType = config.outputMimeType;
+  // }
 
   // 输出分辨率 (仅 Gemini 3 Pro 支持)
   if (config.outputResolution) {

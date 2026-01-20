@@ -49,17 +49,6 @@
           { "label": "允许所有人", "value": "ALLOW_ALL" },
           { "label": "禁止", "value": "DONT_ALLOW" }
         ]
-      },
-      {
-        "name": "outputMimeType",
-        "label": "输出格式",
-        "type": "select",
-        "default": "image/png",
-        "options": [
-          { "label": "PNG", "value": "image/png" },
-          { "label": "JPEG", "value": "image/jpeg" },
-          { "label": "WebP", "value": "image/webp" }
-        ]
       }
     ]
   },
@@ -117,17 +106,6 @@
           { "label": "允许成年人", "value": "ALLOW_ADULT" },
           { "label": "允许所有人", "value": "ALLOW_ALL" },
           { "label": "禁止", "value": "DONT_ALLOW" }
-        ]
-      },
-      {
-        "name": "outputMimeType",
-        "label": "输出格式",
-        "type": "select",
-        "default": "image/png",
-        "options": [
-          { "label": "PNG", "value": "image/png" },
-          { "label": "JPEG", "value": "image/jpeg" },
-          { "label": "WebP", "value": "image/webp" }
         ]
       },
       {
