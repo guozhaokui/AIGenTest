@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "lessons-recorder": {
+      "command": "node",
+      "args": ["%USERPROFILE%\\.mcp-lessons\\src\\index.js"],
+      "name": "AI Lessons Recorder",
+      "description": "记录AI解决问题的经验教训"
+    }
+  }
+}

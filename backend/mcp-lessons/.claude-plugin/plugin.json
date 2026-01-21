@@ -1,0 +1,17 @@
+{
+  "id": "lessons-recorder",
+  "name": "AI Lessons Recorder",
+  "description": "记录AI解决问题的经验教训",
+  "version": "1.0.0",
+  "author": "Local",
+  "mcp": {
+    "servers": {
+      "lessons-recorder": {
+        "type": "stdio",
+        "command": "node",
+        "args": ["src/index.js"],
+        "cwd": "${pluginDir}/.."
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "id": "local-mcp-lessons",
+  "name": "Local MCP Lessons",
+  "description": "Local marketplace for MCP Lessons plugin",
+  "plugins": [
+    {
+      "id": "lessons-recorder",
+      "name": "AI Lessons Recorder",
+      "description": "记录AI解决问题的经验教训",
+      "version": "1.0.0",
+      "source": {
+        "type": "directory",
+        "path": "."
+      }
+    }
+  ]
+}
