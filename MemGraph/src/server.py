@@ -471,6 +471,146 @@ async def debug_test_embedding():
         }
 
 
+class VectorSearchRequest(BaseModel):
+    query: str
+    top_k: int = 20
+
+
+class DebugSearchRequest(BaseModel):
+    query: str
+    limit: int = 10
+    min_score: float = 0.0
+
+
+@app.post("/debug/search-full")
+async def debug_search_full(req: DebugSearchRequest):
+    """
+    完整的调试搜索，包含 n-gram 匹配详情
+    """
+    try:
+        results = await search_engine.search(req.query, {
+            'limit': req.limit,
+            'min_score': req.min_score,
+            'use_vector': True
+        })
+
+        return {
+            "query": req.query,
+            "count": len(results),
+            "results": results
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "query": req.query,
+            "results": []
+        }
+
+
+@app.post("/debug/vector-similarity")
+async def debug_vector_similarity(req: VectorSearchRequest):
+    """
+    根据查询问题，显示所有向量的相似度排序
+    用于调试向量检索效果
+    """
+    import numpy as np
+    import time
+
+    if not indexer.index or indexer.index.ntotal == 0:
+        return {
+            "error": "FAISS 索引为空",
+            "query": req.query,
+            "results": []
+        }
+
+    try:
+        # 1. 生成查询向量
+        start = time.time()
+        query_embedding = await search_engine.embedding_client.embed_text(req.query)
+        embed_time = (time.time() - start) * 1000
+
+        # 归一化
+        norm = np.linalg.norm(query_embedding)
+        if norm > 0:
+            query_embedding = query_embedding / norm
+
+        query_embedding = query_embedding.reshape(1, -1)
+
+        # 2. 计算所有文档的相似度
+        results = []
+
+        # 反向映射：faiss_index -> doc_id
+        index_to_doc = {v: k for k, v in indexer.doc_id_to_index.items()}
+
+        for faiss_idx in range(indexer.index.ntotal):
+            # 获取文档向量
+            doc_vector = indexer.index.reconstruct(faiss_idx)
+            doc_vector = doc_vector.reshape(1, -1)
+
+            # 计算余弦相似度
+            similarity = float(np.dot(query_embedding, doc_vector.T)[0][0])
+
+            # 获取文档信息
+            doc_id = index_to_doc.get(faiss_idx)
+            if doc_id:
+                cursor = indexer.conn.execute('''
+                    SELECT path, role, project, problem, solution
+                    FROM documents
+                    WHERE id = ?
+                ''', (doc_id,))
+                row = cursor.fetchone()
+
+                if row:
+                    # 获取标签
+                    tag_cursor = indexer.conn.execute(
+                        'SELECT tag FROM document_tags WHERE doc_id = ?',
+                        (doc_id,)
+                    )
+                    tags = [t[0] for t in tag_cursor.fetchall()]
+
+                    results.append({
+                        "faiss_index": faiss_idx,
+                        "doc_id": doc_id,
+                        "similarity": round(similarity, 4),
+                        "path": row[0],
+                        "role": row[1],
+                        "project": row[2] or '-',
+                        "tags": tags,
+                        "problem_preview": row[3][:200] if row[3] else '-',
+                        "solution_preview": row[4][:200] if row[4] else '-',
+                        "vector_norm": float(np.linalg.norm(doc_vector))
+                    })
+
+        # 3. 按相似度排序
+        results.sort(key=lambda x: x['similarity'], reverse=True)
+
+        # 4. 限制返回数量
+        results = results[:req.top_k]
+
+        search_time = (time.time() - start) * 1000
+
+        return {
+            "query": req.query,
+            "query_embedding_norm": float(norm),
+            "embed_time_ms": round(embed_time, 2),
+            "search_time_ms": round(search_time, 2),
+            "total_documents": indexer.index.ntotal,
+            "returned_count": len(results),
+            "results": results
+        }
+
+    except Exception as e:
+        import traceback
+        return {
+            "error": str(e),
+            "traceback": traceback.format_exc(),
+            "query": req.query,
+            "results": []
+        }
+
+
 # ============================================================================
 # 启动服务
 # ============================================================================

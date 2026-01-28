@@ -336,6 +336,48 @@
             </div>
             <div id="ngramContent"></div>
         </div>
+
+        <!-- 向量相似度搜索 -->
+        <div class="section">
+            <h2>🔍 向量相似度搜索</h2>
+            <p style="color: #858585; margin-bottom: 15px;">输入查询问题，查看所有文档向量的相似度排序</p>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" id="vectorSearchQuery" placeholder="输入查询问题，例如：如何在claude-code中添加mcp服务器"
+                       style="flex: 1; padding: 10px; background: #2d2d30; border: 1px solid #3e3e42; color: #d4d4d4; border-radius: 4px;">
+                <input type="number" id="vectorSearchTopK" value="10" min="1" max="50"
+                       style="width: 100px; padding: 10px; background: #2d2d30; border: 1px solid #3e3e42; color: #d4d4d4; border-radius: 4px;"
+                       placeholder="Top K">
+                <button class="btn" onclick="searchVectorSimilarity()">搜索</button>
+            </div>
+
+            <div id="vectorSearchLoading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>计算相似度中...</p>
+            </div>
+            <div id="vectorSearchContent"></div>
+        </div>
+
+        <!-- N-gram 匹配详情搜索 -->
+        <div class="section">
+            <h2>🎯 完整搜索调试（含 N-gram 匹配）</h2>
+            <p style="color: #858585; margin-bottom: 15px;">查看激活式搜索 + 向量相似度的完整调试信息，包括匹配的所有 n-gram</p>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <input type="text" id="fullSearchQuery" placeholder="输入查询问题，例如：如何配置mcp"
+                       style="flex: 1; padding: 10px; background: #2d2d30; border: 1px solid #3e3e42; color: #d4d4d4; border-radius: 4px;">
+                <input type="number" id="fullSearchLimit" value="5" min="1" max="20"
+                       style="width: 100px; padding: 10px; background: #2d2d30; border: 1px solid #3e3e42; color: #d4d4d4; border-radius: 4px;"
+                       placeholder="Limit">
+                <button class="btn" onclick="searchFullDebug()">搜索</button>
+            </div>
+
+            <div id="fullSearchLoading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>搜索中...</p>
+            </div>
+            <div id="fullSearchContent"></div>
+        </div>
     </div>
 
     <script>
@@ -640,6 +682,314 @@
                 showMessage(`❌ 重建失败: ${error.message}`, 'error');
             }
         }
+
+        async function searchVectorSimilarity() {
+            const query = document.getElementById('vectorSearchQuery').value.trim();
+            const topK = parseInt(document.getElementById('vectorSearchTopK').value);
+
+            if (!query) {
+                showMessage('请输入查询问题', 'error');
+                return;
+            }
+
+            const loadingEl = document.getElementById('vectorSearchLoading');
+            const contentEl = document.getElementById('vectorSearchContent');
+
+            loadingEl.style.display = 'block';
+            contentEl.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/debug/vector-similarity`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, top_k: topK })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                loadingEl.style.display = 'none';
+
+                if (data.error) {
+                    contentEl.innerHTML = `<p style="color: #f97583;">❌ 错误: ${data.error}</p>`;
+                    return;
+                }
+
+                // 显示查询统计
+                let html = `
+                    <div class="vector-stats">
+                        <p><strong>查询:</strong> "${data.query}"</p>
+                        <p><strong>查询向量范数:</strong> ${data.query_embedding_norm.toFixed(4)}</p>
+                        <p><strong>嵌入耗时:</strong> ${data.embed_time_ms}ms</p>
+                        <p><strong>搜索耗时:</strong> ${data.search_time_ms}ms</p>
+                        <p><strong>总文档数:</strong> ${data.total_documents} | <strong>返回:</strong> ${data.returned_count}</p>
+                    </div>
+
+                    <div class="table-container" style="margin-top: 20px;">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>排名</th>
+                                    <th>相似度</th>
+                                    <th>文档ID</th>
+                                    <th>FAISS索引</th>
+                                    <th>路径</th>
+                                    <th>标签</th>
+                                    <th>向量范数</th>
+                                    <th>问题预览</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                data.results.forEach((result, idx) => {
+                    // 相似度着色
+                    let simColor = '#4ec9b0';
+                    if (result.similarity < 0.3) {
+                        simColor = '#ce9178';
+                    } else if (result.similarity < 0.6) {
+                        simColor = '#dcdcaa';
+                    }
+
+                    const tags = result.tags.length > 0 ? result.tags.join(', ') : '-';
+                    const resultId = `result_${idx}`;
+
+                    html += `
+                        <tr style="cursor: pointer;" onclick="toggleResultDetail('${resultId}')">
+                            <td><strong>${idx + 1}</strong></td>
+                            <td><span style="color: ${simColor}; font-weight: bold; font-size: 16px;">${result.similarity}</span></td>
+                            <td><span class="doc-id">${result.doc_id}</span></td>
+                            <td>${result.faiss_index}</td>
+                            <td>${result.path}</td>
+                            <td style="font-size: 11px;">${tags}</td>
+                            <td>${result.vector_norm.toFixed(4)}</td>
+                            <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                ${result.problem_preview}
+                            </td>
+                        </tr>
+                        <tr id="${resultId}" style="display: none;">
+                            <td colspan="8" style="background: #1e1e1e; padding: 15px;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                                    <div>
+                                        <div style="margin-bottom: 15px;">
+                                            <strong style="color: #4ec9b0;">问题:</strong>
+                                            <p style="margin: 5px 0; color: #d4d4d4;">${result.problem_preview}</p>
+                                        </div>
+                                        <div>
+                                            <strong style="color: #4ec9b0;">解决方法预览:</strong>
+                                            <p style="margin: 5px 0; color: #d4d4d4;">${result.solution_preview}</p>
+                                        </div>
+                                        <div style="margin-top: 10px; padding: 10px; background: #2d2d30; border-radius: 4px;">
+                                            <strong style="color: #dcdcaa;">调试信息:</strong>
+                                            <p style="margin: 5px 0; color: #858585;">角色: ${result.role} | 项目: ${result.project}</p>
+                                        </div>
+                                    </div>
+                                    <div id="ngrams_${resultId}" style="padding: 10px; background: #2d2d30; border-radius: 4px; max-height: 300px; overflow-y: auto;">
+                                        <strong style="color: #ce9178;">🔍 N-gram 匹配详情</strong>
+                                        <p style="margin: 5px 0; color: #858585; font-size: 11px;">加载中...</p>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top: 15px; padding: 10px; background: #2d2d30; border-radius: 4px; color: #858585; font-size: 12px;">
+                        💡 <strong>提示:</strong> 点击表格行查看详细信息。相似度越高（接近1.0）表示语义越相关。
+                    </div>
+                `;
+
+                contentEl.innerHTML = html;
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                contentEl.innerHTML = `<p style="color: #f97583;">❌ 搜索失败: ${error.message}</p>`;
+            }
+        }
+
+        function toggleResultDetail(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'table-row' ? 'none' : 'table-row';
+        }
+
+        async function searchFullDebug() {
+            const query = document.getElementById('fullSearchQuery').value.trim();
+            const limit = parseInt(document.getElementById('fullSearchLimit').value);
+
+            if (!query) {
+                showMessage('请输入查询问题', 'error');
+                return;
+            }
+
+            const loadingEl = document.getElementById('fullSearchLoading');
+            const contentEl = document.getElementById('fullSearchContent');
+
+            loadingEl.style.display = 'block';
+            contentEl.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/debug/search-full`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query, limit, min_score: 0.0 })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                loadingEl.style.display = 'none';
+
+                if (data.error) {
+                    contentEl.innerHTML = `<p style="color: #f97583;">❌ 错误: ${data.error}</p>`;
+                    return;
+                }
+
+                // 显示结果
+                let html = `
+                    <div class="vector-stats">
+                        <p><strong>查询:</strong> "${data.query}"</p>
+                        <p><strong>找到:</strong> ${data.count} 条结果</p>
+                    </div>
+                `;
+
+                data.results.forEach((result, idx) => {
+                    const resultId = `full_result_${idx}`;
+
+                    // N-gram 统计
+                    const ngramTypes = {};
+                    if (result.match_details) {
+                        result.match_details.forEach(detail => {
+                            ngramTypes[detail.type] = (ngramTypes[detail.type] || 0) + 1;
+                        });
+                    }
+
+                    const ngramSummary = Object.entries(ngramTypes)
+                        .map(([type, count]) => `${type}(${count})`)
+                        .join(', ');
+
+                    html += `
+                        <div style="border: 2px solid #3e3e42; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #252526;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div>
+                                    <strong style="color: #4ec9b0; font-size: 16px;">${idx + 1}. ${result.path}</strong>
+                                </div>
+                                <div style="text-align: right;">
+                                    <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 16px;">
+                                        ${result.total_score.toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; padding: 10px; background: #2d2d30; border-radius: 4px;">
+                                <div>
+                                    <div style="color: #858585; font-size: 11px;">激活得分</div>
+                                    <div style="color: #4ec9b0; font-weight: bold;">${result.activation_score ? result.activation_score.toFixed(2) : '-'}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #858585; font-size: 11px;">向量相似度</div>
+                                    <div style="color: #4ec9b0; font-weight: bold;">${result.vector_similarity !== undefined ? result.vector_similarity.toFixed(4) : '-'}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #858585; font-size: 11px;">匹配片段</div>
+                                    <div style="color: #4ec9b0; font-weight: bold;">${result.matched_ngrams || 0}</div>
+                                </div>
+                                <div>
+                                    <div style="color: #858585; font-size: 11px;">N-gram类型</div>
+                                    <div style="color: #dcdcaa; font-weight: bold; font-size: 10px;">${ngramSummary || '-'}</div>
+                                </div>
+                            </div>
+
+                            <div style="margin-bottom: 10px;">
+                                <button class="btn" style="width: auto; padding: 8px 20px;" onclick="toggleNgramDetails('${resultId}')">
+                                    显示/隐藏 N-gram 匹配详情 (${result.matched_ngrams || 0} 条)
+                                </button>
+                            </div>
+
+                            <div id="${resultId}" style="display: none; max-height: 400px; overflow-y: auto; background: #1e1e1e; padding: 15px; border-radius: 4px;">
+                                <strong style="color: #ce9178;">🔍 N-gram 匹配详情</strong>
+                                <table style="width: 100%; margin-top: 10px; font-size: 12px;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid #3e3e42;">
+                                            <th style="text-align: left; padding: 5px; color: #4ec9b0;">#</th>
+                                            <th style="text-align: left; padding: 5px; color: #4ec9b0;">内容</th>
+                                            <th style="text-align: left; padding: 5px; color: #4ec9b0;">类型</th>
+                                            <th style="text-align: left; padding: 5px; color: #4ec9b0;">片段大小</th>
+                                            <th style="text-align: left; padding: 5px; color: #4ec9b0;">章节</th>
+                                            <th style="text-align: right; padding: 5px; color: #4ec9b0;">得分</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                    `;
+
+                    if (result.match_details && result.match_details.length > 0) {
+                        result.match_details.forEach((detail, detailIdx) => {
+                            html += `
+                                <tr style="border-bottom: 1px solid #3e3e42;">
+                                    <td style="padding: 5px; color: #858585;">${detailIdx + 1}</td>
+                                    <td style="padding: 5px; color: #d4d4d4;"><code style="background: #2d2d30; padding: 2px 6px; border-radius: 3px;">${detail.content}</code></td>
+                                    <td style="padding: 5px;"><span class="ngram-type">${detail.type}</span></td>
+                                    <td style="padding: 5px; color: #858585;">${detail.content.length}</td>
+                                    <td style="padding: 5px;"><span class="section-badge">${detail.section}</span></td>
+                                    <td style="padding: 5px; color: #dcdcaa; text-align: right; font-weight: bold;">${detail.score.toFixed(2)}</td>
+                                </tr>
+                            `;
+                        });
+                    } else {
+                        html += `
+                            <tr>
+                                <td colspan="6" style="padding: 10px; text-align: center; color: #858585;">无匹配详情</td>
+                            </tr>
+                        `;
+                    }
+
+                    html += `
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                contentEl.innerHTML = html;
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                contentEl.innerHTML = `<p style="color: #f97583;">❌ 搜索失败: ${error.message}</p>`;
+            }
+        }
+
+        function toggleNgramDetails(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        // 支持回车搜索
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('vectorSearchQuery');
+            if (input) {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        searchVectorSimilarity();
+                    }
+                });
+            }
+
+            const fullInput = document.getElementById('fullSearchQuery');
+            if (fullInput) {
+                fullInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        searchFullDebug();
+                    }
+                });
+            }
+        });
 
         // 页面加载时自动加载数据
         window.addEventListener('DOMContentLoaded', () => {
