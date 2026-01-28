@@ -201,6 +201,9 @@ class KnowledgeIndexer:
 
         self.conn.commit()
 
+        # 保存FAISS索引到磁盘
+        self._save_index()
+
         return doc_id
 
     async def index_documents(self, documents: List[Dict]) -> List[int]:

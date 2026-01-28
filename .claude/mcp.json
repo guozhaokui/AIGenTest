@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "lessons-recorder": {
+      "command": "node",
+      "args": ["backend/mcp-lessons/src/index.js"],
+      "cwd": "${workspaceFolder}"
+    }
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run dev:*)",
+      "Bash(python:*)",
+      "Bash(chmod:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "Bash(pnpm add:*)",
+      "Bash(ls:*)",
+      "Bash(sqlite3:*)",
+      "Bash(npm install:*)",
+      "mcp__lessons-recorder__search_lessons",
+      "mcp__lessons-recorder__read_lesson"
+    ]
+  }
+}

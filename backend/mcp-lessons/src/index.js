@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 
+/**
+ * MCP Lessons V3 - 客户端
+ * 通过HTTP调用MemGraph服务
+ */
+
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import {
   CallToolRequestSchema,
-  ListResourcesRequestSchema,
   ListToolsRequestSchema,
-  ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import StorageV2 from './storage-v2.js';
+import { fetch } from 'undici';
 import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,7 +19,10 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Configure logger
+// MemGraph服务地址
+const MEMGRAPH_URL = process.env.MEMGRAPH_URL || 'http://localhost:8800';
+
+// 配置日志
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
@@ -34,24 +40,20 @@ const logger = winston.createLogger({
   ]
 });
 
-// Initialize storage with new activation search engine
-const storage = new StorageV2();
-
-// Create MCP server
+// 创建MCP服务器
 const server = new Server(
   {
-    name: 'lessons-recorder',
-    version: '1.0.0',
+    name: 'lessons-recorder-v3',
+    version: '3.0.0',
   },
   {
     capabilities: {
       tools: {},
-      resources: {},
     },
   }
 );
 
-// Handle tool listing
+// 工具列表
 server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
@@ -94,13 +96,23 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'search_lessons',
-        description: '搜索经验教训',
+        description: '搜索经验教训（激活式搜索+向量相似度）',
         inputSchema: {
           type: 'object',
           properties: {
             query: {
               type: 'string',
               description: '搜索关键词'
+            },
+            limit: {
+              type: 'number',
+              description: '返回记录数量（默认10）',
+              default: 10
+            },
+            min_score: {
+              type: 'number',
+              description: '最小得分阈值（默认0.1）',
+              default: 0.1
             }
           },
           required: ['query']
@@ -121,20 +133,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         }
       },
       {
-        name: 'read_lesson',
-        description: '读取特定的经验记录',
-        inputSchema: {
-          type: 'object',
-          properties: {
-            path: {
-              type: 'string',
-              description: '记录文件的相对路径（如：2024/01/21_10-30-00_bug-fix.md）'
-            }
-          },
-          required: ['path']
-        }
-      },
-      {
         name: 'list_tags',
         description: '列出所有标签',
         inputSchema: {
@@ -151,6 +149,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             tag: {
               type: 'string',
               description: '标签名称'
+            },
+            limit: {
+              type: 'number',
+              description: '返回记录数量（默认10）',
+              default: 10
             }
           },
           required: ['tag']
@@ -166,7 +169,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'rebuild_index',
-        description: '重建知识库索引（从Markdown文件同步）',
+        description: '重建知识库索引',
         inputSchema: {
           type: 'object',
           properties: {}
@@ -176,229 +179,251 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   };
 });
 
-// Handle tool calls
+// 工具调用处理
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
     switch (name) {
       case 'record_lesson': {
-        const result = storage.saveLesson(args);
-        logger.info(`Recorded new lesson: ${result.path}`);
+        const response = await fetch(`${MEMGRAPH_URL}/record`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(args)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        logger.info(`Recorded new lesson: ${data.path}`);
+
         return {
-          content: [
-            {
-              type: 'text',
-              text: `成功记录经验到: ${result.path}\n完整路径: ${result.fullPath}`
-            }
-          ]
+          content: [{
+            type: 'text',
+            text: `成功记录经验到: ${data.path}\n文档ID: ${data.doc_id}`
+          }]
         };
       }
 
       case 'search_lessons': {
-        const lessons = storage.searchLessons(args.query, {
-          limit: args.limit || 10,
-          minScore: args.minScore || 0.1
+        const response = await fetch(`${MEMGRAPH_URL}/search`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: args.query,
+            limit: args.limit || 10,
+            min_score: args.min_score || 0.1,
+            use_vector: true
+          })
         });
 
-        if (lessons.length === 0) {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+
+        if (data.count === 0) {
           return {
-            content: [
-              {
-                type: 'text',
-                text: `未找到包含 "${args.query}" 的经验记录`
-              }
-            ]
+            content: [{
+              type: 'text',
+              text: `未找到包含 "${args.query}" 的经验记录`
+            }]
           };
         }
 
-        let result = `找到 ${lessons.length} 条相关经验（使用激活式搜索）：\n\n`;
-        lessons.forEach((lesson, index) => {
-          result += `${index + 1}. [${lesson.path}] (得分: ${lesson.totalScore.toFixed(2)})\n`;
+        let result = `找到 ${data.count} 条相关经验（激活式搜索+向量相似度）：\n\n`;
+
+        data.results.forEach((lesson, index) => {
+          result += `${index + 1}. [${lesson.path}] (得分: ${lesson.total_score.toFixed(2)})\n`;
           result += `   角色: ${lesson.role || 'AI'}\n`;
           result += `   项目: ${lesson.project || '-'}\n`;
+
           if (lesson.tags && lesson.tags.length > 0) {
             result += `   标签: ${lesson.tags.join(', ')}\n`;
           }
-          result += `   问题: ${lesson.problemPreview || '-'}\n`;
+
+          result += `   问题: ${lesson.problem_preview || '-'}\n`;
           result += `   时间: ${lesson.timestamp || '-'}\n`;
 
-          // 显示匹配详情
-          if (lesson.matchedNgrams) {
-            result += `   匹配: ${lesson.matchedNgrams} 个片段`;
-            if (lesson.vectorSimilarity !== undefined) {
-              result += `, 向量相似度: ${lesson.vectorSimilarity.toFixed(3)}`;
+          if (lesson.matched_ngrams) {
+            result += `   激活: ${lesson.matched_ngrams} 个片段, 激活得分: ${lesson.activation_score.toFixed(2)}`;
+
+            if (lesson.vector_similarity !== undefined) {
+              result += `, 向量相似度: ${lesson.vector_similarity.toFixed(3)}`;
             }
+
             result += '\n';
           }
+
           result += '\n';
         });
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: result
-            }
-          ]
+          content: [{
+            type: 'text',
+            text: result
+          }]
         };
       }
 
       case 'list_recent': {
-        const limit = args.limit || 10;
-        const lessons = storage.listRecent(limit);
+        const response = await fetch(`${MEMGRAPH_URL}/recent`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: args.limit || 10 })
+        });
 
-        if (lessons.length === 0) {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+
+        if (data.count === 0) {
           return {
-            content: [
-              {
-                type: 'text',
-                text: '暂无经验记录'
-              }
-            ]
+            content: [{
+              type: 'text',
+              text: '暂无经验记录'
+            }]
           };
         }
 
-        let result = `最近 ${lessons.length} 条经验记录：\n\n`;
-        lessons.forEach((lesson, index) => {
+        let result = `最近 ${data.count} 条经验记录：\n\n`;
+
+        data.results.forEach((lesson, index) => {
           result += `${index + 1}. [${lesson.path}]\n`;
           result += `   角色: ${lesson.role || 'AI'}\n`;
           result += `   项目: ${lesson.project || '-'}\n`;
-          result += `   问题: ${lesson.problem?.split('\n')[0] || '-'}\n`;
+          result += `   问题: ${lesson.problem_preview || '-'}\n`;
           result += `   时间: ${lesson.timestamp || '-'}\n\n`;
         });
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: result
-            }
-          ]
-        };
-      }
-
-      case 'read_lesson': {
-        const lesson = storage.readLesson(args.path);
-
-        let result = '# 经验记录\n\n';
-        result += `**路径:** ${args.path}\n`;
-        result += `**角色:** ${lesson.role || 'AI'}\n`;
-        result += `**项目:** ${lesson.project || '-'}\n`;
-        result += `**目录:** ${lesson.directory || '-'}\n`;
-        result += `**时间:** ${lesson.timestamp || '-'}\n`;
-
-        if (lesson.tags && lesson.tags.length > 0) {
-          result += `**标签:** ${lesson.tags.join(', ')}\n`;
-        }
-
-        result += '\n## 问题\n\n';
-        result += lesson.problem || '-';
-        result += '\n\n## 解决方法\n\n';
-        result += lesson.solution || '-';
-
-        return {
-          content: [
-            {
-              type: 'text',
-              text: result
-            }
-          ]
+          content: [{
+            type: 'text',
+            text: result
+          }]
         };
       }
 
       case 'list_tags': {
-        const tags = storage.getAllTags();
+        const response = await fetch(`${MEMGRAPH_URL}/tags`);
 
-        if (tags.length === 0) {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+
+        if (data.count === 0) {
           return {
-            content: [
-              {
-                type: 'text',
-                text: '暂无标签'
-              }
-            ]
+            content: [{
+              type: 'text',
+              text: '暂无标签'
+            }]
           };
         }
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: `所有标签 (${tags.length}):\n${tags.join(', ')}`
-            }
-          ]
+          content: [{
+            type: 'text',
+            text: `所有标签 (${data.count}):\n${data.tags.join(', ')}`
+          }]
         };
       }
 
       case 'search_by_tag': {
-        const lessons = storage.searchByTag(args.tag);
+        const response = await fetch(`${MEMGRAPH_URL}/search/tag`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tag: args.tag,
+            limit: args.limit || 10
+          })
+        });
 
-        if (lessons.length === 0) {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+
+        if (data.count === 0) {
           return {
-            content: [
-              {
-                type: 'text',
-                text: `未找到标签为 "${args.tag}" 的经验记录`
-              }
-            ]
+            content: [{
+              type: 'text',
+              text: `未找到标签为 "${args.tag}" 的经验记录`
+            }]
           };
         }
 
-        let result = `标签 "${args.tag}" 的经验记录 (${lessons.length})：\n\n`;
-        lessons.forEach((lesson, index) => {
+        let result = `标签 "${args.tag}" 的经验记录 (${data.count})：\n\n`;
+
+        data.results.forEach((lesson, index) => {
           result += `${index + 1}. [${lesson.path}]\n`;
-          result += `   问题: ${lesson.problemPreview || '-'}\n`;
+          result += `   问题: ${lesson.problem_preview || '-'}\n`;
           result += `   时间: ${lesson.timestamp || '-'}\n\n`;
         });
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: result
-            }
-          ]
+          content: [{
+            type: 'text',
+            text: result
+          }]
         };
       }
 
       case 'get_stats': {
-        const stats = storage.getStats();
+        const response = await fetch(`${MEMGRAPH_URL}/stats`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const stats = await response.json();
 
         let result = '# 知识库统计信息\n\n';
         result += `- 文档数量: ${stats.documents}\n`;
         result += `- N-gram总数: ${stats.ngrams}\n`;
-        result += `- 唯一N-gram: ${stats.uniqueNgrams}\n`;
-        result += `- 词汇表大小: ${stats.vocabularySize}\n`;
-        result += `- IDF得分数: ${stats.idfScoresCount}\n`;
+        result += `- 唯一N-gram: ${stats.unique_ngrams}\n`;
+        result += `- FAISS向量数: ${stats.faiss_vectors}\n`;
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: result
-            }
-          ]
+          content: [{
+            type: 'text',
+            text: result
+          }]
         };
       }
 
       case 'rebuild_index': {
         logger.info('Rebuilding index...');
-        const stats = storage.rebuildIndex();
+
+        const response = await fetch(`${MEMGRAPH_URL}/rebuild`, {
+          method: 'POST'
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        const stats = data.stats;
 
         let result = '# 索引重建完成\n\n';
         result += `- 文档数量: ${stats.documents}\n`;
         result += `- N-gram总数: ${stats.ngrams}\n`;
-        result += `- 唯一N-gram: ${stats.uniqueNgrams}\n`;
-        result += `- 词汇表大小: ${stats.vocabularySize}\n`;
+        result += `- 唯一N-gram: ${stats.unique_ngrams}\n`;
+        result += `- FAISS向量数: ${stats.faiss_vectors}\n`;
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: result
-            }
-          ]
+          content: [{
+            type: 'text',
+            text: result
+          }]
         };
       }
 
@@ -408,91 +433,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   } catch (error) {
     logger.error(`Error executing tool ${name}:`, error);
     return {
-      content: [
-        {
-          type: 'text',
-          text: `错误: ${error.message}`
-        }
-      ]
+      content: [{
+        type: 'text',
+        text: `错误: ${error.message}`
+      }]
     };
   }
 });
 
-// Handle resource listing
-server.setRequestHandler(ListResourcesRequestSchema, async () => {
-  return {
-    resources: [
-      {
-        uri: 'lessons://recent',
-        name: '最近的经验记录',
-        description: '查看最近添加的经验记录',
-        mimeType: 'text/plain'
-      },
-      {
-        uri: 'lessons://tags',
-        name: '所有标签',
-        description: '查看所有标签',
-        mimeType: 'text/plain'
-      }
-    ]
-  };
-});
-
-// Handle resource reading
-server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-  const { uri } = request.params;
-
-  try {
-    if (uri === 'lessons://recent') {
-      const lessons = storage.listRecent(10);
-
-      let result = '# 最近的经验记录\n\n';
-      lessons.forEach((lesson, index) => {
-        result += `## ${index + 1}. ${lesson.problem?.split('\n')[0] || '未命名'}\n`;
-        result += `- 路径: ${lesson.path}\n`;
-        result += `- 时间: ${lesson.timestamp || '-'}\n`;
-        result += `- 项目: ${lesson.project || '-'}\n\n`;
-      });
-
-      return {
-        contents: [
-          {
-            uri,
-            mimeType: 'text/plain',
-            text: result
-          }
-        ]
-      };
-    } else if (uri === 'lessons://tags') {
-      const tags = storage.getAllTags();
-
-      return {
-        contents: [
-          {
-            uri,
-            mimeType: 'text/plain',
-            text: `标签列表 (${tags.length}):\n${tags.join(', ')}`
-          }
-        ]
-      };
-    } else {
-      throw new Error(`Unknown resource: ${uri}`);
-    }
-  } catch (error) {
-    logger.error(`Error reading resource ${uri}:`, error);
-    throw error;
-  }
-});
-
-// Start the server
+// 启动服务器
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  logger.info('MCP Lessons Recorder server started');
-  console.error('MCP Lessons Recorder server started');
+  logger.info('MCP Lessons V3 (MemGraph client) server started');
+  console.error('MCP Lessons V3 (MemGraph client) server started');
 }
 
-// Handle shutdown gracefully
+// 优雅关闭
 process.on('SIGINT', () => {
   logger.info('Shutting down server...');
   process.exit(0);
@@ -503,7 +460,7 @@ process.on('SIGTERM', () => {
   process.exit(0);
 });
 
-// Run the server
+// 运行服务器
 main().catch((error) => {
   logger.error('Failed to start server:', error);
   console.error('Failed to start server:', error);

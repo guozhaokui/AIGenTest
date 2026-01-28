@@ -38,6 +38,37 @@ if STATIC_DIR.exists():
 # 全局变量
 indexer: Optional[KnowledgeIndexer] = None
 search_engine: Optional[ActivationSearch] = None
+_initialized = False
+
+
+async def ensure_initialized():
+    """确保服务已初始化（延迟初始化）"""
+    global indexer, search_engine, _initialized
+
+    if _initialized:
+        return
+
+    try:
+        print("Lazy initializing MemGraph...")
+
+        indexer = KnowledgeIndexer()
+        search_engine = ActivationSearch(indexer)
+
+        # 如果有记录目录，同步现有文档
+        if RECORDS_DIR.exists():
+            print(f"Syncing documents from {RECORDS_DIR}...")
+            await sync_existing_documents()
+
+        stats = indexer.get_stats()
+        print(f"MemGraph initialized: {stats['documents']} documents indexed")
+
+        _initialized = True
+
+    except Exception as e:
+        print(f"❌ Failed to initialize MemGraph: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
 
 
 # ============================================================================
@@ -75,22 +106,11 @@ class RecentRequest(BaseModel):
 # 启动和关闭事件
 # ============================================================================
 
-@app.on_event("startup")
-async def startup_event():
-    """启动时初始化索引"""
-    global indexer, search_engine
-
-    print("Initializing MemGraph...")
-
-    indexer = KnowledgeIndexer()
-    search_engine = ActivationSearch(indexer)
-
-    # 如果有记录目录，同步现有文档
-    if RECORDS_DIR.exists():
-        await sync_existing_documents()
-
-    stats = indexer.get_stats()
-    print(f"MemGraph initialized: {stats['documents']} documents indexed")
+# 注释掉 startup 事件，改用 lazy initialization
+# @app.on_event("startup")
+# async def startup_event():
+#     """启动时初始化索引"""
+#     pass
 
 
 @app.on_event("shutdown")
@@ -196,6 +216,7 @@ async def health():
 @app.get("/stats")
 async def get_stats():
     """获取统计信息"""
+    await ensure_initialized()
     stats = indexer.get_stats()
     return stats
 
@@ -203,17 +224,46 @@ async def get_stats():
 @app.post("/record")
 async def record_lesson(req: RecordLessonRequest):
     """记录新的经验教训"""
+    await ensure_initialized()
+
     import uuid
     from datetime import datetime
 
     # 生成文件路径
     now = datetime.now()
-    timestamp = now.strftime("%Y%m%d_%H%M%S")
-    slug = req.problem[:30].replace(' ', '-')
+    date_str = now.strftime("%Y/%m")  # 例如：2026/01
+    timestamp = now.strftime("%d_%H-%M-%S")  # 例如：28_12-21-49
+    slug = req.problem[:30].replace(' ', '-').replace('/', '-').replace('\\', '-')
     filename = f"{timestamp}_{slug}.md"
+    relative_path = f"{date_str}/{filename}"
+
+    # 创建目录
+    file_path = RECORDS_DIR / date_str
+    file_path.mkdir(parents=True, exist_ok=True)
+
+    # 写入Markdown文件
+    full_file_path = file_path / filename
+    markdown_content = f"""---
+role: {req.role}
+project: {req.project or ''}
+directory: {req.directory or ''}
+timestamp: {now.isoformat()}
+tags: [{', '.join(req.tags)}]
+---
+
+## 问题
+
+{req.problem}
+
+## 解决方法
+
+{req.solution}
+"""
+
+    full_file_path.write_text(markdown_content, encoding='utf-8')
 
     document = {
-        'path': filename,
+        'path': relative_path,
         'role': req.role,
         'project': req.project or '',
         'directory': req.directory or '',
@@ -228,13 +278,15 @@ async def record_lesson(req: RecordLessonRequest):
     return {
         "success": True,
         "doc_id": doc_id,
-        "path": filename
+        "path": relative_path,
+        "full_path": str(full_file_path)
     }
 
 
 @app.post("/search")
 async def search_lessons(req: SearchRequest):
     """搜索经验教训"""
+    await ensure_initialized()
     results = await search_engine.search(req.query, {
         'limit': req.limit,
         'min_score': req.min_score,
