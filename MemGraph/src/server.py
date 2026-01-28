@@ -13,6 +13,7 @@ from pathlib import Path
 from .config import SERVICE_PORT, SERVICE_HOST, RECORDS_DIR, BASE_DIR
 from .knowledge_indexer import KnowledgeIndexer
 from .activation_search import ActivationSearch
+from .query_logger import QueryLogger
 
 
 app = FastAPI(
@@ -38,6 +39,7 @@ if STATIC_DIR.exists():
 # 全局变量
 indexer: Optional[KnowledgeIndexer] = None
 search_engine: Optional[ActivationSearch] = None
+query_logger: QueryLogger = QueryLogger()
 _initialized = False
 
 
@@ -287,6 +289,10 @@ tags: [{', '.join(req.tags)}]
 async def search_lessons(req: SearchRequest):
     """搜索经验教训"""
     await ensure_initialized()
+
+    import time
+    start_time = time.time()
+
     results = await search_engine.search(req.query, {
         'limit': req.limit,
         'min_score': req.min_score,
@@ -294,6 +300,25 @@ async def search_lessons(req: SearchRequest):
         'filter_tags': req.filter_tags,
         'filter_project': req.filter_project
     })
+
+    search_time_ms = (time.time() - start_time) * 1000
+
+    # 记录查询日志
+    top_score = None
+    if results and len(results) > 0:
+        top_score = results[0].get('score', None)
+
+    query_logger.log_query(
+        query=req.query,
+        result_count=len(results),
+        search_time_ms=search_time_ms,
+        options={
+            'limit': req.limit,
+            'min_score': req.min_score,
+            'use_vector': req.use_vector
+        },
+        top_score=top_score
+    )
 
     return {
         "query": req.query,
@@ -337,6 +362,43 @@ async def list_tags():
         "count": len(tags),
         "tags": tags
     }
+
+
+# ============================================================================
+# 查询日志相关端点
+# ============================================================================
+
+@app.get("/queries/recent")
+async def get_recent_queries(limit: int = 100):
+    """获取最近的查询记录"""
+    queries = query_logger.get_recent_queries(limit)
+    return {
+        "count": len(queries),
+        "queries": queries
+    }
+
+
+@app.get("/queries/stats")
+async def get_query_stats():
+    """获取查询统计信息"""
+    return query_logger.get_stats()
+
+
+@app.get("/queries/export")
+async def export_queries():
+    """导出所有唯一查询（用于性能测试）"""
+    queries = query_logger.export_queries()
+    return {
+        "count": len(queries),
+        "queries": queries
+    }
+
+
+@app.post("/queries/clear")
+async def clear_query_log():
+    """清空查询日志"""
+    query_logger.clear_log()
+    return {"success": True, "message": "Query log cleared"}
 
 
 @app.post("/rebuild")

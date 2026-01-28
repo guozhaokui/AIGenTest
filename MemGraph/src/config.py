@@ -17,6 +17,7 @@ LOGS_DIR.mkdir(exist_ok=True)
 FAISS_INDEX_PATH = DATA_DIR / "knowledge.faiss"
 METADATA_DB_PATH = DATA_DIR / "knowledge.db"
 RECORDS_DIR = ROOT_DIR / "records"
+QUERY_LOG_PATH = DATA_DIR / "query_log.jsonl"  # 查询日志
 
 # 嵌入服务配置
 # 直接访问 GPU 服务器的嵌入服务（不通过 Gateway）
