@@ -20,6 +20,8 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.5.0",
+    "better-sqlite3": "^12.6.2",
+    "nodejieba": "^3.5.2",
     "winston": "^3.11.0"
   },
   "devDependencies": {

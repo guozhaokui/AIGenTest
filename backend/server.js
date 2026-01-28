@@ -112,6 +112,39 @@ function startKnowledge() {
   });
 }
 
+// ==================== 启动 MemGraph 知识图谱服务 ====================
+let memgraphProcess = null;
+
+function startMemGraph() {
+  const memgraphPath = path.resolve(__dirname, '../MemGraph');
+
+  console.log('[memgraph] Starting MemGraph service...');
+
+  // 启动 Python FastAPI 服务
+  memgraphProcess = spawn('python', ['start.py'], {
+    cwd: memgraphPath,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env }
+  });
+
+  memgraphProcess.stdout.on('data', (data) => {
+    console.log(`[memgraph] ${data.toString().trim()}`);
+  });
+
+  memgraphProcess.stderr.on('data', (data) => {
+    console.log(`[memgraph] ${data.toString().trim()}`);
+  });
+
+  memgraphProcess.on('close', (code) => {
+    console.log(`[memgraph] Process exited with code ${code}`);
+    memgraphProcess = null;
+  });
+
+  memgraphProcess.on('error', (err) => {
+    console.error('[memgraph] Failed to start:', err.message);
+  });
+}
+
 // 优雅关闭
 function cleanup() {
   if (imagemgrProcess) {
@@ -125,6 +158,10 @@ function cleanup() {
   if (knowledgeProcess) {
     console.log('[knowledge] Stopping Knowledge Query service...');
     knowledgeProcess.kill('SIGTERM');
+  }
+  if (memgraphProcess) {
+    console.log('[memgraph] Stopping MemGraph service...');
+    memgraphProcess.kill('SIGTERM');
   }
 }
 
@@ -141,7 +178,8 @@ process.on('SIGTERM', () => {
 // 启动 Python 服务
 startImagemgr();
 startKnowledge();
-// startGateway();  // 暂不启动，backend 直接访问各服务，不需要额外网关层
+startMemGraph();
+// startGateway();  // MemGraph 直接访问 GPU 服务器，不需要 Gateway 中转
 
 // ==================== 启动 Express 服务 ====================
 const PORT = process.env.PORT || 3000;

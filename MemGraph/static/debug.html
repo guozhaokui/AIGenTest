@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemGraph 底层调试面板</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .section {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            color: #4ec9b0;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #3e3e42;
+            padding-bottom: 10px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #1177bb;
+        }
+
+        .btn-danger {
+            background: #d73a49;
+        }
+
+        .btn-danger:hover {
+            background: #cb2431;
+        }
+
+        .btn-success {
+            background: #28a745;
+        }
+
+        .btn-success:hover {
+            background: #22863a;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: #2d2d30;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #4ec9b0;
+        }
+
+        .stat-label {
+            color: #858585;
+            font-size: 12px;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #4ec9b0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            background: #2d2d30;
+            color: #4ec9b0;
+            padding: 10px;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #3e3e42;
+        }
+
+        tr:hover {
+            background: #2d2d30;
+        }
+
+        .doc-id {
+            color: #ce9178;
+            font-weight: bold;
+        }
+
+        .vector-preview {
+            font-size: 11px;
+            color: #858585;
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .vector-full {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #1e1e1e;
+            border-radius: 4px;
+            font-size: 11px;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .show-vector {
+            color: #4ec9b0;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #858585;
+        }
+
+        .spinner {
+            border: 4px solid #3e3e42;
+            border-top: 4px solid #4ec9b0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.error {
+            background: #3a1f1f;
+            border-left: 3px solid #d73a49;
+            color: #f97583;
+        }
+
+        .message.success {
+            background: #1f3a1f;
+            border-left: 3px solid #28a745;
+            color: #85e89d;
+        }
+
+        .message.warning {
+            background: #3a321f;
+            border-left: 3px solid #ffc107;
+            color: #ffd454;
+        }
+
+        .ngram-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            background: #264f78;
+            color: #9cdcfe;
+        }
+
+        .section-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 11px;
+            background: #553a3a;
+            color: #ce9178;
+        }
+
+        .highlight {
+            background: #ffd454;
+            color: #1e1e1e;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .vector-stats {
+            background: #2d2d30;
+            padding: 10px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+        }
+
+        .vector-dimension {
+            color: #4ec9b0;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔬 MemGraph 底层调试面板</h1>
+            <p>检查向量索引、文档映射、FAISS 状态</p>
+        </div>
+
+        <div id="message" class="message"></div>
+
+        <!-- 系统状态 -->
+        <div class="section">
+            <h2>系统状态</h2>
+            <div class="stats-grid" id="systemStats">
+                <div class="stat-card">
+                    <div class="stat-label">文档数</div>
+                    <div class="stat-value" id="statDocs">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">FAISS向量数</div>
+                    <div class="stat-value" id="statVectors">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">N-gram总数</div>
+                    <div class="stat-value" id="statNgrams">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">唯一N-gram</div>
+                    <div class="stat-value" id="statUniqueNgrams">-</div>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn" onclick="loadAllData()">刷新数据</button>
+                <button class="btn btn-success" onclick="testEmbedding()">测试嵌入服务</button>
+                <button class="btn btn-danger" onclick="rebuildIndex()">重建索引</button>
+            </div>
+        </div>
+
+        <!-- 向量索引详情 -->
+        <div class="section">
+            <h2>向量索引详情</h2>
+            <div id="vectorLoading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>加载中...</p>
+            </div>
+            <div id="vectorContent"></div>
+        </div>
+
+        <!-- 文档-向量映射 -->
+        <div class="section">
+            <h2>文档列表与向量映射</h2>
+            <div id="docLoading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>加载中...</p>
+            </div>
+            <div id="docContent"></div>
+        </div>
+
+        <!-- N-gram 分布 -->
+        <div class="section">
+            <h2>N-gram 分布统计</h2>
+            <div id="ngramLoading" class="loading" style="display: none;">
+                <div class="spinner"></div>
+                <p>加载中...</p>
+            </div>
+            <div id="ngramContent"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8800';
+
+        function showMessage(text, type = 'success') {
+            const msgEl = document.getElementById('message');
+            msgEl.textContent = text;
+            msgEl.className = `message ${type} show`;
+            setTimeout(() => {
+                msgEl.className = 'message';
+            }, 5000);
+        }
+
+        async function loadStats() {
+            try {
+                const response = await fetch(`${API_BASE}/stats`);
+                const data = await response.json();
+
+                document.getElementById('statDocs').textContent = data.documents;
+                document.getElementById('statVectors').textContent = data.faiss_vectors;
+                document.getElementById('statNgrams').textContent = data.ngrams;
+                document.getElementById('statUniqueNgrams').textContent = data.unique_ngrams;
+
+                // 检查异常
+                if (data.documents > 0 && data.faiss_vectors === 0) {
+                    showMessage('⚠️ 警告: 有文档但没有向量！可能索引构建失败。', 'warning');
+                } else if (data.documents !== data.faiss_vectors) {
+                    showMessage(`⚠️ 警告: 文档数(${data.documents})和向量数(${data.faiss_vectors})不一致！`, 'warning');
+                }
+            } catch (error) {
+                showMessage(`❌ 加载统计失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function loadVectorIndex() {
+            const loadingEl = document.getElementById('vectorLoading');
+            const contentEl = document.getElementById('vectorContent');
+
+            loadingEl.style.display = 'block';
+            contentEl.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/debug/vectors`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+
+                loadingEl.style.display = 'none';
+
+                if (data.vectors.length === 0) {
+                    contentEl.innerHTML = '<p style="color: #858585;">没有向量数据</p>';
+                    return;
+                }
+
+                let html = `
+                    <div class="vector-stats">
+                        <p>向量总数: <span class="vector-dimension">${data.total_vectors}</span></p>
+                        <p>向量维度: <span class="vector-dimension">${data.dimension}</span></p>
+                        <p>索引类型: <span class="vector-dimension">${data.index_type}</span></p>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>FAISS索引</th>
+                                    <th>文档ID</th>
+                                    <th>文档路径</th>
+                                    <th>向量范数</th>
+                                    <th>向量预览</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                data.vectors.forEach((vec, idx) => {
+                    const vectorId = `vector_${idx}`;
+                    html += `
+                        <tr>
+                            <td><span class="doc-id">${vec.faiss_index}</span></td>
+                            <td><span class="doc-id">${vec.doc_id}</span></td>
+                            <td>${vec.path || '-'}</td>
+                            <td>${vec.norm.toFixed(4)}</td>
+                            <td class="vector-preview">[${vec.preview.join(', ')}...]</td>
+                            <td>
+                                <span class="show-vector" onclick="toggleVector('${vectorId}')">显示完整向量</span>
+                                <div id="${vectorId}" class="vector-full">${vec.full_vector}</div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                contentEl.innerHTML = html;
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                contentEl.innerHTML = `<p style="color: #f97583;">❌ 加载失败: ${error.message}</p>`;
+            }
+        }
+
+        async function loadDocuments() {
+            const loadingEl = document.getElementById('docLoading');
+            const contentEl = document.getElementById('docContent');
+
+            loadingEl.style.display = 'block';
+            contentEl.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/debug/documents`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+
+                loadingEl.style.display = 'none';
+
+                if (data.documents.length === 0) {
+                    contentEl.innerHTML = '<p style="color: #858585;">没有文档数据</p>';
+                    return;
+                }
+
+                let html = `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>文档ID</th>
+                                    <th>FAISS索引</th>
+                                    <th>路径</th>
+                                    <th>角色</th>
+                                    <th>项目</th>
+                                    <th>时间</th>
+                                    <th>标签</th>
+                                    <th>问题预览</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                data.documents.forEach(doc => {
+                    const hasFaiss = doc.has_faiss_vector ? '✅' : '❌';
+                    const faissIndex = doc.faiss_index !== null ? doc.faiss_index : '-';
+                    const tags = doc.tags.length > 0 ? doc.tags.join(', ') : '-';
+
+                    html += `
+                        <tr>
+                            <td><span class="doc-id">${doc.doc_id}</span></td>
+                            <td>${hasFaiss} ${faissIndex}</td>
+                            <td>${doc.path}</td>
+                            <td>${doc.role}</td>
+                            <td>${doc.project || '-'}</td>
+                            <td>${doc.timestamp}</td>
+                            <td>${tags}</td>
+                            <td>${doc.problem_preview}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                contentEl.innerHTML = html;
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                contentEl.innerHTML = `<p style="color: #f97583;">❌ 加载失败: ${error.message}</p>`;
+            }
+        }
+
+        async function loadNgramStats() {
+            const loadingEl = document.getElementById('ngramLoading');
+            const contentEl = document.getElementById('ngramContent');
+
+            loadingEl.style.display = 'block';
+            contentEl.innerHTML = '';
+
+            try {
+                const response = await fetch(`${API_BASE}/debug/ngrams`);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                const data = await response.json();
+
+                loadingEl.style.display = 'none';
+
+                let html = `
+                    <div class="stats-grid">
+                `;
+
+                for (const [type, count] of Object.entries(data.by_type)) {
+                    html += `
+                        <div class="stat-card">
+                            <div class="stat-label">${type}</div>
+                            <div class="stat-value">${count}</div>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    </div>
+                    <h3 style="color: #4ec9b0; margin-top: 20px; margin-bottom: 10px;">Top 50 N-gram（按文档数排序）</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>内容</th>
+                                    <th>类型</th>
+                                    <th>出现在文档数</th>
+                                    <th>总出现次数</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                data.top_ngrams.forEach(ngram => {
+                    html += `
+                        <tr>
+                            <td><span class="highlight">${ngram.content}</span></td>
+                            <td><span class="ngram-type">${ngram.gram_type}</span></td>
+                            <td>${ngram.doc_count}</td>
+                            <td>${ngram.total_count}</td>
+                        </tr>
+                    `;
+                });
+
+                html += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+
+                contentEl.innerHTML = html;
+            } catch (error) {
+                loadingEl.style.display = 'none';
+                contentEl.innerHTML = `<p style="color: #f97583;">❌ 加载失败: ${error.message}</p>`;
+            }
+        }
+
+        function toggleVector(id) {
+            const el = document.getElementById(id);
+            el.style.display = el.style.display === 'block' ? 'none' : 'block';
+        }
+
+        async function loadAllData() {
+            await loadStats();
+            await loadVectorIndex();
+            await loadDocuments();
+            await loadNgramStats();
+        }
+
+        async function testEmbedding() {
+            try {
+                const response = await fetch(`${API_BASE}/debug/test-embedding`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showMessage(`✅ 嵌入服务正常！维度: ${data.dimension}, 耗时: ${data.time_ms}ms`, 'success');
+                } else {
+                    showMessage(`❌ 嵌入服务失败: ${data.error}`, 'error');
+                }
+            } catch (error) {
+                showMessage(`❌ 测试失败: ${error.message}`, 'error');
+            }
+        }
+
+        async function rebuildIndex() {
+            if (!confirm('确定要重建索引吗？这将清空所有数据并重新索引。')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/rebuild`, {
+                    method: 'POST'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                showMessage(`✅ 索引重建完成！文档数: ${data.stats.documents}`, 'success');
+
+                // 重新加载数据
+                await loadAllData();
+            } catch (error) {
+                showMessage(`❌ 重建失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 页面加载时自动加载数据
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAllData();
+        });
+    </script>
+</body>
+</html>

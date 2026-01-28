@@ -8,7 +8,7 @@ import {
   ListToolsRequestSchema,
   ReadResourceRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import LessonsStorage from './storage.js';
+import StorageV2 from './storage-v2.js';
 import winston from 'winston';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -34,8 +34,8 @@ const logger = winston.createLogger({
   ]
 });
 
-// Initialize storage
-const storage = new LessonsStorage();
+// Initialize storage with new activation search engine
+const storage = new StorageV2();
 
 // Create MCP server
 const server = new Server(
@@ -155,6 +155,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ['tag']
         }
+      },
+      {
+        name: 'get_stats',
+        description: '获取知识库统计信息',
+        inputSchema: {
+          type: 'object',
+          properties: {}
+        }
+      },
+      {
+        name: 'rebuild_index',
+        description: '重建知识库索引（从Markdown文件同步）',
+        inputSchema: {
+          type: 'object',
+          properties: {}
+        }
       }
     ]
   };
@@ -180,7 +196,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
 
       case 'search_lessons': {
-        const lessons = storage.searchLessons(args.query);
+        const lessons = storage.searchLessons(args.query, {
+          limit: args.limit || 10,
+          minScore: args.minScore || 0.1
+        });
+
         if (lessons.length === 0) {
           return {
             content: [
@@ -192,13 +212,26 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
 
-        let result = `找到 ${lessons.length} 条相关经验：\n\n`;
+        let result = `找到 ${lessons.length} 条相关经验（使用激活式搜索）：\n\n`;
         lessons.forEach((lesson, index) => {
-          result += `${index + 1}. [${lesson.path}]\n`;
+          result += `${index + 1}. [${lesson.path}] (得分: ${lesson.totalScore.toFixed(2)})\n`;
           result += `   角色: ${lesson.role || 'AI'}\n`;
           result += `   项目: ${lesson.project || '-'}\n`;
-          result += `   问题: ${lesson.problem?.split('\n')[0] || '-'}\n`;
-          result += `   时间: ${lesson.timestamp || '-'}\n\n`;
+          if (lesson.tags && lesson.tags.length > 0) {
+            result += `   标签: ${lesson.tags.join(', ')}\n`;
+          }
+          result += `   问题: ${lesson.problemPreview || '-'}\n`;
+          result += `   时间: ${lesson.timestamp || '-'}\n`;
+
+          // 显示匹配详情
+          if (lesson.matchedNgrams) {
+            result += `   匹配: ${lesson.matchedNgrams} 个片段`;
+            if (lesson.vectorSimilarity !== undefined) {
+              result += `, 向量相似度: ${lesson.vectorSimilarity.toFixed(3)}`;
+            }
+            result += '\n';
+          }
+          result += '\n';
         });
 
         return {
@@ -315,9 +348,49 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         let result = `标签 "${args.tag}" 的经验记录 (${lessons.length})：\n\n`;
         lessons.forEach((lesson, index) => {
           result += `${index + 1}. [${lesson.path}]\n`;
-          result += `   问题: ${lesson.problem?.split('\n')[0] || '-'}\n`;
+          result += `   问题: ${lesson.problemPreview || '-'}\n`;
           result += `   时间: ${lesson.timestamp || '-'}\n\n`;
         });
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result
+            }
+          ]
+        };
+      }
+
+      case 'get_stats': {
+        const stats = storage.getStats();
+
+        let result = '# 知识库统计信息\n\n';
+        result += `- 文档数量: ${stats.documents}\n`;
+        result += `- N-gram总数: ${stats.ngrams}\n`;
+        result += `- 唯一N-gram: ${stats.uniqueNgrams}\n`;
+        result += `- 词汇表大小: ${stats.vocabularySize}\n`;
+        result += `- IDF得分数: ${stats.idfScoresCount}\n`;
+
+        return {
+          content: [
+            {
+              type: 'text',
+              text: result
+            }
+          ]
+        };
+      }
+
+      case 'rebuild_index': {
+        logger.info('Rebuilding index...');
+        const stats = storage.rebuildIndex();
+
+        let result = '# 索引重建完成\n\n';
+        result += `- 文档数量: ${stats.documents}\n`;
+        result += `- N-gram总数: ${stats.ngrams}\n`;
+        result += `- 唯一N-gram: ${stats.uniqueNgrams}\n`;
+        result += `- 词汇表大小: ${stats.vocabularySize}\n`;
 
         return {
           content: [

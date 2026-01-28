@@ -18,7 +18,8 @@
       "WebFetch(domain:medium.com)",
       "WebFetch(domain:news.qq.com)",
       "WebFetch(domain:introl.com)",
-      "WebFetch(domain:arxiv.org)"
+      "WebFetch(domain:arxiv.org)",
+      "WebFetch(domain:github.com)"
     ]
   }
 }
