@@ -4,7 +4,7 @@ N-gram处理器
 """
 import jieba
 import re
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Tuple
 from .config import STOP_WORDS, NGRAM_CONFIG
 
 
@@ -14,6 +14,71 @@ class NgramProcessor:
     def __init__(self):
         self.stop_words: Set[str] = STOP_WORDS
         self.min_length = 2
+
+    def _parse_markdown_sections(self, text: str) -> List[Dict]:
+        """
+        解析 Markdown 文档，按标题层级拆分成章节
+
+        Returns:
+            [
+                {
+                    'title': '标题文本',
+                    'level': 2,  # 标题层级 (1=# 2=## 3=###)
+                    'content': '标题下的内容',
+                    'full_section': '标题 + 内容'
+                },
+                ...
+            ]
+        """
+        sections = []
+
+        # 按标题分割（匹配 # ## ### 等）
+        # 使用正则表达式找到所有标题
+        lines = text.split('\n')
+        current_section = None
+
+        for line in lines:
+            # 检查是否是标题行
+            heading_match = re.match(r'^(#{1,6})\s+(.+?)$', line)
+
+            if heading_match:
+                # 保存上一个章节
+                if current_section:
+                    sections.append(current_section)
+
+                # 开始新章节
+                level = len(heading_match.group(1))  # # 的数量
+                title = heading_match.group(2).strip()
+
+                current_section = {
+                    'title': title,
+                    'level': level,
+                    'content': '',
+                    'full_section': line + '\n'
+                }
+            else:
+                # 非标题行，添加到当前章节的内容
+                if current_section:
+                    current_section['content'] += line + '\n'
+                    current_section['full_section'] += line + '\n'
+                else:
+                    # 文档开头的非标题内容，作为一个特殊章节
+                    if not sections or sections[-1].get('title') != '__preamble__':
+                        sections.append({
+                            'title': '__preamble__',
+                            'level': 0,
+                            'content': line + '\n',
+                            'full_section': line + '\n'
+                        })
+                    else:
+                        sections[-1]['content'] += line + '\n'
+                        sections[-1]['full_section'] += line + '\n'
+
+        # 保存最后一个章节
+        if current_section:
+            sections.append(current_section)
+
+        return sections
 
     def process_document(self, document: Dict) -> List[Dict]:
         """
@@ -42,19 +107,67 @@ class NgramProcessor:
                 gram_type="metadata"
             ))
 
-        # 2. 处理问题部分
+        # 2. 处理问题部分（按 Markdown 章节拆分）
         if document.get("problem"):
-            ngrams.extend(self._extract_all_ngrams(
-                document["problem"],
-                section="problem"
-            ))
+            problem_sections = self._parse_markdown_sections(document["problem"])
+            if problem_sections:
+                # 如果有章节结构，为每个章节生成 N-gram
+                for section in problem_sections:
+                    if section['title'] == '__preamble__':
+                        # 前言部分
+                        ngrams.extend(self._extract_all_ngrams(
+                            section['content'],
+                            section="problem"
+                        ))
+                    else:
+                        # 标题本身作为重要的 N-gram
+                        ngrams.extend(self._process_text(
+                            section['title'],
+                            section="problem",
+                            gram_type="metadata"  # 标题使用 metadata 权重
+                        ))
+                        # 标题下的内容
+                        ngrams.extend(self._extract_all_ngrams(
+                            section['content'],
+                            section="problem"
+                        ))
+            else:
+                # 没有章节结构，按原来的方式处理
+                ngrams.extend(self._extract_all_ngrams(
+                    document["problem"],
+                    section="problem"
+                ))
 
-        # 3. 处理解决方案部分
+        # 3. 处理解决方案部分（按 Markdown 章节拆分）
         if document.get("solution"):
-            ngrams.extend(self._extract_all_ngrams(
-                document["solution"],
-                section="solution"
-            ))
+            solution_sections = self._parse_markdown_sections(document["solution"])
+            if solution_sections:
+                # 如果有章节结构，为每个章节生成 N-gram
+                for section in solution_sections:
+                    if section['title'] == '__preamble__':
+                        # 前言部分
+                        ngrams.extend(self._extract_all_ngrams(
+                            section['content'],
+                            section="solution"
+                        ))
+                    else:
+                        # 标题本身作为重要的 N-gram
+                        ngrams.extend(self._process_text(
+                            section['title'],
+                            section="solution",
+                            gram_type="metadata"  # 标题使用 metadata 权重
+                        ))
+                        # 标题下的内容
+                        ngrams.extend(self._extract_all_ngrams(
+                            section['content'],
+                            section="solution"
+                        ))
+            else:
+                # 没有章节结构，按原来的方式处理
+                ngrams.extend(self._extract_all_ngrams(
+                    document["solution"],
+                    section="solution"
+                ))
 
         return ngrams
 
@@ -157,8 +270,10 @@ class NgramProcessor:
         ngrams = []
         for i in range(len(text) - n + 1):
             gram = text[i:i + n]
-            # 过滤纯标点符号
-            if re.search(r'[\u4e00-\u9fa5a-zA-Z0-9]', gram):
+            # 过滤规则：
+            # 1. 必须包含至少一个汉字、字母或数字
+            # 2. 必须包含至少一个汉字（避免纯英文/数字的无意义拆分）
+            if re.search(r'[\u4e00-\u9fa5]', gram):  # 必须有汉字
                 ngrams.append({
                     "content": gram,
                     "gram_type": gram_type,
@@ -194,12 +309,13 @@ class NgramProcessor:
                 for i in range(len(filtered_words) - n + 1):
                     ngrams.add(' '.join(filtered_words[i:i + n]))
 
-        # 字符n-gram
+        # 字符n-gram (仅中文，避免纯英文数字的无意义拆分)
         clean_text = re.sub(r'\s+', '', query_text)
         for n in [2, 3]:
             for i in range(len(clean_text) - n + 1):
                 gram = clean_text[i:i + n]
-                if re.search(r'[\u4e00-\u9fa5a-zA-Z0-9]', gram):
+                # 必须包含至少一个汉字
+                if re.search(r'[\u4e00-\u9fa5]', gram):
                     ngrams.add(gram)
 
         return [g for g in ngrams if len(g) >= self.min_length]

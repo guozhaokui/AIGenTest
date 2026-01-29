@@ -40,7 +40,7 @@ NGRAM_CONFIG = {
 
 # 评分权重
 SCORE_WEIGHTS = {
-    # N-gram类型权重
+    # N-gram类型权重（用于激活得分计算）
     "metadata": 5.0,
     "sentence": 3.0,
     "word_4gram": 2.5,
@@ -54,8 +54,9 @@ SCORE_WEIGHTS = {
     "section_problem": 2.0,
     "section_solution": 1.5,
 
-    # 向量相似度权重
-    "vector_similarity": 3.0,
+    # 向量相似度权重（已弃用，实际权重在 activation_search.py 中硬编码）
+    # 文档级向量: 10.0, N-gram级向量: 5.0, N-gram激活: 0.3
+    "vector_similarity": 3.0,  # 保留以避免代码兼容性问题
 }
 
 # 停用词

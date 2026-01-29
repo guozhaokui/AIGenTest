@@ -863,10 +863,12 @@
                 data.results.forEach((result, idx) => {
                     const resultId = `full_result_${idx}`;
 
-                    // N-gram 统计
+                    // N-gram 去重统计
+                    const uniqueNgrams = new Set();
                     const ngramTypes = {};
                     if (result.match_details) {
                         result.match_details.forEach(detail => {
+                            uniqueNgrams.add(detail.content);
                             ngramTypes[detail.type] = (ngramTypes[detail.type] || 0) + 1;
                         });
                     }
@@ -874,6 +876,17 @@
                     const ngramSummary = Object.entries(ngramTypes)
                         .map(([type, count]) => `${type}(${count})`)
                         .join(', ');
+
+                    // 计算得分分解
+                    const activationScore = result.activation_score || 0;
+                    const vectorSim = result.vector_similarity || 0;
+                    const chunkMaxSim = result.chunk_max_similarity || 0;
+                    const ngramVectorSim = result.ngram_vector_similarity || 0;
+
+                    const activationContribution = activationScore * 0.3;
+                    const docVectorContribution = vectorSim * 8.0;
+                    const chunkVectorContribution = chunkMaxSim * 6.0;
+                    const ngramVectorContribution = ngramVectorSim * 5.0;
 
                     html += `
                         <div style="border: 2px solid #3e3e42; border-radius: 8px; padding: 15px; margin-bottom: 15px; background: #252526;">
@@ -883,23 +896,33 @@
                                 </div>
                                 <div style="text-align: right;">
                                     <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 5px 15px; border-radius: 20px; font-weight: bold; font-size: 16px;">
-                                        ${result.total_score.toFixed(2)}
+                                        总分: ${result.total_score.toFixed(2)}
                                     </span>
                                 </div>
                             </div>
 
-                            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; padding: 10px; background: #2d2d30; border-radius: 4px;">
+                            <!-- 得分详细分解 -->
+                            <div style="background: #2d2d30; padding: 12px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid #4ec9b0;">
+                                <div style="color: #4ec9b0; font-weight: bold; margin-bottom: 8px;">📊 得分计算公式</div>
+                                <div style="font-family: 'Consolas', monospace; font-size: 12px; color: #d4d4d4; line-height: 1.8;">
+                                    <div>激活得分: <span style="color: #ce9178;">${activationScore.toFixed(2)}</span> × 0.3 = <span style="color: #4ec9b0; font-weight: bold;">${activationContribution.toFixed(2)}</span></div>
+                                    <div>整篇文档向量: <span style="color: #ce9178;">${vectorSim.toFixed(4)}</span> × 8.0 = <span style="color: #4ec9b0; font-weight: bold;">${docVectorContribution.toFixed(2)}</span></div>
+                                    ${chunkMaxSim > 0 ? `<div>最佳块向量: <span style="color: #ce9178;">${chunkMaxSim.toFixed(4)}</span> × 6.0 = <span style="color: #ffd454; font-weight: bold;">${chunkVectorContribution.toFixed(2)}</span> ⭐</div>` : '<div style="color: #858585;">块向量: 无匹配</div>'}
+                                    ${ngramVectorSim > 0 ? `<div>N-gram向量: <span style="color: #ce9178;">${ngramVectorSim.toFixed(4)}</span> × 5.0 = <span style="color: #4ec9b0; font-weight: bold;">${ngramVectorContribution.toFixed(2)}</span></div>` : '<div style="color: #858585;">N-gram向量: 无匹配</div>'}
+                                    <div style="border-top: 1px solid #3e3e42; margin-top: 5px; padding-top: 5px;">
+                                        总分 = <span style="color: #ffd454; font-weight: bold;">${result.total_score.toFixed(2)}</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px; padding: 10px; background: #2d2d30; border-radius: 4px;">
                                 <div>
-                                    <div style="color: #858585; font-size: 11px;">激活得分</div>
-                                    <div style="color: #4ec9b0; font-weight: bold;">${result.activation_score ? result.activation_score.toFixed(2) : '-'}</div>
+                                    <div style="color: #858585; font-size: 11px;">唯一匹配片段</div>
+                                    <div style="color: #4ec9b0; font-weight: bold;">${uniqueNgrams.size}</div>
                                 </div>
                                 <div>
-                                    <div style="color: #858585; font-size: 11px;">向量相似度</div>
-                                    <div style="color: #4ec9b0; font-weight: bold;">${result.vector_similarity !== undefined ? result.vector_similarity.toFixed(4) : '-'}</div>
-                                </div>
-                                <div>
-                                    <div style="color: #858585; font-size: 11px;">匹配片段</div>
-                                    <div style="color: #4ec9b0; font-weight: bold;">${result.matched_ngrams || 0}</div>
+                                    <div style="color: #858585; font-size: 11px;">总匹配次数</div>
+                                    <div style="color: #dcdcaa; font-weight: bold;">${result.match_details ? result.match_details.length : 0}</div>
                                 </div>
                                 <div>
                                     <div style="color: #858585; font-size: 11px;">N-gram类型</div>
@@ -907,38 +930,187 @@
                                 </div>
                             </div>
 
-                            <div style="margin-bottom: 10px;">
+                            <div style="margin-bottom: 10px; display: flex; gap: 10px; flex-wrap: wrap;">
                                 <button class="btn" style="width: auto; padding: 8px 20px;" onclick="toggleNgramDetails('${resultId}')">
-                                    显示/隐藏 N-gram 匹配详情 (${result.matched_ngrams || 0} 条)
+                                    显示/隐藏 激活匹配 (${result.matched_ngrams || 0} 条)
+                                </button>
+                                <button class="btn" style="width: auto; padding: 8px 20px; background: #ffd454; color: #1e1e1e;" onclick="toggleNgramDetails('${resultId}_chunks')">
+                                    显示/隐藏 多粒度块匹配 (${result.chunk_matches ? result.chunk_matches.length : 0} 条) ⭐
+                                </button>
+                                <button class="btn" style="width: auto; padding: 8px 20px; background: #764ba2;" onclick="toggleNgramDetails('${resultId}_vector')">
+                                    显示/隐藏 N-gram向量 (${result.ngram_vector_matches ? result.ngram_vector_matches.length : 0} 条)
                                 </button>
                             </div>
 
-                            <div id="${resultId}" style="display: none; max-height: 400px; overflow-y: auto; background: #1e1e1e; padding: 15px; border-radius: 4px;">
-                                <strong style="color: #ce9178;">🔍 N-gram 匹配详情</strong>
+                            <!-- 文档多粒度块匹配详情 -->
+                            <div id="${resultId}_chunks" style="display: none; max-height: 500px; overflow-y: auto; background: #1e1e1e; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+                                <strong style="color: #ffd454;">🎯 文档多粒度块匹配（段落+句子）⭐</strong>
+                                <div style="color: #858585; font-size: 11px; margin: 5px 0;">文档被分割成段落和句子，查询向量与每个块比较，显示相似度最高的匹配</div>
+                    `;
+
+                    if (result.chunk_matches && result.chunk_matches.length > 0) {
+                        html += `
+                                <div style="margin-top: 15px;">
+                        `;
+                        result.chunk_matches.forEach((match, idx) => {
+                            const granularityLabel = match.granularity === 'paragraph' ? '📄 段落' : '📝 句子';
+                            const granularityColor = match.granularity === 'paragraph' ? '#4ec9b0' : '#dcdcaa';
+                            const similarityPercent = (match.similarity * 100).toFixed(1);
+
+                            html += `
+                                <div style="background: #2d2d30; padding: 12px; border-radius: 4px; margin-bottom: 10px; border-left: 3px solid ${granularityColor};">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                        <span style="color: ${granularityColor}; font-weight: bold;">${idx + 1}. ${granularityLabel}</span>
+                                        <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: bold;">
+                                            相似度: ${match.similarity.toFixed(4)} (${similarityPercent}%)
+                                        </span>
+                                    </div>
+                                    <div style="color: #d4d4d4; font-size: 12px; line-height: 1.6; background: #1e1e1e; padding: 10px; border-radius: 4px; font-family: 'Consolas', monospace; white-space: pre-wrap; word-break: break-word;">
+                                        ${match.content}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        html += `
+                                </div>
+                        `;
+                    } else {
+                        html += `
+                                <div style="padding: 20px; text-align: center; color: #858585;">
+                                    无多粒度块匹配
+                                </div>
+                        `;
+                    }
+
+                    html += `
+                            </div>
+
+                            <!-- N-gram 向量匹配详情 -->
+                            <div id="${resultId}_vector" style="display: none; max-height: 400px; overflow-y: auto; background: #1e1e1e; padding: 15px; border-radius: 4px; margin-bottom: 15px;">
+                                <strong style="color: #ce9178;">🎯 N-gram 向量相似度匹配</strong>
+                                <div style="color: #858585; font-size: 11px; margin: 5px 0;">通过语义向量匹配的N-gram片段，包括 metadata, word_3gram, word_4gram, sentence</div>
+                    `;
+
+                    if (result.ngram_vector_matches && result.ngram_vector_matches.length > 0) {
+                        html += `
                                 <table style="width: 100%; margin-top: 10px; font-size: 12px;">
                                     <thead>
                                         <tr style="border-bottom: 1px solid #3e3e42;">
                                             <th style="text-align: left; padding: 5px; color: #4ec9b0;">#</th>
                                             <th style="text-align: left; padding: 5px; color: #4ec9b0;">内容</th>
                                             <th style="text-align: left; padding: 5px; color: #4ec9b0;">类型</th>
-                                            <th style="text-align: left; padding: 5px; color: #4ec9b0;">片段大小</th>
+                                            <th style="text-align: right; padding: 5px; color: #4ec9b0;">向量相似度</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                        `;
+
+                        result.ngram_vector_matches.forEach((match, matchIdx) => {
+                            // 相似度着色
+                            let simColor = '#4ec9b0';
+                            if (match.similarity < 0.3) {
+                                simColor = '#ce9178';
+                            } else if (match.similarity < 0.6) {
+                                simColor = '#dcdcaa';
+                            }
+
+                            // 根据类型显示不同样式
+                            let typeStyle = 'ngram-type';
+                            if (match.gram_type === 'sentence') {
+                                typeStyle = 'background: #553a55; color: #c586c0;';
+                            }
+
+                            html += `
+                                <tr style="border-bottom: 1px solid #3e3e42;">
+                                    <td style="padding: 5px; color: #858585;">${matchIdx + 1}</td>
+                                    <td style="padding: 5px; color: #d4d4d4; max-width: 500px;">
+                                        <code style="background: #2d2d30; padding: 2px 6px; border-radius: 3px; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${match.content}">
+                                            ${match.content}
+                                        </code>
+                                    </td>
+                                    <td style="padding: 5px;">
+                                        <span class="ngram-type" style="${match.gram_type === 'sentence' ? typeStyle : ''}">${match.gram_type}</span>
+                                    </td>
+                                    <td style="padding: 5px; text-align: right;">
+                                        <span style="color: ${simColor}; font-weight: bold; font-size: 14px;">${match.similarity.toFixed(4)}</span>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+
+                        html += `
+                                    </tbody>
+                                </table>
+                        `;
+                    } else {
+                        html += `
+                                <div style="padding: 20px; text-align: center; color: #858585;">
+                                    无 N-gram 向量匹配（可能是因为匹配的片段没有生成向量）
+                                </div>
+                        `;
+                    }
+
+                    html += `
+                            </div>
+
+                            <!-- 激活匹配详情 -->
+                            <div id="${resultId}" style="display: none; max-height: 400px; overflow-y: auto; background: #1e1e1e; padding: 15px; border-radius: 4px;">
+                                <strong style="color: #ce9178;">🔍 N-gram 激活匹配详情（去重显示）</strong>
+                                <div style="color: #858585; font-size: 11px; margin: 5px 0;">通过精确匹配的短片段，主要是 char_2/3gram, word_2/3/4gram</div>
+                                <table style="width: 100%; margin-top: 10px; font-size: 12px;">
+                                    <thead>
+                                        <tr style="border-bottom: 1px solid #3e3e42;">
+                                            <th style="text-align: left; padding: 5px; color: #4ec9b0;">#</th>
+                                            <th style="text-align: left; padding: 5px; color: #4ec9b0;">内容</th>
+                                            <th style="text-align: left; padding: 5px; color: #4ec9b0;">类型</th>
+                                            <th style="text-align: center; padding: 5px; color: #4ec9b0;">出现次数</th>
                                             <th style="text-align: left; padding: 5px; color: #4ec9b0;">章节</th>
-                                            <th style="text-align: right; padding: 5px; color: #4ec9b0;">得分</th>
+                                            <th style="text-align: right; padding: 5px; color: #4ec9b0;">平均得分</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                     `;
 
                     if (result.match_details && result.match_details.length > 0) {
-                        result.match_details.forEach((detail, detailIdx) => {
+                        // 去重并聚合 N-gram
+                        const ngramMap = {};
+                        result.match_details.forEach(detail => {
+                            if (!ngramMap[detail.content]) {
+                                ngramMap[detail.content] = {
+                                    content: detail.content,
+                                    type: detail.type,
+                                    sections: new Set([detail.section]),
+                                    scores: [detail.score],
+                                    count: 1
+                                };
+                            } else {
+                                ngramMap[detail.content].sections.add(detail.section);
+                                ngramMap[detail.content].scores.push(detail.score);
+                                ngramMap[detail.content].count++;
+                            }
+                        });
+
+                        // 转换为数组并排序（按平均得分降序）
+                        const uniqueNgrams = Object.values(ngramMap).sort((a, b) => {
+                            const avgA = a.scores.reduce((sum, s) => sum + s, 0) / a.scores.length;
+                            const avgB = b.scores.reduce((sum, s) => sum + s, 0) / b.scores.length;
+                            return avgB - avgA;
+                        });
+
+                        uniqueNgrams.forEach((ngram, detailIdx) => {
+                            const avgScore = ngram.scores.reduce((sum, s) => sum + s, 0) / ngram.scores.length;
+                            const sectionsStr = Array.from(ngram.sections).join(', ');
+
                             html += `
                                 <tr style="border-bottom: 1px solid #3e3e42;">
                                     <td style="padding: 5px; color: #858585;">${detailIdx + 1}</td>
-                                    <td style="padding: 5px; color: #d4d4d4;"><code style="background: #2d2d30; padding: 2px 6px; border-radius: 3px;">${detail.content}</code></td>
-                                    <td style="padding: 5px;"><span class="ngram-type">${detail.type}</span></td>
-                                    <td style="padding: 5px; color: #858585;">${detail.content.length}</td>
-                                    <td style="padding: 5px;"><span class="section-badge">${detail.section}</span></td>
-                                    <td style="padding: 5px; color: #dcdcaa; text-align: right; font-weight: bold;">${detail.score.toFixed(2)}</td>
+                                    <td style="padding: 5px; color: #d4d4d4;"><code style="background: #2d2d30; padding: 2px 6px; border-radius: 3px;">${ngram.content}</code></td>
+                                    <td style="padding: 5px;"><span class="ngram-type">${ngram.type}</span></td>
+                                    <td style="padding: 5px; text-align: center;">
+                                        <span style="background: #3e3e42; padding: 2px 8px; border-radius: 10px; color: #dcdcaa; font-weight: bold;">${ngram.count}x</span>
+                                    </td>
+                                    <td style="padding: 5px;"><span class="section-badge">${sectionsStr}</span></td>
+                                    <td style="padding: 5px; color: #dcdcaa; text-align: right; font-weight: bold;">${avgScore.toFixed(2)}</td>
                                 </tr>
                             `;
                         });

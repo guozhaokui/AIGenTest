@@ -679,23 +679,88 @@
 
         // 重建索引
         async function rebuildIndex() {
-            if (!confirm('确定要重建索引吗？这可能需要一些时间。')) {
+            if (!confirm('确定要重建索引吗？这会清空现有索引并重新扫描所有文档。')) {
                 return;
             }
 
             try {
+                // 启动重建
                 const response = await fetch(`${API_BASE}/rebuild`, {
                     method: 'POST'
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    alert(`✅ 索引重建完成！\n文档数: ${data.stats.documents}\nN-gram总数: ${data.stats.ngrams}\n唯一N-gram: ${data.stats.unique_ngrams}\nFAISS向量数: ${data.stats.faiss_vectors}`);
-                    loadStats();
-                } else {
-                    throw new Error(data.detail || '重建失败');
+                if (!response.ok) {
+                    throw new Error(data.error || data.detail || '重建失败');
                 }
+
+                // 显示进度对话框
+                const progressDiv = document.createElement('div');
+                progressDiv.id = 'rebuild-progress';
+                progressDiv.style.cssText = `
+                    position: fixed;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    background: white;
+                    padding: 30px;
+                    border-radius: 10px;
+                    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                    z-index: 10000;
+                    min-width: 400px;
+                    text-align: center;
+                `;
+
+                progressDiv.innerHTML = `
+                    <h3 style="margin-top: 0;">🔄 重建索引中...</h3>
+                    <div style="margin: 20px 0;">
+                        <div id="progress-message" style="margin-bottom: 10px; color: #666;">初始化...</div>
+                        <div style="background: #f0f0f0; height: 30px; border-radius: 15px; overflow: hidden;">
+                            <div id="progress-bar" style="background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <div id="progress-text" style="margin-top: 10px; font-size: 14px; color: #999;">0 / 0</div>
+                    </div>
+                    <div style="font-size: 12px; color: #999;">请勿关闭此页面</div>
+                `;
+
+                document.body.appendChild(progressDiv);
+
+                // 轮询进度
+                const progressInterval = setInterval(async () => {
+                    try {
+                        const progressResp = await fetch(`${API_BASE}/rebuild/progress`);
+                        const progress = await progressResp.json();
+
+                        const messageEl = document.getElementById('progress-message');
+                        const barEl = document.getElementById('progress-bar');
+                        const textEl = document.getElementById('progress-text');
+
+                        if (messageEl) messageEl.textContent = progress.message;
+
+                        if (progress.total > 0) {
+                            const percent = (progress.current / progress.total * 100).toFixed(1);
+                            if (barEl) barEl.style.width = percent + '%';
+                            if (textEl) textEl.textContent = `${progress.current} / ${progress.total} (${percent}%)`;
+                        }
+
+                        // 检查是否完成
+                        if (progress.phase === 'completed') {
+                            clearInterval(progressInterval);
+                            document.body.removeChild(progressDiv);
+                            alert(`✅ ${progress.message}`);
+                            loadStats();
+                        } else if (progress.phase === 'error') {
+                            clearInterval(progressInterval);
+                            document.body.removeChild(progressDiv);
+                            alert(`❌ ${progress.message}`);
+                        }
+
+                    } catch (error) {
+                        console.error('Failed to fetch progress:', error);
+                    }
+                }, 500); // 每500ms查询一次进度
+
             } catch (error) {
                 alert(`❌ 错误: ${error.message}`);
             }

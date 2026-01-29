@@ -20,6 +20,7 @@ tags: [claude-code, mcp, 配置, 命令行]
 ```bash
 claude mcp add --transport stdio <服务器名称> -- <命令> "<脚本路径>"
 ```
+注意，现在只能在cmd窗口执行，不能在gitbash执行
 
 ### 实际示例
 ```bash

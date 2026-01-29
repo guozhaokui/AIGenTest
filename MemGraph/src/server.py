@@ -42,6 +42,15 @@ search_engine: Optional[ActivationSearch] = None
 query_logger: QueryLogger = QueryLogger()
 _initialized = False
 
+# 重建进度跟踪
+rebuild_progress = {
+    "in_progress": False,
+    "current": 0,
+    "total": 0,
+    "message": "",
+    "phase": ""  # "scanning" or "indexing"
+}
+
 
 async def ensure_initialized():
     """确保服务已初始化（延迟初始化）"""
@@ -56,10 +65,11 @@ async def ensure_initialized():
         indexer = KnowledgeIndexer()
         search_engine = ActivationSearch(indexer)
 
+        # 启动时不自动同步，让用户手动点击"重建索引"
         # 如果有记录目录，同步现有文档
-        if RECORDS_DIR.exists():
-            print(f"Syncing documents from {RECORDS_DIR}...")
-            await sync_existing_documents()
+        # if RECORDS_DIR.exists():
+        #     print(f"Syncing documents from {RECORDS_DIR}...")
+        #     await sync_existing_documents()
 
         stats = indexer.get_stats()
         print(f"MemGraph initialized: {stats['documents']} documents indexed")
@@ -129,8 +139,12 @@ async def shutdown_event():
     print("MemGraph shutdown complete")
 
 
-async def sync_existing_documents():
-    """同步现有的Markdown文档"""
+async def sync_existing_documents(progress_callback=None):
+    """同步现有的Markdown文档
+
+    Args:
+        progress_callback: 可选的进度回调函数 (current, total, message)
+    """
     if not RECORDS_DIR.exists():
         return
 
@@ -139,8 +153,20 @@ async def sync_existing_documents():
 
     documents = []
 
-    for md_file in RECORDS_DIR.rglob("*.md"):
+    # 首先收集所有文件
+    all_files = list(RECORDS_DIR.rglob("*.md"))
+    total_files = len(all_files)
+
+    if progress_callback:
+        progress_callback(0, total_files, f"开始扫描 {total_files} 个文档...")
+
+    print(f"Found {total_files} markdown files to process")
+
+    for idx, md_file in enumerate(all_files, 1):
         try:
+            if progress_callback:
+                progress_callback(idx, total_files, f"解析: {md_file.name}")
+
             content = md_file.read_text(encoding='utf-8')
 
             # 解析frontmatter
@@ -163,12 +189,32 @@ async def sync_existing_documents():
                                 value = [t.strip() for t in value.strip('[]').split(',')]
                             metadata[key] = value
 
-                    # 解析问题和解决方案
+                    # 解析文档内容
+                    # 策略1: 如果有标准的 "## 问题" 和 "## 解决方案" 格式，优先使用
                     problem_match = re.search(r'## 问题\s*\n+(.*?)(?=\n##|\Z)', body, re.DOTALL)
                     solution_match = re.search(r'## 解决[方法办]*\s*\n+(.*)', body, re.DOTALL)
 
-                    metadata['problem'] = problem_match.group(1).strip() if problem_match else ''
-                    metadata['solution'] = solution_match.group(1).strip() if solution_match else ''
+                    if problem_match or solution_match:
+                        # 标准格式
+                        metadata['problem'] = problem_match.group(1).strip() if problem_match else ''
+                        metadata['solution'] = solution_match.group(1).strip() if solution_match else ''
+                    else:
+                        # 策略2: 通用文档格式
+                        # problem = 文件名（去掉日期和扩展名）或第一个一级标题
+                        # solution = 整个 body（包含所有标题和内容）
+
+                        # 尝试提取第一个一级标题作为 problem
+                        first_h1 = re.search(r'^#\s+(.+?)$', body, re.MULTILINE)
+                        if first_h1:
+                            metadata['problem'] = first_h1.group(1).strip()
+                        else:
+                            # 从文件名提取（去掉日期时间前缀）
+                            filename = md_file.stem
+                            problem_from_filename = re.sub(r'^\d{4}[/-]\d{2}[/-]\d{2}[_-]\d{2}[-:]\d{2}[-:]\d{2}[_-]?', '', filename)
+                            metadata['problem'] = problem_from_filename if problem_from_filename else filename
+
+                        # solution 包含整个文档内容
+                        metadata['solution'] = body.strip()
 
             relative_path = md_file.relative_to(RECORDS_DIR)
 
@@ -189,9 +235,42 @@ async def sync_existing_documents():
             print(f"Failed to parse {md_file}: {e}")
 
     if documents:
-        print(f"Syncing {len(documents)} existing documents...")
-        await indexer.index_documents(documents)
+        total_docs = len(documents)
+        print(f"Syncing {total_docs} existing documents...")
+
+        if progress_callback:
+            progress_callback(0, total_docs, f"开始索引 {total_docs} 个文档...")
+
+        # 批量索引但提供进度反馈
+        doc_ids = []
+        for idx, doc in enumerate(documents, 1):
+            try:
+                # 批量索引时不立即保存，也不生成 N-gram 向量（最后统一生成）
+                doc_id = await indexer.index_document(doc, save_index=False, generate_ngram_vectors=False)
+                doc_ids.append(doc_id)
+
+                if progress_callback:
+                    progress_callback(idx, total_docs, f"索引: {doc['path']}")
+
+                if idx % 5 == 0:
+                    print(f"  Indexed {idx}/{total_docs} documents...")
+            except Exception as e:
+                print(f"Failed to index {doc.get('path')}: {e}")
+
+        # 批量生成所有 N-gram 向量（去重后统一生成）
+        if progress_callback:
+            progress_callback(total_docs, total_docs, "批量生成 N-gram 向量...")
+
+        print("Batch generating N-gram vectors...")
+        await indexer.batch_generate_all_ngram_vectors()
+
+        # 最后统一保存FAISS索引
+        print("Saving FAISS index...")
+        indexer._save_index()
         print("Sync completed")
+
+        if progress_callback:
+            progress_callback(total_docs, total_docs, "索引完成！")
 
 
 # ============================================================================
@@ -330,6 +409,7 @@ async def search_lessons(req: SearchRequest):
 @app.post("/search/tag")
 async def search_by_tag(req: TagSearchRequest):
     """按标签搜索"""
+    await ensure_initialized()
     results = search_engine.search_by_tag(req.tag, req.limit)
 
     return {
@@ -342,6 +422,7 @@ async def search_by_tag(req: TagSearchRequest):
 @app.post("/recent")
 async def list_recent(req: RecentRequest):
     """获取最近的记录"""
+    await ensure_initialized()
     results = search_engine.get_recent(req.limit)
 
     return {
@@ -353,6 +434,7 @@ async def list_recent(req: RecentRequest):
 @app.get("/tags")
 async def list_tags():
     """列出所有标签"""
+    await ensure_initialized()
     cursor = indexer.conn.execute(
         'SELECT DISTINCT tag FROM document_tags ORDER BY tag'
     )
@@ -403,15 +485,73 @@ async def clear_query_log():
 
 @app.post("/rebuild")
 async def rebuild_index():
-    """重建索引"""
-    indexer.clear_all()
-    await sync_existing_documents()
-    stats = indexer.get_stats()
+    """重建索引（异步启动，返回立即）"""
+    global rebuild_progress
+
+    await ensure_initialized()
+
+    if rebuild_progress["in_progress"]:
+        return {
+            "success": False,
+            "error": "重建索引正在进行中，请稍后再试"
+        }
+
+    # 启动后台任务
+    import asyncio
+    asyncio.create_task(rebuild_index_task())
 
     return {
         "success": True,
-        "stats": stats
+        "message": "重建索引已启动，请查询 /rebuild/progress 获取进度"
     }
+
+
+async def rebuild_index_task():
+    """后台重建索引任务"""
+    global rebuild_progress
+
+    try:
+        rebuild_progress["in_progress"] = True
+        rebuild_progress["current"] = 0
+        rebuild_progress["total"] = 0
+        rebuild_progress["message"] = "开始重建索引..."
+        rebuild_progress["phase"] = "preparing"
+
+        def progress_callback(current, total, message):
+            rebuild_progress["current"] = current
+            rebuild_progress["total"] = total
+            rebuild_progress["message"] = message
+            if current <= total and total > 0:
+                if current == 0:
+                    rebuild_progress["phase"] = "scanning"
+                elif message.startswith("索引"):
+                    rebuild_progress["phase"] = "indexing"
+
+        indexer.clear_all()
+        await sync_existing_documents(progress_callback)
+
+        stats = indexer.get_stats()
+        rebuild_progress["message"] = f"完成！索引了 {stats['documents']} 个文档"
+        rebuild_progress["phase"] = "completed"
+
+    except Exception as e:
+        rebuild_progress["message"] = f"错误: {str(e)}"
+        rebuild_progress["phase"] = "error"
+        print(f"Rebuild error: {e}")
+        import traceback
+        traceback.print_exc()
+
+    finally:
+        # 3秒后重置状态
+        import asyncio
+        await asyncio.sleep(3)
+        rebuild_progress["in_progress"] = False
+
+
+@app.get("/rebuild/progress")
+async def get_rebuild_progress():
+    """获取重建进度"""
+    return rebuild_progress
 
 
 # ============================================================================
@@ -421,6 +561,7 @@ async def rebuild_index():
 @app.get("/debug/vectors")
 async def debug_vectors():
     """获取所有向量的详细信息"""
+    await ensure_initialized()
     import numpy as np
 
     if not indexer.index or indexer.index.ntotal == 0:
@@ -437,8 +578,8 @@ async def debug_vectors():
     index_to_doc = {v: k for k, v in indexer.doc_id_to_index.items()}
 
     for faiss_idx in range(indexer.index.ntotal):
-        # 获取向量
-        vec = indexer.index.reconstruct(faiss_idx)
+        # 获取向量（使用缓存避免崩溃）
+        vec = indexer.get_vector(faiss_idx)
 
         # 获取对应的文档ID
         doc_id = index_to_doc.get(faiss_idx)
@@ -474,6 +615,7 @@ async def debug_vectors():
 @app.get("/debug/documents")
 async def debug_documents():
     """获取所有文档及其向量映射状态"""
+    await ensure_initialized()
     cursor = indexer.conn.execute('''
         SELECT id, path, role, project, timestamp
         FROM documents
@@ -524,6 +666,7 @@ async def debug_documents():
 @app.get("/debug/ngrams")
 async def debug_ngrams():
     """获取N-gram统计信息"""
+    await ensure_initialized()
     # 按类型统计
     cursor = indexer.conn.execute('''
         SELECT gram_type, COUNT(*) as count
@@ -562,6 +705,7 @@ async def debug_ngrams():
 @app.post("/debug/test-embedding")
 async def debug_test_embedding():
     """测试嵌入服务"""
+    await ensure_initialized()
     import time
 
     try:
@@ -601,6 +745,7 @@ async def debug_search_full(req: DebugSearchRequest):
     """
     完整的调试搜索，包含 n-gram 匹配详情
     """
+    await ensure_initialized()
     try:
         results = await search_engine.search(req.query, {
             'limit': req.limit,
@@ -629,6 +774,7 @@ async def debug_vector_similarity(req: VectorSearchRequest):
     根据查询问题，显示所有向量的相似度排序
     用于调试向量检索效果
     """
+    await ensure_initialized()
     import numpy as np
     import time
 
@@ -659,8 +805,8 @@ async def debug_vector_similarity(req: VectorSearchRequest):
         index_to_doc = {v: k for k, v in indexer.doc_id_to_index.items()}
 
         for faiss_idx in range(indexer.index.ntotal):
-            # 获取文档向量
-            doc_vector = indexer.index.reconstruct(faiss_idx)
+            # 获取文档向量（使用缓存避免崩溃）
+            doc_vector = indexer.get_vector(faiss_idx)
             doc_vector = doc_vector.reshape(1, -1)
 
             # 计算余弦相似度
