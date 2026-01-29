@@ -281,13 +281,13 @@ class KnowledgeIndexer:
                 chunks['paragraphs'].append(para)
 
         # 2. 分割句子（按中文句号、英文句号、换行）
-        sentence_pattern = r'[。！？\.\!\?]+'
+        sentence_pattern = r'[。！？\.\!\?\n]+'
         sentences = re.split(sentence_pattern, full_content)
 
         for sent in sentences:
             sent = sent.strip()
-            # 只保留20-500字符的句子
-            if 20 <= len(sent) <= 500:
+            # 只保留10-500字符的句子
+            if 10 <= len(sent) <= 500:
                 chunks['sentences'].append(sent)
 
         return chunks
@@ -336,8 +336,8 @@ class KnowledgeIndexer:
             except Exception as e:
                 print(f"    ⚠️  段落 {i} 向量生成失败: {e}")
 
-        # 生成句子向量（只取前5个重要句子，避免向量过多）
-        for i, sent_content in enumerate(chunks['sentences'][:5]):
+        # 生成句子向量（取所有句子）
+        for i, sent_content in enumerate(chunks['sentences']):
             try:
                 embedding = await self.embedding_client.embed_text(sent_content)
                 norm = np.linalg.norm(embedding)
@@ -361,7 +361,7 @@ class KnowledgeIndexer:
                 print(f"    ⚠️  句子 {i} 向量生成失败: {e}")
 
         self.conn.commit()
-        print(f"    ✓ 共生成 {total_vectors} 个多粒度向量 (段落: {len(chunks['paragraphs'])}, 句子: {min(len(chunks['sentences']), 5)})")
+        print(f"    ✓ 共生成 {total_vectors} 个多粒度向量 (段落: {len(chunks['paragraphs'])}, 句子: {len(chunks['sentences'])})")
 
     async def _index_ngram_vectors(self, ngrams: List[Dict]):
         """
@@ -552,6 +552,204 @@ class KnowledgeIndexer:
         self._save_index()
 
         return doc_ids
+
+    async def reindex_document(self, doc_id: int, document: Dict):
+        """
+        重新索引已有文档（删除旧索引，创建新索引）
+
+        Args:
+            doc_id: 文档ID
+            document: 新的文档数据
+        """
+        print(f"Reindexing document {doc_id}...")
+
+        # 1. 删除旧的 N-gram 记录
+        self.conn.execute('DELETE FROM ngrams WHERE doc_id = ?', (doc_id,))
+
+        # 2. 删除旧的文档向量（段落、句子）
+        self.conn.execute('DELETE FROM document_vectors WHERE doc_id = ?', (doc_id,))
+
+        # 3. 删除旧的标签关联
+        self.conn.execute('DELETE FROM document_tags WHERE doc_id = ?', (doc_id,))
+
+        # 4. 更新文档记录
+        tags_str = ','.join(document.get('tags', []))
+        full_content = f"{document.get('problem', '')}\n\n{document.get('solution', '')}"
+
+        self.conn.execute('''
+            UPDATE documents
+            SET role = ?, project = ?, directory = ?, timestamp = ?,
+                tags = ?, problem = ?, solution = ?, full_content = ?
+            WHERE id = ?
+        ''', (
+            document.get('role', 'AI'),
+            document.get('project', ''),
+            document.get('directory', ''),
+            document.get('timestamp', ''),
+            tags_str,
+            document.get('problem', ''),
+            document.get('solution', ''),
+            full_content,
+            doc_id
+        ))
+
+        # 5. 插入新的标签
+        for tag in document.get('tags', []):
+            self.conn.execute(
+                'INSERT OR IGNORE INTO document_tags (doc_id, tag) VALUES (?, ?)',
+                (doc_id, tag)
+            )
+
+        # 6. 生成新的 N-gram
+        ngrams = self.ngram_processor.process_document(document)
+
+        for ngram in ngrams:
+            self.conn.execute('''
+                INSERT INTO ngrams (doc_id, content, gram_type, gram_size, section, position)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                doc_id,
+                ngram['content'],
+                ngram['gram_type'],
+                ngram['gram_size'],
+                ngram['section'],
+                ngram['position']
+            ))
+
+        # 7. 更新文档向量（整篇）
+        try:
+            embedding = await self.embedding_client.embed_text(full_content)
+
+            # 归一化
+            norm = np.linalg.norm(embedding)
+            if norm > 0:
+                embedding = embedding / norm
+
+            # 获取旧的 FAISS 索引位置
+            if doc_id in self.doc_id_to_index:
+                faiss_idx = self.doc_id_to_index[doc_id]
+
+                # 直接覆盖 FAISS 向量（使用 reconstruct_n 和 add）
+                # 注意：FAISS IndexFlatIP 不支持原地修改，只能通过重建实现
+                # 这里我们保持原 faiss_idx 不变，重建索引时会覆盖
+                embedding_2d = embedding.reshape(1, -1)
+
+                # 临时方案：标记需要重建索引
+                # 实际更新会在 _save_index 时通过完整重建完成
+                print(f"Updated vector for doc_id={doc_id}, faiss_idx={faiss_idx}")
+
+        except Exception as e:
+            print(f"Warning: Failed to update embedding for doc_id={doc_id}: {e}")
+
+        # 8. 重新生成文档多粒度向量
+        await self._index_document_vectors(doc_id, full_content)
+
+        # 9. 重新生成 N-gram 向量
+        await self._index_ngram_vectors(ngrams)
+
+        self.conn.commit()
+
+        # 10. 重建 FAISS 索引（因为无法原地修改）
+        print("Rebuilding FAISS index after document update...")
+        await self._rebuild_faiss_index()
+
+        self._save_index()
+        print(f"Document {doc_id} reindexed successfully")
+
+    async def _rebuild_faiss_index(self):
+        """重建完整的FAISS索引"""
+        print("Rebuilding FAISS index...")
+
+        # 创建新索引
+        self.index = faiss.IndexFlatIP(EMBED_DIMENSION)
+        self.doc_id_to_index.clear()
+        self.index_to_doc_id.clear()
+
+        # 清除所有旧的 faiss_idx (避免 UNIQUE 冲突)
+        self.conn.execute('UPDATE document_vectors SET faiss_idx = NULL')
+        self.conn.execute('UPDATE ngram_vectors SET faiss_idx = NULL')
+        self.conn.commit()
+
+        # 1. 重建文档向量
+        cursor = self.conn.execute('SELECT id, full_content FROM documents ORDER BY id')
+        for doc_id, full_content in cursor.fetchall():
+            try:
+                embedding = await self.embedding_client.embed_text(full_content)
+                norm = np.linalg.norm(embedding)
+                if norm > 0:
+                    embedding = embedding / norm
+
+                embedding = embedding.reshape(1, -1)
+                self.index.add(embedding)
+
+                faiss_idx = self.index.ntotal - 1
+                self.doc_id_to_index[doc_id] = faiss_idx
+                self.index_to_doc_id[faiss_idx] = doc_id
+
+            except Exception as e:
+                print(f"Warning: Failed to rebuild vector for doc_id={doc_id}: {e}")
+
+        # 2. 重建文档块向量
+        cursor = self.conn.execute('''
+            SELECT id, doc_id, content
+            FROM document_vectors
+            ORDER BY id
+        ''')
+
+        for vec_id, doc_id, content in cursor.fetchall():
+            try:
+                embedding = await self.embedding_client.embed_text(content)
+                norm = np.linalg.norm(embedding)
+                if norm > 0:
+                    embedding = embedding / norm
+
+                embedding = embedding.reshape(1, -1)
+                self.index.add(embedding)
+
+                faiss_idx = self.index.ntotal - 1
+
+                # 更新 document_vectors 表中的 faiss_idx
+                self.conn.execute(
+                    'UPDATE document_vectors SET faiss_idx = ? WHERE id = ?',
+                    (faiss_idx, vec_id)
+                )
+
+            except Exception as e:
+                print(f"Warning: Failed to rebuild chunk vector for vec_id={vec_id}: {e}")
+
+        # 3. 重建 N-gram 向量
+        cursor = self.conn.execute('''
+            SELECT ngram_content, faiss_idx
+            FROM ngram_vectors
+            WHERE faiss_idx IS NOT NULL
+            ORDER BY ngram_content
+        ''')
+
+        old_ngram_vectors = cursor.fetchall()
+
+        for ngram_content, old_faiss_idx in old_ngram_vectors:
+            try:
+                embedding = await self.embedding_client.embed_text(ngram_content)
+                norm = np.linalg.norm(embedding)
+                if norm > 0:
+                    embedding = embedding / norm
+
+                embedding = embedding.reshape(1, -1)
+                self.index.add(embedding)
+
+                new_faiss_idx = self.index.ntotal - 1
+
+                # 更新映射
+                self.conn.execute(
+                    'UPDATE ngram_vectors SET faiss_idx = ? WHERE ngram_content = ?',
+                    (new_faiss_idx, ngram_content)
+                )
+
+            except Exception as e:
+                print(f"Warning: Failed to rebuild ngram vector for ngram={ngram_content}: {e}")
+
+        self.conn.commit()
+        print(f"FAISS index rebuilt: {self.index.ntotal} vectors")
 
     def get_stats(self) -> Dict:
         """获取统计信息"""

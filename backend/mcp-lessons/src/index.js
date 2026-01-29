@@ -10,6 +10,8 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
+  ListPromptsRequestSchema,
+  GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 import { fetch } from 'undici';
 import winston from 'winston';
@@ -49,9 +51,62 @@ const server = new Server(
   {
     capabilities: {
       tools: {},
+      prompts: {},
     },
   }
 );
+
+// Prompts 列表 - 提供使用指南
+server.setRequestHandler(ListPromptsRequestSchema, async () => {
+  return {
+    prompts: [
+      {
+        name: 'lessons-usage-guide',
+        description: 'AI Lessons 知识库的最佳使用方法和场景指南',
+      }
+    ]
+  };
+});
+
+// 获取 Prompt 内容
+server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+  const { name } = request.params;
+
+  if (name === 'lessons-usage-guide') {
+    return {
+      messages: [
+        {
+          role: 'user',
+          content: {
+            type: 'text',
+            text: `# AI Lessons 使用指南
+
+## 记录原则
+
+**关键：保持简洁，避免冗余**
+
+- 只记录核心要点和解决方法
+- 不要重复解释已知概念
+- 通用概念单独记录，其他文档引用即可
+- 一个问题一条记录
+
+## 何时记录
+
+解决问题、重要配置、踩坑经验时主动记录，无需询问用户。
+
+## 基本操作
+
+- 记录：record_lesson
+- 搜索：search_lessons
+- 更新：先搜索获取 doc_id，再 update_lesson（慢，~60秒）`
+          }
+        }
+      ]
+    };
+  }
+
+  throw new Error(`Unknown prompt: ${name}`);
+});
 
 // 工具列表
 server.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -59,7 +114,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: 'record_lesson',
-        description: '记录一个新的经验教训',
+        description: '记录知识、经验、笔记或任何信息。用于在对话过程中主动记录值得保存的内容（如解决的问题、学到的经验、重要的配置等）',
         inputSchema: {
           type: 'object',
           properties: {
@@ -79,11 +134,11 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             },
             problem: {
               type: 'string',
-              description: '遇到的问题描述'
+              description: '标题、主题或问题描述'
             },
             solution: {
               type: 'string',
-              description: '解决方法（支持Markdown格式）'
+              description: '内容、解决方法或详细说明（支持Markdown格式）'
             },
             tags: {
               type: 'array',
@@ -91,7 +146,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               description: '标签列表（可选）'
             }
           },
-          required: ['problem', 'solution']
+          required: ['solution']
         }
       },
       {
@@ -157,6 +212,46 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             }
           },
           required: ['tag']
+        }
+      },
+      {
+        name: 'update_lesson',
+        description: '更新已有文档内容并重新索引（文档ID可通过搜索、列出最近记录或按标签搜索获取）',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            doc_id: {
+              type: 'number',
+              description: '文档ID（从搜索结果、list_recent 或 search_by_tag 的输出中获取）'
+            },
+            role: {
+              type: 'string',
+              description: '角色：AI 或 用户',
+              enum: ['AI', '用户']
+            },
+            project: {
+              type: 'string',
+              description: '项目名称或简单描述'
+            },
+            directory: {
+              type: 'string',
+              description: '项目目录路径'
+            },
+            problem: {
+              type: 'string',
+              description: '标题、主题或问题描述'
+            },
+            solution: {
+              type: 'string',
+              description: '内容、解决方法或详细说明（支持Markdown格式）'
+            },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: '标签列表（可选）'
+            }
+          },
+          required: ['doc_id', 'solution']
         }
       },
       {
@@ -234,31 +329,49 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
 
-        let result = `找到 ${data.count} 条相关经验（激活式搜索+向量相似度）：\n\n`;
+        let result = `找到 ${data.count} 条相关经验：\n\n`;
 
         data.results.forEach((lesson, index) => {
-          result += `${index + 1}. [${lesson.path}] (得分: ${lesson.total_score.toFixed(2)})\n`;
-          result += `   角色: ${lesson.role || 'AI'}\n`;
-          result += `   项目: ${lesson.project || '-'}\n`;
+          result += `${'='.repeat(60)}\n`;
+          result += `${index + 1}. ${lesson.path}\n`;
+          result += `${'='.repeat(60)}\n\n`;
+
+          result += `📋 基本信息\n`;
+          result += `  文档ID: ${lesson.doc_id}\n`;
+          result += `  角色: ${lesson.role || 'AI'}\n`;
+          result += `  项目: ${lesson.project || '-'}\n`;
+          result += `  时间: ${lesson.timestamp || '-'}\n`;
 
           if (lesson.tags && lesson.tags.length > 0) {
-            result += `   标签: ${lesson.tags.join(', ')}\n`;
+            result += `  标签: ${lesson.tags.join(', ')}\n`;
           }
 
-          result += `   问题: ${lesson.problem_preview || '-'}\n`;
-          result += `   时间: ${lesson.timestamp || '-'}\n`;
+          result += `\n`;
 
+          if (lesson.problem) {
+            result += `❓ 主题\n`;
+            result += `${lesson.problem}\n\n`;
+          }
+
+          result += `📝 内容\n`;
+          result += `${lesson.solution || '-'}\n\n`;
+
+          // 匹配详情（可选，用于调试）
           if (lesson.matched_ngrams) {
-            result += `   激活: ${lesson.matched_ngrams} 个片段, 激活得分: ${lesson.activation_score.toFixed(2)}`;
+            result += `📊 匹配详情\n`;
+            result += `  得分: ${lesson.total_score.toFixed(2)}\n`;
+            result += `  激活片段: ${lesson.matched_ngrams} 个\n`;
 
             if (lesson.vector_similarity !== undefined) {
-              result += `, 向量相似度: ${lesson.vector_similarity.toFixed(3)}`;
+              result += `  整篇文档相似度: ${lesson.vector_similarity.toFixed(3)}\n`;
+            }
+
+            if (lesson.chunk_max_similarity !== undefined) {
+              result += `  最佳块相似度: ${lesson.chunk_max_similarity.toFixed(3)}\n`;
             }
 
             result += '\n';
           }
-
-          result += '\n';
         });
 
         return {
@@ -295,6 +408,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         data.results.forEach((lesson, index) => {
           result += `${index + 1}. [${lesson.path}]\n`;
+          result += `   文档ID: ${lesson.doc_id}\n`;
           result += `   角色: ${lesson.role || 'AI'}\n`;
           result += `   项目: ${lesson.project || '-'}\n`;
           result += `   问题: ${lesson.problem_preview || '-'}\n`;
@@ -364,6 +478,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
         data.results.forEach((lesson, index) => {
           result += `${index + 1}. [${lesson.path}]\n`;
+          result += `   文档ID: ${lesson.doc_id}\n`;
           result += `   问题: ${lesson.problem_preview || '-'}\n`;
           result += `   时间: ${lesson.timestamp || '-'}\n\n`;
         });
@@ -372,6 +487,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           content: [{
             type: 'text',
             text: result
+          }]
+        };
+      }
+
+      case 'update_lesson': {
+        const response = await fetch(`${MEMGRAPH_URL}/update`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(args)
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        }
+
+        const data = await response.json();
+        logger.info(`Updated lesson doc_id=${args.doc_id}: ${data.path}`);
+
+        return {
+          content: [{
+            type: 'text',
+            text: `成功更新文档: ${data.path}\n文档ID: ${data.doc_id}\n已重新索引向量`
           }]
         };
       }

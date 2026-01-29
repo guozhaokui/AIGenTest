@@ -56,3 +56,27 @@
 {"timestamp": "2026-01-29T16:45:01.759386", "query": "linux21的ip地址", "result_count": 4, "search_time_ms": 179.78, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}
 {"timestamp": "2026-01-29T16:45:14.510311", "query": "linux21的显卡", "result_count": 1, "search_time_ms": 179.24, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}
 {"timestamp": "2026-01-29T16:51:54.210223", "query": "linux21的显卡", "result_count": 1, "search_time_ms": 363.51, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:06:50.841262", "query": "MetaGPT 多智能体框架", "result_count": 0, "search_time_ms": 0.0, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:06:51.100636", "query": "DINOv3 视觉模型", "result_count": 2, "search_time_ms": 223.6, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:06:51.327532", "query": "BGE embedding 向量模型", "result_count": 5, "search_time_ms": 189.37, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:11:00.584434", "query": "linux21 服务器", "result_count": 10, "search_time_ms": 193.13, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:11:00.809423", "query": "linux81 GPU", "result_count": 2, "search_time_ms": 187.44, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:11:05.586262", "query": "概念", "result_count": 1, "search_time_ms": 173.91, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:16:13.233479", "query": "linux21 linux81", "result_count": 1, "search_time_ms": 188.33, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:26:48.043918", "query": "thinking cache Claude API", "result_count": 5, "search_time_ms": 214.66, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:26:48.268592", "query": "SAM3D 3D分割", "result_count": 1, "search_time_ms": 183.16, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:26:48.491216", "query": "Patch Match 图像匹配", "result_count": 4, "search_time_ms": 183.11, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:26:48.719472", "query": "IQuest MLX mac模型", "result_count": 5, "search_time_ms": 186.17, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:29:32.517144", "query": "MetaGPT", "result_count": 0, "search_time_ms": 0.0, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:29:32.555146", "query": "sam3D 3D分割", "result_count": 0, "search_time_ms": 0.0, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:29:32.784950", "query": "DINOv3 视觉模型", "result_count": 2, "search_time_ms": 200.19, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:29:33.001289", "query": "BGE embedding 嵌入模型", "result_count": 3, "search_time_ms": 181.48, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:29:37.630198", "query": "siglip 视觉编码", "result_count": 0, "search_time_ms": 0.0, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:35:27.344523", "query": "linux81 服务器", "result_count": 5, "search_time_ms": 201.9, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:43:40.054566", "query": "测试更新功能", "result_count": 1, "search_time_ms": 753.41, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:44:13.738851", "query": "测试更新功能", "result_count": 1, "search_time_ms": 209.55, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T17:58:41.238261", "query": "更新测试", "result_count": 1, "search_time_ms": 183.34, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T18:00:17.353900", "query": "更新测试", "result_count": 1, "search_time_ms": 187.5, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T18:56:01.990692", "query": "cursor的会话记录保存在哪里", "result_count": 5, "search_time_ms": 197.13, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T18:56:10.572281", "query": "cursor 会话 对话记录", "result_count": 3, "search_time_ms": 179.32, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T19:06:55.026870", "query": "cursor的会话记录保存在哪里", "result_count": 1, "search_time_ms": 185.65, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}

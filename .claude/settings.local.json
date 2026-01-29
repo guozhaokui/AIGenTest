@@ -11,7 +11,8 @@
       "Bash(sqlite3:*)",
       "Bash(npm install:*)",
       "mcp__lessons-recorder__search_lessons",
-      "mcp__lessons-recorder__read_lesson"
+      "mcp__lessons-recorder__read_lesson",
+      "mcp__lessons-recorder__record_lesson"
     ]
   }
 }

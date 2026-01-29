@@ -96,6 +96,16 @@ class RecordLessonRequest(BaseModel):
     tags: List[str] = []
 
 
+class UpdateLessonRequest(BaseModel):
+    doc_id: int
+    role: Optional[str] = None
+    project: Optional[str] = None
+    directory: Optional[str] = None
+    problem: Optional[str] = None
+    solution: str
+    tags: Optional[List[str]] = None
+
+
 class SearchRequest(BaseModel):
     query: str
     limit: int = 10
@@ -171,6 +181,8 @@ async def sync_existing_documents(progress_callback=None):
 
             # 解析frontmatter
             metadata = {}
+            body = content
+
             if content.startswith('---'):
                 parts = content.split('---', 2)
                 if len(parts) >= 3:
@@ -189,32 +201,32 @@ async def sync_existing_documents(progress_callback=None):
                                 value = [t.strip() for t in value.strip('[]').split(',')]
                             metadata[key] = value
 
-                    # 解析文档内容
-                    # 策略1: 如果有标准的 "## 问题" 和 "## 解决方案" 格式，优先使用
-                    problem_match = re.search(r'## 问题\s*\n+(.*?)(?=\n##|\Z)', body, re.DOTALL)
-                    solution_match = re.search(r'## 解决[方法办]*\s*\n+(.*)', body, re.DOTALL)
+            # 解析文档内容（无论是否有 frontmatter）
+            # 策略1: 如果有标准的 "## 问题" 和 "## 解决方案" 格式，优先使用
+            problem_match = re.search(r'## 问题\s*\n+(.*?)(?=\n##|\Z)', body, re.DOTALL)
+            solution_match = re.search(r'## 解决[方法办]*\s*\n+(.*)', body, re.DOTALL)
 
-                    if problem_match or solution_match:
-                        # 标准格式
-                        metadata['problem'] = problem_match.group(1).strip() if problem_match else ''
-                        metadata['solution'] = solution_match.group(1).strip() if solution_match else ''
-                    else:
-                        # 策略2: 通用文档格式
-                        # problem = 文件名（去掉日期和扩展名）或第一个一级标题
-                        # solution = 整个 body（包含所有标题和内容）
+            if problem_match or solution_match:
+                # 标准格式
+                metadata['problem'] = problem_match.group(1).strip() if problem_match else ''
+                metadata['solution'] = solution_match.group(1).strip() if solution_match else ''
+            else:
+                # 策略2: 通用文档格式
+                # problem = 文件名（去掉日期和扩展名）或第一个一级标题
+                # solution = 整个 body（包含所有标题和内容）
 
-                        # 尝试提取第一个一级标题作为 problem
-                        first_h1 = re.search(r'^#\s+(.+?)$', body, re.MULTILINE)
-                        if first_h1:
-                            metadata['problem'] = first_h1.group(1).strip()
-                        else:
-                            # 从文件名提取（去掉日期时间前缀）
-                            filename = md_file.stem
-                            problem_from_filename = re.sub(r'^\d{4}[/-]\d{2}[/-]\d{2}[_-]\d{2}[-:]\d{2}[-:]\d{2}[_-]?', '', filename)
-                            metadata['problem'] = problem_from_filename if problem_from_filename else filename
+                # 尝试提取第一个一级标题作为 problem
+                first_h1 = re.search(r'^#\s+(.+?)$', body, re.MULTILINE)
+                if first_h1:
+                    metadata['problem'] = first_h1.group(1).strip()
+                else:
+                    # 从文件名提取（去掉日期时间前缀）
+                    filename = md_file.stem
+                    problem_from_filename = re.sub(r'^\d{4}[/-]\d{2}[/-]\d{2}[_-]\d{2}[-:]\d{2}[-:]\d{2}[_-]?', '', filename)
+                    metadata['problem'] = problem_from_filename if problem_from_filename else filename
 
-                        # solution 包含整个文档内容
-                        metadata['solution'] = body.strip()
+                # solution 包含整个文档内容
+                metadata['solution'] = body.strip()
 
             relative_path = md_file.relative_to(RECORDS_DIR)
 
@@ -360,6 +372,79 @@ tags: [{', '.join(req.tags)}]
         "success": True,
         "doc_id": doc_id,
         "path": relative_path,
+        "full_path": str(full_file_path)
+    }
+
+
+@app.post("/update")
+async def update_lesson(req: UpdateLessonRequest):
+    """更新已有文档并重新索引"""
+    await ensure_initialized()
+
+    from datetime import datetime
+
+    # 获取原文档信息
+    cursor = indexer.conn.execute(
+        'SELECT path, role, project, directory, timestamp FROM documents WHERE id = ?',
+        (req.doc_id,)
+    )
+    row = cursor.fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail=f"Document {req.doc_id} not found")
+
+    old_path, old_role, old_project, old_directory, old_timestamp = row
+
+    # 合并新旧值 (保留旧值如果新值未提供)
+    role = req.role if req.role is not None else old_role
+    project = req.project if req.project is not None else old_project
+    directory = req.directory if req.directory is not None else old_directory
+    problem = req.problem if req.problem is not None else ""
+    tags = req.tags if req.tags is not None else []
+
+    # 使用原路径更新文件
+    full_file_path = RECORDS_DIR / old_path
+
+    # 生成新的Markdown内容
+    markdown_content = f"""---
+role: {role}
+project: {project or ''}
+directory: {directory or ''}
+timestamp: {old_timestamp}
+tags: [{', '.join(tags)}]
+---
+
+## 问题
+
+{problem}
+
+## 解决方法
+
+{req.solution}
+"""
+
+    # 写入文件
+    full_file_path.write_text(markdown_content, encoding='utf-8')
+
+    # 更新文档索引
+    document = {
+        'path': old_path,
+        'role': role,
+        'project': project or '',
+        'directory': directory or '',
+        'timestamp': old_timestamp,
+        'tags': tags,
+        'problem': problem,
+        'solution': req.solution
+    }
+
+    # 重新索引文档 (会自动删除旧的向量和N-gram)
+    await indexer.reindex_document(req.doc_id, document)
+
+    return {
+        "success": True,
+        "doc_id": req.doc_id,
+        "path": old_path,
         "full_path": str(full_file_path)
     }
 
