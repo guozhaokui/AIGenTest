@@ -141,10 +141,15 @@
         <div class="answer-section">
           <el-alert
             v-if="!item.answer"
-            title="未配置NVIDIA API或生成失败"
-            type="warning"
+            title="MemGraph 搜索引擎 - 仅提供文档检索，不生成AI回答"
+            type="info"
             :closable="false"
-          />
+          >
+            <template #default>
+              提示：MemGraph 使用激活式搜索 + FAISS向量检索，快速找到最相关的文档。
+              如需 AI 生成答案，请使用"纯聊天"模式。
+            </template>
+          </el-alert>
           <div v-else class="answer-content">
             <strong>回答:</strong>
             <div class="answer-text">{{ item.answer }}</div>
@@ -155,13 +160,15 @@
         </div>
 
         <!-- 检索到的文档 -->
-        <el-divider content-position="left">检索到的相关文档</el-divider>
+        <el-divider content-position="left">
+          MemGraph 检索结果 (共 {{ item.context.length }} 条)
+        </el-divider>
         <div class="context-docs">
           <el-collapse>
             <el-collapse-item
               v-for="doc in item.context"
               :key="doc.index"
-              :title="`文档${doc.index}: ${doc.source} (相似度: ${(doc.similarity * 100).toFixed(1)}%)`"
+              :title="`#${doc.index} ${doc.source} - 相似度: ${(doc.similarity * 100).toFixed(1)}%`"
             >
               <pre class="doc-content">{{ doc.content }}</pre>
             </el-collapse-item>

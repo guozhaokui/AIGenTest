@@ -113,9 +113,9 @@ export function listModels() {
   return api.get('/models').then(r => r.data);
 }
 
-// Knowledge Query API (separate service on port 5001)
+// Knowledge Query API - 使用 MemGraph 服务 (port 8800)
 const knowledgeApi = axios.create({
-  baseURL: 'http://localhost:5001/api/knowledge',
+  baseURL: 'http://localhost:8800',
   timeout: 30000
 });
 
@@ -135,7 +135,43 @@ export function indexDocuments(payload) {
 
 export function queryKnowledge(payload) {
   // { question: string, model: string, top_k: number }
-  return knowledgeApi.post('/query', payload).then(r => r.data);
+  // 适配 MemGraph API: 使用 /search 端点
+  const memgraphPayload = {
+    query: payload.question,
+    limit: payload.top_k || 3,
+    min_score: 0.1,
+    use_vector: true
+  };
+
+  return knowledgeApi.post('/search', memgraphPayload).then(response => {
+    const data = response.data;
+
+    // 将 MemGraph 响应格式转换为前端期望的格式
+    // MemGraph 返回: { query: string, count: number, results: [...] }
+    // 前端期望: { success: boolean, data: { question, answer, context, model } }
+
+    const contextDocs = data.results.slice(0, payload.top_k || 3).map((result, index) => ({
+      index: index + 1,
+      source: result.path || result.problem_preview || 'Unknown',
+      content: `问题: ${result.problem || ''}\n\n解决方法: ${result.solution || result.solution_preview || ''}`,
+      similarity: result.vector_similarity || result.total_score / 100 || 0
+    }));
+
+    return {
+      success: true,
+      data: {
+        question: data.query,
+        answer: null, // MemGraph 不提供 LLM 生成的答案
+        context: contextDocs,
+        model: payload.model
+      }
+    };
+  }).catch(error => {
+    return {
+      success: false,
+      error: error.message || '查询失败'
+    };
+  });
 }
 
 export function getKnowledgeModels() {
@@ -152,7 +188,24 @@ export function deleteDocument(payload) {
 }
 
 export function getStats() {
-  return knowledgeApi.get('/stats').then(r => r.data);
+  // MemGraph /stats 返回: { documents, ngrams, unique_ngrams, faiss_vectors }
+  // 前端期望: { success: boolean, data: { total_documents, dimension } }
+  return knowledgeApi.get('/stats').then(response => {
+    const data = response.data;
+    return {
+      success: true,
+      data: {
+        total_documents: data.documents || 0,
+        dimension: 512, // MemGraph 使用 512 维向量
+        faiss_vectors: data.faiss_vectors || 0
+      }
+    };
+  }).catch(error => {
+    return {
+      success: false,
+      error: error.message
+    };
+  });
 }
 
 export function chat(payload) {
