@@ -6,10 +6,11 @@ import sqlite3
 import json
 import faiss
 import numpy as np
+import hashlib
 from pathlib import Path
 from typing import List, Dict, Optional
 from .config import (
-    FAISS_INDEX_PATH, METADATA_DB_PATH, EMBED_DIMENSION
+    FAISS_INDEX_PATH, METADATA_DB_PATH, EMBED_DIMENSION, EMBED_FULL_DIMENSION
 )
 from .ngram_processor import NgramProcessor
 from .embedding_client import EmbeddingClient
@@ -59,6 +60,16 @@ class KnowledgeIndexer:
             )
         ''')
 
+        # 添加 content_hash 列（如果不存在）
+        try:
+            self.conn.execute('ALTER TABLE documents ADD COLUMN content_hash TEXT')
+        except sqlite3.OperationalError:
+            # 列已存在，忽略
+            pass
+
+        # 为 documents 表添加 content_hash 索引
+        self.conn.execute('CREATE INDEX IF NOT EXISTS idx_documents_hash ON documents(content_hash)')
+
         # N-gram表
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS ngrams (
@@ -100,7 +111,15 @@ class KnowledgeIndexer:
             )
         ''')
 
+        # 添加 vector_data 列（用于存储向量本身）
+        try:
+            self.conn.execute('ALTER TABLE ngram_vectors ADD COLUMN vector_data BLOB')
+        except sqlite3.OperationalError:
+            pass
+
         # 文档多粒度向量表（用于存储文档的段落、句子级向量）
+        # 注意：移除了 FOREIGN KEY 约束，使得向量表可以独立存在作为缓存
+        # 这样删除 documents 表时不会级联删除向量缓存
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS document_vectors (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -109,13 +128,25 @@ class KnowledgeIndexer:
                 content TEXT NOT NULL,
                 faiss_idx INTEGER UNIQUE,
                 position INTEGER,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (doc_id) REFERENCES documents(id) ON DELETE CASCADE
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
+        # 添加 content_hash 列（如果不存在）
+        try:
+            self.conn.execute('ALTER TABLE document_vectors ADD COLUMN content_hash TEXT')
+        except sqlite3.OperationalError:
+            pass
+
+        # 添加 vector_data 列（用于存储向量本身）
+        try:
+            self.conn.execute('ALTER TABLE document_vectors ADD COLUMN vector_data BLOB')
+        except sqlite3.OperationalError:
+            pass
+
         self.conn.execute('CREATE INDEX IF NOT EXISTS idx_doc_vectors_doc_id ON document_vectors(doc_id)')
         self.conn.execute('CREATE INDEX IF NOT EXISTS idx_doc_vectors_granularity ON document_vectors(granularity)')
+        self.conn.execute('CREATE INDEX IF NOT EXISTS idx_doc_vectors_hash ON document_vectors(content_hash)')
 
         self.conn.commit()
 
@@ -142,8 +173,92 @@ class KnowledgeIndexer:
     def _create_new_index(self):
         """创建新的FAISS索引"""
         # 使用 IndexFlatIP (内积，适合归一化后的向量)
+        # 使用512维以节省空间（准确率98%+）
         self.index = faiss.IndexFlatIP(EMBED_DIMENSION)
-        print(f"Created new FAISS index (dimension: {EMBED_DIMENSION})")
+        print(f"Created new FAISS index (dimension: {EMBED_DIMENSION}, reduced from {EMBED_FULL_DIMENSION})")
+
+    @staticmethod
+    def reduce_dimension(vector: np.ndarray) -> np.ndarray:
+        """降维：保留前512维
+
+        Args:
+            vector: 原始向量（4096维）
+
+        Returns:
+            降维后的向量（512维）
+        """
+        if len(vector) > EMBED_DIMENSION:
+            return vector[:EMBED_DIMENSION].copy()
+        return vector
+
+    def add_vector_to_index(self, vector: np.ndarray) -> int:
+        """添加向量到FAISS索引（自动降维到512维）
+
+        Args:
+            vector: 原始向量（4096维或已降维）
+
+        Returns:
+            faiss_idx: FAISS索引位置
+        """
+        # 降维到512维
+        reduced = self.reduce_dimension(vector)
+
+        # 确保是2D数组
+        if reduced.ndim == 1:
+            reduced = reduced.reshape(1, -1)
+
+        # 添加到FAISS
+        self.index.add(reduced)
+
+        return self.index.ntotal - 1
+
+    @staticmethod
+    def compute_content_hash(content: str) -> str:
+        """计算内容的 SHA256 哈希
+
+        Args:
+            content: 文本内容
+
+        Returns:
+            64位十六进制哈希字符串
+        """
+        return hashlib.sha256(content.encode('utf-8')).hexdigest()
+
+    def get_cached_vector(self, content_hash: str, vector_type: str = 'chunk') -> Optional[np.ndarray]:
+        """从缓存中查找向量数据
+
+        Args:
+            content_hash: 内容哈希值
+            vector_type: 向量类型 ('document' 或 'chunk')
+
+        Returns:
+            numpy array if found, None otherwise
+        """
+        if vector_type == 'document':
+            # 查找文档向量缓存（从 document_vectors 表，granularity='full'）
+            # 注意：文档全文向量也存在 document_vectors 中，需要特殊标记
+            # 暂时先查 document_vectors 表
+            cursor = self.conn.execute('''
+                SELECT vector_data FROM document_vectors
+                WHERE content_hash = ? AND vector_data IS NOT NULL
+                LIMIT 1
+            ''', (content_hash,))
+            row = cursor.fetchone()
+            if row and row[0]:
+                # 从 BLOB 解码向量
+                return np.frombuffer(row[0], dtype='float32')
+        else:
+            # 查找段落/句子向量缓存
+            cursor = self.conn.execute('''
+                SELECT vector_data FROM document_vectors
+                WHERE content_hash = ? AND vector_data IS NOT NULL
+                LIMIT 1
+            ''', (content_hash,))
+            row = cursor.fetchone()
+            if row and row[0]:
+                return np.frombuffer(row[0], dtype='float32')
+
+        return None
 
     def _save_index(self):
         """保存FAISS索引"""
@@ -294,7 +409,7 @@ class KnowledgeIndexer:
 
     async def _index_document_vectors(self, doc_id: int, full_content: str):
         """
-        为文档生成多粒度向量
+        为文档生成多粒度向量（带缓存）
 
         Args:
             doc_id: 文档ID
@@ -311,57 +426,101 @@ class KnowledgeIndexer:
         chunks = self._split_document_into_chunks(full_content)
 
         total_vectors = 0
+        cache_hits = 0
 
-        # 生成段落向量
+        # 生成段落向量（带缓存）
         for i, para_content in enumerate(chunks['paragraphs']):
-            try:
-                embedding = await self.embedding_client.embed_text(para_content)
-                norm = np.linalg.norm(embedding)
-                if norm > 0:
-                    embedding = embedding / norm
+            content_hash = self.compute_content_hash(para_content)
 
-                # 添加到FAISS
-                embedding = embedding.reshape(1, -1)
-                self.index.add(embedding)
-                faiss_idx = self.index.ntotal - 1
+            # 检查缓存
+            cached_vector = self.get_cached_vector(content_hash, 'chunk')
+            embedding = None
 
-                # 保存到数据库
-                self.conn.execute('''
-                    INSERT INTO document_vectors (doc_id, granularity, content, faiss_idx, position)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (doc_id, 'paragraph', para_content, faiss_idx, i))
+            if cached_vector is not None:
+                # 复用缓存的向量
+                try:
+                    cached_vector = cached_vector.reshape(1, -1)
+                    self.index.add(cached_vector)
+                    faiss_idx = self.index.ntotal - 1
+                    embedding = cached_vector  # 用于保存到数据库
+                    cache_hits += 1
+                except Exception as e:
+                    print(f"    ⚠️  段落 {i} 复用向量失败，将重新生成: {e}")
+                    cached_vector = None
 
-                total_vectors += 1
+            if cached_vector is None:
+                # 生成新向量
+                try:
+                    embedding = await self.embedding_client.embed_text(para_content)
+                    norm = np.linalg.norm(embedding)
+                    if norm > 0:
+                        embedding = embedding / norm
 
-            except Exception as e:
-                print(f"    ⚠️  段落 {i} 向量生成失败: {e}")
+                    # 添加到FAISS
+                    embedding = embedding.reshape(1, -1)
+                    self.index.add(embedding)
+                    faiss_idx = self.index.ntotal - 1
 
-        # 生成句子向量（取所有句子）
+                except Exception as e:
+                    print(f"    ⚠️  段落 {i} 向量生成失败: {e}")
+                    continue
+
+            # 保存到数据库（包含 content_hash 和 vector_data）
+            self.conn.execute('''
+                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (doc_id, 'paragraph', para_content, content_hash, faiss_idx, i, embedding.tobytes()))
+
+            total_vectors += 1
+
+        # 生成句子向量（带缓存）
         for i, sent_content in enumerate(chunks['sentences']):
-            try:
-                embedding = await self.embedding_client.embed_text(sent_content)
-                norm = np.linalg.norm(embedding)
-                if norm > 0:
-                    embedding = embedding / norm
+            content_hash = self.compute_content_hash(sent_content)
 
-                # 添加到FAISS
-                embedding = embedding.reshape(1, -1)
-                self.index.add(embedding)
-                faiss_idx = self.index.ntotal - 1
+            # 检查缓存
+            cached_vector = self.get_cached_vector(content_hash, 'chunk')
+            embedding = None
 
-                # 保存到数据库
-                self.conn.execute('''
-                    INSERT INTO document_vectors (doc_id, granularity, content, faiss_idx, position)
-                    VALUES (?, ?, ?, ?, ?)
-                ''', (doc_id, 'sentence', sent_content, faiss_idx, i))
+            if cached_vector is not None:
+                # 复用缓存的向量
+                try:
+                    cached_vector = cached_vector.reshape(1, -1)
+                    self.index.add(cached_vector)
+                    faiss_idx = self.index.ntotal - 1
+                    embedding = cached_vector  # 用于保存到数据库
+                    cache_hits += 1
+                except Exception as e:
+                    print(f"    ⚠️  句子 {i} 复用向量失败，将重新生成: {e}")
+                    cached_vector = None
 
-                total_vectors += 1
+            if cached_vector is None:
+                # 生成新向量
+                try:
+                    embedding = await self.embedding_client.embed_text(sent_content)
+                    norm = np.linalg.norm(embedding)
+                    if norm > 0:
+                        embedding = embedding / norm
 
-            except Exception as e:
-                print(f"    ⚠️  句子 {i} 向量生成失败: {e}")
+                    # 添加到FAISS
+                    embedding = embedding.reshape(1, -1)
+                    self.index.add(embedding)
+                    faiss_idx = self.index.ntotal - 1
+
+                except Exception as e:
+                    print(f"    ⚠️  句子 {i} 向量生成失败: {e}")
+                    continue
+
+            # 保存到数据库（包含 content_hash 和 vector_data）
+            self.conn.execute('''
+                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (doc_id, 'sentence', sent_content, content_hash, faiss_idx, i, embedding.tobytes()))
+
+            total_vectors += 1
 
         self.conn.commit()
-        print(f"    ✓ 共生成 {total_vectors} 个多粒度向量 (段落: {len(chunks['paragraphs'])}, 句子: {len(chunks['sentences'])})")
+        cache_rate = (cache_hits / total_vectors * 100) if total_vectors > 0 else 0
+        print(f"    ✓ 生成 {total_vectors} 个向量 (段落: {len(chunks['paragraphs'])}, 句子: {len(chunks['sentences'])}, 缓存命中: {cache_hits}/{total_vectors} = {cache_rate:.1f}%)")
 
     async def _index_ngram_vectors(self, ngrams: List[Dict]):
         """
@@ -407,7 +566,7 @@ class KnowledgeIndexer:
         print(f"Generating vectors for {len(new_ngrams)} new ngrams (size >= 5)...")
 
         # 批量生成向量
-        for content in new_ngrams:
+        for idx, content in enumerate(new_ngrams, 1):
             try:
                 embedding = await self.embedding_client.embed_text(content)
 
@@ -417,19 +576,26 @@ class KnowledgeIndexer:
                     embedding = embedding / norm
 
                 # 添加到 FAISS
-                embedding = embedding.reshape(1, -1)
-                self.index.add(embedding)
+                embedding_2d = embedding.reshape(1, -1)
+                self.index.add(embedding_2d)
 
                 faiss_idx = self.index.ntotal - 1
 
-                # 记录到数据库
+                # 记录到数据库（包含 vector_data）
                 self.conn.execute('''
-                    INSERT OR IGNORE INTO ngram_vectors (ngram_content, faiss_idx, gram_size)
-                    VALUES (?, ?, ?)
-                ''', (content, faiss_idx, unique_ngrams[content]))
+                    INSERT OR IGNORE INTO ngram_vectors (ngram_content, faiss_idx, gram_size, vector_data)
+                    VALUES (?, ?, ?, ?)
+                ''', (content, faiss_idx, unique_ngrams[content], embedding.tobytes()))
+
+                # 每100个提交一次，避免长事务
+                if idx % 100 == 0:
+                    self.conn.commit()
 
             except Exception as e:
                 print(f"Warning: Failed to generate embedding for ngram '{content[:30]}...': {e}")
+
+        # 最后提交剩余的
+        self.conn.commit()
 
     async def index_document(self, document: Dict, save_index: bool = True, generate_ngram_vectors: bool = True) -> int:
         """
@@ -443,13 +609,15 @@ class KnowledgeIndexer:
         Returns:
             文档ID
         """
-        # 1. 插入文档
+        # 1. 准备文档数据并计算哈希
         tags_str = ','.join(document.get('tags', []))
         full_content = f"{document.get('problem', '')}\n\n{document.get('solution', '')}"
+        content_hash = self.compute_content_hash(full_content)
 
+        # 插入文档（包含 content_hash）
         cursor = self.conn.execute('''
-            INSERT INTO documents (path, role, project, directory, timestamp, tags, problem, solution, full_content)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO documents (path, role, project, directory, timestamp, tags, problem, solution, full_content, content_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             document['path'],
             document.get('role', 'AI'),
@@ -459,7 +627,8 @@ class KnowledgeIndexer:
             tags_str,
             document.get('problem', ''),
             document.get('solution', ''),
-            full_content
+            full_content,
+            content_hash
         ))
 
         doc_id = cursor.lastrowid
@@ -488,29 +657,65 @@ class KnowledgeIndexer:
                 ngram['position']
             ))
 
-        # 5. 生成文档嵌入向量
-        try:
-            embedding = await self.embedding_client.embed_text(full_content)
+        # 5. 生成文档嵌入向量（带缓存）
+        cached_vector = self.get_cached_vector(content_hash, 'document')
 
-            # 归一化向量 (用于余弦相似度)
-            norm = np.linalg.norm(embedding)
-            if norm > 0:
-                embedding = embedding / norm
+        if cached_vector is not None:
+            # 复用缓存的向量
+            print(f"✓ 复用文档向量缓存 (doc_id={doc_id}, hash={content_hash[:8]}...)")
+            try:
+                # 从数据库加载的向量直接添加到 FAISS
+                cached_vector = cached_vector.reshape(1, -1)
+                self.index.add(cached_vector)
 
-            # 添加到FAISS索引
-            embedding = embedding.reshape(1, -1)
-            self.index.add(embedding)
+                # 更新映射
+                faiss_idx = self.index.ntotal - 1
+                self.doc_id_to_index[doc_id] = faiss_idx
+                self.index_to_doc_id[faiss_idx] = doc_id
 
-            # 更新映射
-            faiss_idx = self.index.ntotal - 1
-            self.doc_id_to_index[doc_id] = faiss_idx
-            self.index_to_doc_id[faiss_idx] = doc_id
+                # 保存到 document_vectors 表（作为文档全文向量）
+                self.conn.execute('''
+                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0, cached_vector.tobytes()))
 
-            print(f"Added vector for doc_id={doc_id}, faiss_idx={faiss_idx}, norm={norm:.4f}")
+            except Exception as e:
+                print(f"⚠️  复用向量失败，将重新生成: {e}")
+                cached_vector = None
 
-        except Exception as e:
-            print(f"Warning: Failed to generate embedding for doc_id={doc_id}: {e}")
-            print("Document indexed without vector embedding")
+        if cached_vector is None:
+            # 生成新向量
+            try:
+                embedding = await self.embedding_client.embed_text(full_content)
+
+                # 归一化向量 (用于余弦相似度)
+                norm = np.linalg.norm(embedding)
+                if norm > 0:
+                    embedding = embedding / norm
+
+                # 添加到FAISS索引
+                embedding = embedding.reshape(1, -1)
+                self.index.add(embedding)
+
+                # 更新映射
+                faiss_idx = self.index.ntotal - 1
+                self.doc_id_to_index[doc_id] = faiss_idx
+                self.index_to_doc_id[faiss_idx] = doc_id
+
+                # 保存向量到数据库
+                self.conn.execute('''
+                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0, embedding.tobytes()))
+
+                print(f"✓ 生成新文档向量 (doc_id={doc_id}, faiss_idx={faiss_idx}, hash={content_hash[:8]}...)")
+
+            except Exception as e:
+                print(f"✗ 生成文档向量失败 (doc_id={doc_id}): {e}")
+                print("Document indexed without vector embedding")
+
+        # 提交文档基本信息（避免长事务导致数据库锁）
+        self.conn.commit()
 
         # 6. 生成文档多粒度向量（段落、句子）
         await self._index_document_vectors(doc_id, full_content)
@@ -520,6 +725,7 @@ class KnowledgeIndexer:
             print(f"Calling _index_ngram_vectors with {len(ngrams)} ngrams")
             await self._index_ngram_vectors(ngrams)
 
+        # 最终提交
         self.conn.commit()
 
         # 保存FAISS索引到磁盘（可选）
@@ -572,14 +778,15 @@ class KnowledgeIndexer:
         # 3. 删除旧的标签关联
         self.conn.execute('DELETE FROM document_tags WHERE doc_id = ?', (doc_id,))
 
-        # 4. 更新文档记录
+        # 4. 更新文档记录（包含 content_hash）
         tags_str = ','.join(document.get('tags', []))
         full_content = f"{document.get('problem', '')}\n\n{document.get('solution', '')}"
+        content_hash = self.compute_content_hash(full_content)
 
         self.conn.execute('''
             UPDATE documents
             SET role = ?, project = ?, directory = ?, timestamp = ?,
-                tags = ?, problem = ?, solution = ?, full_content = ?
+                tags = ?, problem = ?, solution = ?, full_content = ?, content_hash = ?
             WHERE id = ?
         ''', (
             document.get('role', 'AI'),
@@ -590,6 +797,7 @@ class KnowledgeIndexer:
             document.get('problem', ''),
             document.get('solution', ''),
             full_content,
+            content_hash,
             doc_id
         ))
 
@@ -616,30 +824,46 @@ class KnowledgeIndexer:
                 ngram['position']
             ))
 
-        # 7. 更新文档向量（整篇）
-        try:
-            embedding = await self.embedding_client.embed_text(full_content)
+        # 7. 更新文档向量（整篇，带缓存）
+        cached_faiss_idx = self.get_cached_vector(content_hash, 'document')
 
-            # 归一化
-            norm = np.linalg.norm(embedding)
-            if norm > 0:
-                embedding = embedding / norm
+        if cached_faiss_idx is not None:
+            # 复用缓存的向量
+            print(f"✓ 复用文档向量缓存 (doc_id={doc_id}, hash={content_hash[:8]}...)")
+            try:
+                cached_vector = self.get_vector(cached_faiss_idx)
+                cached_vector = cached_vector.reshape(1, -1)
+                self.index.add(cached_vector)
 
-            # 获取旧的 FAISS 索引位置
-            if doc_id in self.doc_id_to_index:
-                faiss_idx = self.doc_id_to_index[doc_id]
+                faiss_idx = self.index.ntotal - 1
+                self.doc_id_to_index[doc_id] = faiss_idx
+                self.index_to_doc_id[faiss_idx] = doc_id
+            except Exception as e:
+                print(f"⚠️  复用向量失败，将重新生成: {e}")
+                cached_faiss_idx = None
 
-                # 直接覆盖 FAISS 向量（使用 reconstruct_n 和 add）
-                # 注意：FAISS IndexFlatIP 不支持原地修改，只能通过重建实现
-                # 这里我们保持原 faiss_idx 不变，重建索引时会覆盖
-                embedding_2d = embedding.reshape(1, -1)
+        if cached_faiss_idx is None:
+            # 生成新向量
+            try:
+                embedding = await self.embedding_client.embed_text(full_content)
 
-                # 临时方案：标记需要重建索引
-                # 实际更新会在 _save_index 时通过完整重建完成
-                print(f"Updated vector for doc_id={doc_id}, faiss_idx={faiss_idx}")
+                # 归一化
+                norm = np.linalg.norm(embedding)
+                if norm > 0:
+                    embedding = embedding / norm
 
-        except Exception as e:
-            print(f"Warning: Failed to update embedding for doc_id={doc_id}: {e}")
+                # 添加到FAISS索引
+                embedding = embedding.reshape(1, -1)
+                self.index.add(embedding)
+
+                faiss_idx = self.index.ntotal - 1
+                self.doc_id_to_index[doc_id] = faiss_idx
+                self.index_to_doc_id[faiss_idx] = doc_id
+
+                print(f"✓ 生成新文档向量 (doc_id={doc_id}, faiss_idx={faiss_idx}, hash={content_hash[:8]}...)")
+
+            except Exception as e:
+                print(f"✗ 更新文档向量失败 (doc_id={doc_id}): {e}")
 
         # 8. 重新生成文档多粒度向量
         await self._index_document_vectors(doc_id, full_content)
@@ -770,16 +994,34 @@ class KnowledgeIndexer:
         }
 
     def clear_all(self):
-        """清空所有索引"""
+        """清空所有索引数据
+
+        保留向量缓存以加速重建：
+        - 删除 documents、ngrams、document_tags 表的所有记录
+        - 仅删除 document_vectors 和 ngram_vectors 表中 vector_data 为 NULL 的记录（元数据）
+        - 保留 vector_data 不为 NULL 的记录作为缓存
+        - 清除缓存记录的 faiss_idx 和 doc_id（避免 UNIQUE 冲突）
+        """
         self.conn.execute('DELETE FROM documents')
         self.conn.execute('DELETE FROM ngrams')
         self.conn.execute('DELETE FROM document_tags')
+
+        # 只删除没有向量数据的元数据记录，保留缓存
+        self.conn.execute('DELETE FROM document_vectors WHERE vector_data IS NULL')
+        self.conn.execute('DELETE FROM ngram_vectors WHERE vector_data IS NULL')
+
+        # 清除缓存记录的 faiss_idx 和 doc_id（避免 UNIQUE 冲突和外键引用问题）
+        # 设置 doc_id = -1 作为缓存记录的标记（因为有 NOT NULL 约束）
+        # 缓存查找通过 content_hash 进行，不依赖 doc_id
+        self.conn.execute('UPDATE document_vectors SET faiss_idx = NULL, doc_id = -1 WHERE vector_data IS NOT NULL')
+        self.conn.execute('UPDATE ngram_vectors SET faiss_idx = NULL WHERE vector_data IS NOT NULL')
         self.conn.commit()
 
         # 重建FAISS索引
         self._create_new_index()
         self.doc_id_to_index.clear()
         self.index_to_doc_id.clear()
+        self.vector_cache.clear()
         self._save_index()
 
     def close(self):

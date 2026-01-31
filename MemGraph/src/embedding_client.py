@@ -5,7 +5,7 @@
 import httpx
 from typing import List
 import numpy as np
-from .config import EMBED_SERVICE_URL, EMBED_DIMENSION
+from .config import EMBED_SERVICE_URL, EMBED_DIMENSION, EMBED_FULL_DIMENSION
 
 
 class EmbeddingClient:
@@ -59,13 +59,17 @@ class EmbeddingClient:
 
             embedding_array = np.array(embedding, dtype=np.float32)
 
-            # 验证维度
-            if len(embedding_array) != EMBED_DIMENSION:
-                raise ValueError(f"Embedding dimension mismatch: expected {EMBED_DIMENSION}, got {len(embedding_array)}")
+            # 验证维度（服务返回的是4096维）
+            if len(embedding_array) != EMBED_FULL_DIMENSION:
+                raise ValueError(f"Embedding dimension mismatch: expected {EMBED_FULL_DIMENSION}, got {len(embedding_array)}")
 
             # 验证不是全零向量
             if np.all(embedding_array == 0):
                 raise ValueError("Received all-zero embedding vector")
+
+            # 降维到512维以节省存储和计算
+            if len(embedding_array) > EMBED_DIMENSION:
+                embedding_array = embedding_array[:EMBED_DIMENSION]
 
             return embedding_array
 

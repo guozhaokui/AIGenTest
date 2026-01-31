@@ -2,13 +2,14 @@
 FastAPI 服务端
 提供知识图谱搜索的HTTP接口
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import uvicorn
 from pathlib import Path
+import shutil
 
 from .config import SERVICE_PORT, SERVICE_HOST, RECORDS_DIR, BASE_DIR
 from .knowledge_indexer import KnowledgeIndexer
@@ -373,6 +374,86 @@ tags: [{', '.join(req.tags)}]
         "doc_id": doc_id,
         "path": relative_path,
         "full_path": str(full_file_path)
+    }
+
+
+@app.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    """上传文件并自动加上meta数据（时间戳）"""
+    await ensure_initialized()
+
+    from datetime import datetime
+    import os
+
+    # 验证文件
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="文件名为空")
+
+    # 生成保存路径
+    now = datetime.now()
+    date_str = now.strftime("%Y/%m")  # 例如：2026/01
+
+    # 创建 uploads 子目录
+    upload_dir = RECORDS_DIR / "uploads" / date_str
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    # 生成文件名（添加时间戳前缀避免重名）
+    timestamp_prefix = now.strftime("%d_%H-%M-%S")
+    original_filename = file.filename
+    safe_filename = f"{timestamp_prefix}_{original_filename}"
+
+    file_path = upload_dir / safe_filename
+    relative_path = f"uploads/{date_str}/{safe_filename}"
+
+    # 保存文件
+    try:
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"文件保存失败: {str(e)}")
+    finally:
+        await file.close()
+
+    # 读取文件内容（如果是文本文件）
+    file_content = ""
+    file_ext = os.path.splitext(original_filename)[1].lower()
+
+    # 支持的文本文件扩展名
+    text_extensions = ['.txt', '.md', '.py', '.js', '.json', '.csv', '.xml', '.html', '.css', '.yaml', '.yml', '.log']
+
+    if file_ext in text_extensions:
+        try:
+            file_content = file_path.read_text(encoding='utf-8', errors='ignore')
+        except Exception as e:
+            print(f"Warning: Failed to read file content: {e}")
+            file_content = f"[无法读取文件内容: {str(e)}]"
+    else:
+        file_content = f"[二进制文件: {file_ext}]"
+
+    # 创建文档记录
+    document = {
+        'path': relative_path,
+        'role': 'AI',
+        'project': '',
+        'directory': str(upload_dir),
+        'timestamp': now.isoformat(),
+        'tags': ['上传文件', file_ext.lstrip('.')],
+        'problem': f"上传文件: {original_filename}",
+        'solution': file_content
+    }
+
+    # 索引文档
+    doc_id = await indexer.index_document(document)
+
+    return {
+        "success": True,
+        "doc_id": doc_id,
+        "path": relative_path,
+        "full_path": str(file_path),
+        "filename": original_filename,
+        "size": file_path.stat().st_size,
+        "timestamp": now.isoformat(),
+        "file_type": file_ext
     }
 
 

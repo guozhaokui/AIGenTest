@@ -80,3 +80,26 @@
 {"timestamp": "2026-01-29T18:56:01.990692", "query": "cursor的会话记录保存在哪里", "result_count": 5, "search_time_ms": 197.13, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
 {"timestamp": "2026-01-29T18:56:10.572281", "query": "cursor 会话 对话记录", "result_count": 3, "search_time_ms": 179.32, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
 {"timestamp": "2026-01-29T19:06:55.026870", "query": "cursor的会话记录保存在哪里", "result_count": 1, "search_time_ms": 185.65, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T19:30:39.984469", "query": "metagpt", "result_count": 0, "search_time_ms": 0.0, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T19:34:36.435360", "query": "metagpt", "result_count": 0, "search_time_ms": 0.0, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T19:35:00.773677", "query": "MetaGPT", "result_count": 0, "search_time_ms": 0.0, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-29T19:38:08.171548", "query": "metagpt", "result_count": 1, "search_time_ms": 344.94, "options": {"limit": 1, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-30T09:59:21.721354", "query": "metagpt", "result_count": 1, "search_time_ms": 745.23, "options": {"limit": 2, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-30T15:35:51.823741", "query": "metagpt", "result_count": 1, "search_time_ms": 172.09, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T10:07:17.242156", "query": "linux81的地址", "result_count": 5, "search_time_ms": 252.81, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:18:41.965337", "query": "mcp全局配置", "result_count": 5, "search_time_ms": 254.45, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:26:13.579856", "query": "mcp全局配置", "result_count": 5, "search_time_ms": 206.38, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:26:40.456196", "query": "aiplatform 的部署地址", "result_count": 5, "search_time_ms": 239.97, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:36:56.284210", "query": "向量数据库", "result_count": 10, "search_time_ms": 757.07, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:37:17.576767", "query": "aiplatform 的部署地址", "result_count": 5, "search_time_ms": 185.07, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:41:06.756925", "query": "龙虾的地址", "result_count": 5, "search_time_ms": 187.0, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:41:16.716769", "query": "glm的收费页面", "result_count": 4, "search_time_ms": 212.75, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:43:48.906847", "query": "agent不用记住所有的资料", "result_count": 5, "search_time_ms": 182.25, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:44:05.181399", "query": "还有设么没有做", "result_count": 5, "search_time_ms": 188.98, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:44:22.324498", "query": "还有什么没有做的", "result_count": 5, "search_time_ms": 262.36, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:44:44.658744", "query": "agent记忆相关资料", "result_count": 1, "search_time_ms": 198.19, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T15:56:16.004378", "query": "文件上传功能", "result_count": 10, "search_time_ms": 216.29, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T16:00:46.408195", "query": "捷德是谁", "result_count": 1, "search_time_ms": 387.99, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T16:01:21.753806", "query": "居儿城是什么", "result_count": 3, "search_time_ms": 443.58, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T16:01:38.696688", "query": "捷德的全名是什么", "result_count": 4, "search_time_ms": 224.19, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T16:14:14.336825", "query": "配置亚马逊", "result_count": 5, "search_time_ms": 316.55, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}

@@ -427,6 +427,31 @@
                 </form>
             </div>
 
+            <!-- 上传文件 -->
+            <div class="card">
+                <h2>📤 上传文件</h2>
+                <div id="uploadMessage" class="message"></div>
+                <form id="uploadForm">
+                    <div class="form-group">
+                        <label>选择文件</label>
+                        <input type="file" id="fileInput" required style="padding: 8px;">
+                    </div>
+                    <div id="fileInfo" style="margin-bottom: 15px; color: #666; font-size: 14px;"></div>
+                    <button type="submit" class="btn">上传并索引</button>
+                </form>
+                <div style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px; font-size: 0.9em;">
+                    <strong>说明：</strong>
+                    <ul style="margin: 10px 0 0 20px; line-height: 1.6;">
+                        <li>文件将保存到 records/uploads/ 目录</li>
+                        <li>自动添加时间戳元数据</li>
+                        <li>文本文件会被索引到知识库</li>
+                        <li>支持: txt, md, py, js, json, csv, xml, html等</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
             <!-- 统计信息 -->
             <div class="card">
                 <h2>📊 统计信息</h2>
@@ -557,6 +582,96 @@
                 messageEl.textContent = `❌ 错误: ${error.message}`;
             }
 
+            setTimeout(() => {
+                messageEl.className = 'message';
+            }, 5000);
+        });
+
+        // 文件选择时显示文件信息
+        document.getElementById('fileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            const fileInfoEl = document.getElementById('fileInfo');
+
+            if (file) {
+                const sizeKB = (file.size / 1024).toFixed(2);
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                const sizeStr = file.size > 1024 * 1024 ? `${sizeMB} MB` : `${sizeKB} KB`;
+
+                fileInfoEl.innerHTML = `
+                    📄 <strong>${file.name}</strong><br>
+                    📦 大小: ${sizeStr}<br>
+                    🏷️ 类型: ${file.type || '未知'}
+                `;
+            } else {
+                fileInfoEl.innerHTML = '';
+            }
+        });
+
+        // 上传文件
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const messageEl = document.getElementById('uploadMessage');
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                messageEl.className = 'message error show';
+                messageEl.textContent = '❌ 请选择文件';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                // 重置样式为加载状态
+                messageEl.className = 'message show';
+                messageEl.style.background = '#fff3cd';
+                messageEl.style.color = '#856404';
+                messageEl.style.border = '1px solid #ffc107';
+                messageEl.textContent = '⏳ 正在上传并索引...';
+
+                console.log('开始上传文件:', file.name);
+
+                const response = await fetch(`${API_BASE}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                console.log('收到响应:', response.status);
+
+                const result = await response.json();
+                console.log('解析结果:', result);
+
+                if (response.ok && result.success) {
+                    messageEl.className = 'message success show';
+                    messageEl.style.background = '#d4edda';
+                    messageEl.style.color = '#155724';
+                    messageEl.style.border = '1px solid #c3e6cb';
+                    messageEl.textContent = `✅ 上传成功！\n文件: ${result.filename}\n大小: ${(result.size / 1024).toFixed(2)} KB\n路径: ${result.path}`;
+
+                    // 重置表单
+                    document.getElementById('uploadForm').reset();
+                    document.getElementById('fileInfo').innerHTML = '';
+
+                    // 刷新统计
+                    loadStats();
+
+                    console.log('上传完成');
+                } else {
+                    throw new Error(result.detail || result.error || '上传失败');
+                }
+            } catch (error) {
+                console.error('上传错误:', error);
+                messageEl.className = 'message error show';
+                messageEl.style.background = '#f8d7da';
+                messageEl.style.color = '#721c24';
+                messageEl.style.border = '1px solid #f5c6cb';
+                messageEl.textContent = `❌ 错误: ${error.message}`;
+            }
+
+            // 5秒后隐藏消息
             setTimeout(() => {
                 messageEl.className = 'message';
             }, 5000);

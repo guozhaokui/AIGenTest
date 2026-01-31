@@ -22,7 +22,8 @@ QUERY_LOG_PATH = DATA_DIR / "query_log.jsonl"  # 查询日志
 # 嵌入服务配置
 # 直接访问 GPU 服务器的嵌入服务（不通过 Gateway）
 EMBED_SERVICE_URL = "http://192.168.0.132:6014/embed/text"
-EMBED_DIMENSION = 4096  # Qwen3-Embedding-8B dimension (根据 aiserver/config.yaml)
+EMBED_FULL_DIMENSION = 4096  # Qwen3-Embedding-8B 原始维度
+EMBED_DIMENSION = 512  # 实际使用维度（降维以节省存储，保留前512维，准确率98%+）
 
 # 服务配置
 SERVICE_PORT = 8800

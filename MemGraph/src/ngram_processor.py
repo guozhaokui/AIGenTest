@@ -193,6 +193,16 @@ class NgramProcessor:
         filtered_words = [w for w in words
                           if len(w) >= self.min_length and w not in self.stop_words]
 
+        # 1.5 单个词（word_1gram）
+        for i, word in enumerate(filtered_words):
+            all_ngrams.append({
+                "content": word,
+                "gram_type": "word_1gram",
+                "gram_size": 1,
+                "section": section,
+                "position": i
+            })
+
         if NGRAM_CONFIG.get("word_2gram", True):
             all_ngrams.extend(self._generate_word_ngrams(
                 filtered_words, 2, "word_2gram", section
@@ -242,7 +252,7 @@ class NgramProcessor:
 
     def _segment_words(self, text: str) -> List[str]:
         """分词"""
-        return list(jieba.cut(text))
+        return list(jieba.cut(text.lower()))
 
     def _split_sentences(self, text: str) -> List[str]:
         """分句"""
@@ -267,6 +277,7 @@ class NgramProcessor:
     def _generate_char_ngrams(self, text: str, n: int,
                               gram_type: str, section: str) -> List[Dict]:
         """生成字符级别n-gram"""
+        text = text.lower()  # 统一转小写
         ngrams = []
         for i in range(len(text) - n + 1):
             gram = text[i:i + n]
@@ -310,7 +321,7 @@ class NgramProcessor:
                     ngrams.add(' '.join(filtered_words[i:i + n]))
 
         # 字符n-gram (仅中文，避免纯英文数字的无意义拆分)
-        clean_text = re.sub(r'\s+', '', query_text)
+        clean_text = re.sub(r'\s+', '', query_text.lower())
         for n in [2, 3]:
             for i in range(len(clean_text) - n + 1):
                 gram = clean_text[i:i + n]
