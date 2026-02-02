@@ -1,13 +1,28 @@
 <template>
   <div class="document-management">
-    <el-card>
+    <el-card shadow="never" class="header-card">
       <template #header>
         <div class="card-header">
           <span>文档管理</span>
-          <el-button type="primary" @click="handleScan" :loading="scanning">
-            <el-icon><Folder /></el-icon>
-            扫描目录
-          </el-button>
+          <div class="header-actions">
+            <el-upload
+              :action="uploadUrl"
+              :show-file-list="false"
+              :on-success="handleUploadSuccess"
+              :on-error="handleUploadError"
+              :before-upload="beforeUpload"
+              accept=".txt,.md,.py,.js,.json,.csv,.xml,.html,.css,.yaml,.yml,.log"
+            >
+              <el-button type="success" :loading="uploading">
+                <el-icon><Upload /></el-icon>
+                上传文件
+              </el-button>
+            </el-upload>
+            <el-button type="primary" @click="handleScan" :loading="scanning">
+              <el-icon><Folder /></el-icon>
+              扫描目录
+            </el-button>
+          </div>
         </div>
       </template>
 
@@ -24,7 +39,7 @@
     </el-card>
 
     <!-- 文档列表 -->
-    <el-card style="margin-top: 20px" v-if="files.length > 0">
+    <el-card shadow="never" class="list-card" v-if="files.length > 0">
       <template #header>
         <div class="card-header">
           <span>文档列表（共 {{ files.length }} 个文件）</span>
@@ -160,10 +175,14 @@ const docsPath = ref('/mnt/e/TEST/work/日志');
 const scanning = ref(false);
 const indexing = ref(false);
 const clearing = ref(false);
+const uploading = ref(false);
 const files = ref([]);
 const selectedFiles = ref([]);
 const showProgress = ref(false);
 const indexResults = ref([]);
+
+// 上传URL
+const uploadUrl = 'http://localhost:8848/upload';
 
 const handleScan = async () => {
   scanning.value = true;
@@ -327,6 +346,36 @@ const formatDate = (dateStr) => {
   return date.toLocaleString('zh-CN');
 };
 
+// 上传前验证
+const beforeUpload = (file) => {
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (file.size > maxSize) {
+    ElMessage.error('文件大小不能超过 10MB');
+    return false;
+  }
+  uploading.value = true;
+  return true;
+};
+
+// 上传成功
+const handleUploadSuccess = (response) => {
+  uploading.value = false;
+  if (response.success) {
+    ElMessage.success(`文件上传成功: ${response.filename}`);
+    // 刷新文档列表
+    handleScan();
+  } else {
+    ElMessage.error('上传失败: ' + (response.error || '未知错误'));
+  }
+};
+
+// 上传失败
+const handleUploadError = (error) => {
+  uploading.value = false;
+  console.error('上传失败:', error);
+  ElMessage.error('上传失败: ' + error.message);
+};
+
 onMounted(() => {
   // 自动扫描
   handleScan();
@@ -335,7 +384,49 @@ onMounted(() => {
 
 <style scoped>
 .document-management {
-  padding: 20px;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-card {
+  border-radius: 0;
+  border-bottom: 1px solid #dcdfe6;
+  flex-shrink: 0;
+}
+
+.header-card :deep(.el-card__header) {
+  padding: 16px;
+  border-bottom: 1px solid #dcdfe6;
+}
+
+.header-card :deep(.el-card__body) {
+  padding: 16px;
+}
+
+.list-card {
+  flex: 1;
+  border-radius: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.list-card :deep(.el-card__header) {
+  padding: 16px;
+  border-bottom: 1px solid #dcdfe6;
+  flex-shrink: 0;
+}
+
+.list-card :deep(.el-card__body) {
+  padding: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.list-card :deep(.el-table) {
+  height: 100%;
 }
 
 .card-header {
@@ -344,7 +435,12 @@ onMounted(() => {
   align-items: center;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .path-config {
-  margin-bottom: 20px;
+  margin-bottom: 0;
 }
 </style>

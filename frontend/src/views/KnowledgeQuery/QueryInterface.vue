@@ -1,6 +1,6 @@
 <template>
   <div class="query-interface">
-    <el-card>
+    <el-card shadow="never" class="header-card">
       <template #header>
         <div class="card-header">
           <div class="header-left">
@@ -128,7 +128,8 @@
       <el-card
         v-for="(item, index) in queryHistory"
         :key="index"
-        style="margin-top: 20px"
+        shadow="never"
+        class="history-card"
       >
         <template #header>
           <div class="history-header">
@@ -433,7 +434,25 @@ onMounted(() => {
 
 <style scoped>
 .query-interface {
-  padding: 20px;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.header-card {
+  border-radius: 0;
+  border-bottom: 1px solid #dcdfe6;
+  flex-shrink: 0;
+}
+
+.header-card :deep(.el-card__header) {
+  padding: 16px;
+  border-bottom: 1px solid #dcdfe6;
+}
+
+.header-card :deep(.el-card__body) {
+  padding: 16px;
 }
 
 .card-header {
@@ -448,24 +467,25 @@ onMounted(() => {
 }
 
 .query-input {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 /* 聊天模式样式 */
 .chat-mode {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 280px);
+  height: calc(100vh - 220px);
 }
 
 .chat-history {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 16px;
   background-color: #f5f7fa;
-  border-radius: 4px;
-  margin-bottom: 20px;
-  max-height: 500px;
+  border-radius: 0;
+  border-top: 1px solid #dcdfe6;
+  margin-bottom: 0;
+  max-height: none;
 }
 
 .empty-chat {
@@ -522,8 +542,9 @@ onMounted(() => {
 .message-content {
   max-width: 70%;
   padding: 12px 16px;
-  border-radius: 8px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  border-radius: 0;
+  box-shadow: none;
+  border: 1px solid #e4e7ed;
 }
 
 .message-text {
@@ -556,7 +577,7 @@ onMounted(() => {
 .thinking-section {
   margin-bottom: 12px;
   border: 1px solid #e4e7ed;
-  border-radius: 8px;
+  border-radius: 0;
   background-color: #f9fafc;
   overflow: hidden;
 }
@@ -638,7 +659,8 @@ onMounted(() => {
 
 .chat-input {
   border-top: 1px solid #e4e7ed;
-  padding-top: 16px;
+  padding: 16px;
+  background-color: white;
 }
 
 .chat-actions {
@@ -649,7 +671,28 @@ onMounted(() => {
 
 /* 知识问答历史样式 */
 .query-history {
-  margin-top: 20px;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+.history-card {
+  border-radius: 0;
+  border-bottom: 1px solid #dcdfe6;
+  margin-bottom: 0;
+}
+
+.history-card:last-child {
+  border-bottom: none;
+}
+
+.history-card :deep(.el-card__header) {
+  padding: 16px;
+  border-bottom: 1px solid #dcdfe6;
+}
+
+.history-card :deep(.el-card__body) {
+  padding: 16px;
 }
 
 .history-header {
@@ -670,7 +713,8 @@ onMounted(() => {
 .answer-content {
   padding: 15px;
   background-color: #f5f7fa;
-  border-radius: 4px;
+  border-radius: 0;
+  border: 1px solid #e4e7ed;
 }
 
 .answer-text {
@@ -687,7 +731,8 @@ onMounted(() => {
   white-space: pre-wrap;
   background-color: #f9f9f9;
   padding: 10px;
-  border-radius: 4px;
+  border-radius: 0;
+  border: 1px solid #e4e7ed;
   max-height: 300px;
   overflow-y: auto;
 }

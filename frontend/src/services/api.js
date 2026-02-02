@@ -113,9 +113,9 @@ export function listModels() {
   return api.get('/models').then(r => r.data);
 }
 
-// Knowledge Query API - 使用 MemGraph 服务 (port 8800)
+// Knowledge Query API - 使用 MemGraph 服务 (port 8848)
 const knowledgeApi = axios.create({
-  baseURL: 'http://localhost:8800',
+  baseURL: 'http://localhost:8848',
   timeout: 30000
 });
 

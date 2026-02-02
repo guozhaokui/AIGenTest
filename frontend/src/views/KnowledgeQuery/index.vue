@@ -19,10 +19,14 @@
             <el-icon><Document /></el-icon>
             <span>文档管理</span>
           </el-menu-item>
-          <el-menu-item index="memory">
-            <el-icon><Memo /></el-icon>
-            <span>记忆管理</span>
-          </el-menu-item>
+          <el-sub-menu index="memory-group">
+            <template #title>
+              <el-icon><Memo /></el-icon>
+              <span>记忆管理</span>
+            </template>
+            <el-menu-item index="memory">知识图谱</el-menu-item>
+            <el-menu-item index="add-memory">添加记忆</el-menu-item>
+          </el-sub-menu>
         </el-menu>
 
         <!-- 统计信息 -->

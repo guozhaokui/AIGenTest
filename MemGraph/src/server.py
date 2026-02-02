@@ -330,7 +330,13 @@ async def record_lesson(req: RecordLessonRequest):
     now = datetime.now()
     date_str = now.strftime("%Y/%m")  # 例如：2026/01
     timestamp = now.strftime("%d_%H-%M-%S")  # 例如：28_12-21-49
-    slug = req.problem[:30].replace(' ', '-').replace('/', '-').replace('\\', '-')
+
+    # 清理文件名中的非法字符（Windows: \ / : * ? " < > |）
+    slug = req.problem[:30]
+    for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|']:
+        slug = slug.replace(char, '-')
+    slug = slug.replace(' ', '-')
+
     filename = f"{timestamp}_{slug}.md"
     relative_path = f"{date_str}/{filename}"
 

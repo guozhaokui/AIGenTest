@@ -26,7 +26,7 @@ EMBED_FULL_DIMENSION = 4096  # Qwen3-Embedding-8B 原始维度
 EMBED_DIMENSION = 512  # 实际使用维度（降维以节省存储，保留前512维，准确率98%+）
 
 # 服务配置
-SERVICE_PORT = 8800
+SERVICE_PORT = 8848
 SERVICE_HOST = "0.0.0.0"
 
 # N-gram配置
