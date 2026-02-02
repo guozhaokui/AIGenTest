@@ -597,9 +597,262 @@ class KnowledgeIndexer:
         # 最后提交剩余的
         self.conn.commit()
 
+    def check_document_exists(self, content_hash: str, path: str = None) -> Optional[Dict]:
+        """检查文档是否已存在
+
+        Args:
+            content_hash: 内容哈希值
+            path: 文件路径（可选）
+
+        Returns:
+            如果存在返回 {'doc_id': int, 'path': str, 'content_hash': str, 'is_same_content': bool}
+            不存在返回 None
+        """
+        # 1. 先检查是否有相同哈希的文档
+        cursor = self.conn.execute('''
+            SELECT id, path, content_hash FROM documents
+            WHERE content_hash = ?
+        ''', (content_hash,))
+
+        row = cursor.fetchone()
+        if row:
+            return {
+                'doc_id': row[0],
+                'path': row[1],
+                'content_hash': row[2],
+                'is_same_content': True  # 内容完全相同
+            }
+
+        # 2. 如果提供了path，检查是否有相同路径的文档（可能是修改）
+        if path:
+            cursor = self.conn.execute('''
+                SELECT id, path, content_hash FROM documents
+                WHERE path = ?
+            ''', (path,))
+
+            row = cursor.fetchone()
+            if row:
+                return {
+                    'doc_id': row[0],
+                    'path': row[1],
+                    'content_hash': row[2],
+                    'is_same_content': False  # 同路径但内容不同
+                }
+
+        return None
+
+    async def index_document_smart(self, document: Dict, save_index: bool = True,
+                                   generate_ngram_vectors: bool = True,
+                                   force_update: bool = False) -> Dict:
+        """智能添加或更新文档（带去重和更新检测）
+
+        Args:
+            document: 文档字典
+            save_index: 是否立即保存FAISS索引
+            generate_ngram_vectors: 是否生成N-gram向量
+            force_update: 是否强制更新（即使内容相同也更新时间戳等元数据）
+
+        Returns:
+            {
+                'action': 'added' | 'updated' | 'skipped',
+                'doc_id': int,
+                'message': str,
+                'old_hash': str (仅更新时),
+                'new_hash': str
+            }
+        """
+        # 计算内容哈希
+        full_content = f"{document.get('problem', '')}\n\n{document.get('solution', '')}"
+        content_hash = self.compute_content_hash(full_content)
+        path = document.get('path', '')
+
+        # 检查是否已存在
+        existing = self.check_document_exists(content_hash, path)
+
+        if existing:
+            if existing['is_same_content']:
+                # 内容完全相同
+                if force_update:
+                    # 强制更新元数据
+                    await self.update_document_async(existing['doc_id'], document, save_index, generate_ngram_vectors)
+                    return {
+                        'action': 'updated',
+                        'doc_id': existing['doc_id'],
+                        'message': f'强制更新文档元数据 (内容未变)',
+                        'old_hash': existing['content_hash'],
+                        'new_hash': content_hash
+                    }
+                else:
+                    # 跳过重复内容
+                    print(f"⏭️  跳过重复文档: {document.get('problem', path)} (哈希: {content_hash[:16]}...)")
+                    return {
+                        'action': 'skipped',
+                        'doc_id': existing['doc_id'],
+                        'message': f'跳过重复文档 (相同哈希)',
+                        'old_hash': existing['content_hash'],
+                        'new_hash': content_hash
+                    }
+            else:
+                # 同路径但内容不同，需要更新
+                print(f"📝 检测到文档修改: {path}")
+                print(f"   旧哈希: {existing['content_hash'][:16]}...")
+                print(f"   新哈希: {content_hash[:16]}...")
+
+                await self.update_document_async(existing['doc_id'], document, save_index, generate_ngram_vectors)
+                return {
+                    'action': 'updated',
+                    'doc_id': existing['doc_id'],
+                    'message': f'更新修改的文档',
+                    'old_hash': existing['content_hash'],
+                    'new_hash': content_hash
+                }
+        else:
+            # 新文档，添加
+            print(f"➕ 添加新文档: {document.get('problem', path)} (哈希: {content_hash[:16]}...)")
+            doc_id = await self.index_document(document, save_index, generate_ngram_vectors)
+            return {
+                'action': 'added',
+                'doc_id': doc_id,
+                'message': f'添加新文档',
+                'new_hash': content_hash
+            }
+
+    async def update_document_async(self, doc_id: int, document: Dict,
+                                     save_index: bool = True,
+                                     generate_ngram_vectors: bool = True) -> None:
+        """
+        更新已存在的文档（删除旧向量，重新索引）
+
+        Args:
+            doc_id: 要更新的文档ID
+            document: 新的文档数据
+            save_index: 是否立即保存FAISS索引
+            generate_ngram_vectors: 是否生成N-gram向量
+        """
+        print(f"🔄 更新文档 {doc_id}: {document.get('problem', document.get('path', 'N/A'))}")
+
+        # 1. 删除旧的FAISS向量
+        if doc_id in self.doc_id_to_index:
+            old_faiss_idx = self.doc_id_to_index[doc_id]
+            # FAISS不支持直接删除，但我们可以从映射中移除
+            del self.doc_id_to_index[doc_id]
+            del self.index_to_doc_id[old_faiss_idx]
+            print(f"   移除旧的FAISS映射 (idx={old_faiss_idx})")
+
+        # 2. 删除旧的数据库记录
+        # 删除文档向量
+        self.conn.execute('DELETE FROM document_vectors WHERE doc_id = ?', (doc_id,))
+
+        # 删除n-grams
+        self.conn.execute('DELETE FROM ngrams WHERE doc_id = ?', (doc_id,))
+
+        # 删除标签关联
+        self.conn.execute('DELETE FROM document_tags WHERE doc_id = ?', (doc_id,))
+
+        print(f"   删除旧的向量和n-grams")
+
+        # 3. 更新文档基本信息
+        tags_str = ','.join(document.get('tags', []))
+        full_content = f"{document.get('problem', '')}\n\n{document.get('solution', '')}"
+        content_hash = self.compute_content_hash(full_content)
+
+        self.conn.execute('''
+            UPDATE documents
+            SET path = ?, role = ?, project = ?, directory = ?,
+                timestamp = ?, tags = ?, problem = ?, solution = ?,
+                full_content = ?, content_hash = ?
+            WHERE id = ?
+        ''', (
+            document['path'],
+            document.get('role', 'AI'),
+            document.get('project', ''),
+            document.get('directory', ''),
+            document.get('timestamp', ''),
+            tags_str,
+            document.get('problem', ''),
+            document.get('solution', ''),
+            full_content,
+            content_hash,
+            doc_id
+        ))
+
+        print(f"   更新文档元数据 (新hash={content_hash[:16]}...)")
+
+        # 4. 重新生成标签
+        for tag in document.get('tags', []):
+            self.conn.execute(
+                'INSERT OR IGNORE INTO document_tags (doc_id, tag) VALUES (?, ?)',
+                (doc_id, tag)
+            )
+
+        # 5. 重新生成n-grams
+        ngrams = self.ngram_processor.process_document(document)
+        for ngram in ngrams:
+            self.conn.execute('''
+                INSERT INTO ngrams (doc_id, content, gram_type, gram_size, section, position)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (
+                doc_id,
+                ngram['content'],
+                ngram['gram_type'],
+                ngram['gram_size'],
+                ngram['section'],
+                ngram['position']
+            ))
+
+        print(f"   重新生成 {len(ngrams)} 个n-grams")
+
+        # 6. 重新生成文档向量
+        try:
+            embedding = await self.embedding_client.embed_text(full_content)
+
+            # 归一化向量
+            norm = np.linalg.norm(embedding)
+            if norm > 0:
+                embedding = embedding / norm
+
+            # 添加到FAISS索引
+            embedding = embedding.reshape(1, -1)
+            self.index.add(embedding)
+
+            # 更新映射
+            faiss_idx = self.index.ntotal - 1
+            self.doc_id_to_index[doc_id] = faiss_idx
+            self.index_to_doc_id[faiss_idx] = doc_id
+
+            # 保存到 document_vectors 表
+            self.conn.execute('''
+                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0, embedding.tobytes()))
+
+            print(f"   生成新的文档向量 (FAISS idx={faiss_idx})")
+
+        except Exception as e:
+            print(f"❌ 生成向量失败: {e}")
+            raise
+
+        # 7. 生成文档多粒度向量（段落、句子）
+        await self._index_document_vectors(doc_id, full_content)
+        print(f"   生成多粒度向量")
+
+        # 8. 为 word_3gram, word_4gram, sentence 生成向量
+        if generate_ngram_vectors:
+            await self._index_ngram_vectors(ngrams)
+            print(f"   生成n-gram向量")
+
+        # 9. 提交更改
+        self.conn.commit()
+
+        # 10. 保存索引
+        if save_index:
+            self._save_index()
+
+        print(f"✅ 文档更新完成 (doc_id={doc_id})")
+
     async def index_document(self, document: Dict, save_index: bool = True, generate_ngram_vectors: bool = True) -> int:
         """
-        索引单个文档
+        索引单个文档（内部方法，不做去重检查）
 
         Args:
             document: 文档字典

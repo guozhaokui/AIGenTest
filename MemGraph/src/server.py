@@ -15,6 +15,7 @@ from .config import SERVICE_PORT, SERVICE_HOST, RECORDS_DIR, BASE_DIR
 from .knowledge_indexer import KnowledgeIndexer
 from .activation_search import ActivationSearch
 from .query_logger import QueryLogger
+from .graph_expander import GraphExpander
 
 
 app = FastAPI(
@@ -40,6 +41,7 @@ if STATIC_DIR.exists():
 # 全局变量
 indexer: Optional[KnowledgeIndexer] = None
 search_engine: Optional[ActivationSearch] = None
+graph_expander: Optional[GraphExpander] = None
 query_logger: QueryLogger = QueryLogger()
 _initialized = False
 
@@ -55,7 +57,7 @@ rebuild_progress = {
 
 async def ensure_initialized():
     """确保服务已初始化（延迟初始化）"""
-    global indexer, search_engine, _initialized
+    global indexer, search_engine, graph_expander, _initialized
 
     if _initialized:
         return
@@ -65,6 +67,7 @@ async def ensure_initialized():
 
         indexer = KnowledgeIndexer()
         search_engine = ActivationSearch(indexer)
+        graph_expander = GraphExpander(indexer, search_engine)
 
         # 启动时不自动同步，让用户手动点击"重建索引"
         # 如果有记录目录，同步现有文档
@@ -367,11 +370,14 @@ tags: [{', '.join(req.tags)}]
         'solution': req.solution
     }
 
-    doc_id = await indexer.index_document(document)
+    # 使用智能索引（自动去重和更新检测）
+    result = await indexer.index_document_smart(document)
 
     return {
         "success": True,
-        "doc_id": doc_id,
+        "doc_id": result['doc_id'],
+        "action": result['action'],  # 'added', 'updated', 或 'skipped'
+        "message": result['message'],
         "path": relative_path,
         "full_path": str(full_file_path)
     }
@@ -442,12 +448,14 @@ async def upload_file(file: UploadFile = File(...)):
         'solution': file_content
     }
 
-    # 索引文档
-    doc_id = await indexer.index_document(document)
+    # 使用智能索引（自动去重和更新检测）
+    result = await indexer.index_document_smart(document)
 
     return {
         "success": True,
-        "doc_id": doc_id,
+        "doc_id": result['doc_id'],
+        "action": result['action'],  # 'added', 'updated', 或 'skipped'
+        "message": result['message'],
         "path": relative_path,
         "full_path": str(file_path),
         "filename": original_filename,
@@ -527,6 +535,74 @@ tags: [{', '.join(tags)}]
         "doc_id": req.doc_id,
         "path": old_path,
         "full_path": str(full_file_path)
+    }
+
+
+@app.delete("/document/{doc_id}")
+async def delete_document(doc_id: int):
+    """删除文档（包括文件、数据库记录和向量）"""
+    await ensure_initialized()
+
+    import os
+
+    # 1. 获取文档信息
+    cursor = indexer.conn.execute(
+        'SELECT path, problem FROM documents WHERE id = ?',
+        (doc_id,)
+    )
+    row = cursor.fetchone()
+
+    if not row:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
+
+    doc_path, problem = row
+
+    # 2. 删除物理文件（如果存在）
+    full_file_path = RECORDS_DIR / doc_path
+    file_deleted = False
+    if full_file_path.exists():
+        try:
+            full_file_path.unlink()
+            file_deleted = True
+            print(f"✓ 删除文件: {full_file_path}")
+        except Exception as e:
+            print(f"⚠️  删除文件失败: {e}")
+
+    # 3. 从 FAISS 映射中删除
+    if doc_id in indexer.doc_id_to_index:
+        old_faiss_idx = indexer.doc_id_to_index[doc_id]
+        del indexer.doc_id_to_index[doc_id]
+        del indexer.index_to_doc_id[old_faiss_idx]
+        print(f"✓ 删除 FAISS 映射 (idx={old_faiss_idx})")
+
+    # 4. 删除数据库记录
+    cursor1 = indexer.conn.execute('DELETE FROM document_vectors WHERE doc_id = ?', (doc_id,))
+    deleted_vectors = cursor1.rowcount
+
+    cursor2 = indexer.conn.execute('DELETE FROM ngrams WHERE doc_id = ?', (doc_id,))
+    deleted_ngrams = cursor2.rowcount
+
+    cursor3 = indexer.conn.execute('DELETE FROM document_tags WHERE doc_id = ?', (doc_id,))
+    deleted_tags = cursor3.rowcount
+
+    indexer.conn.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
+
+    indexer.conn.commit()
+    print(f"✓ 删除数据库记录 (向量:{deleted_vectors}, ngrams:{deleted_ngrams}, 标签:{deleted_tags})")
+
+    # 5. 保存更新后的索引
+    indexer._save_index()
+
+    return {
+        "success": True,
+        "doc_id": doc_id,
+        "problem": problem[:50] + "..." if len(problem) > 50 else problem,
+        "file_deleted": file_deleted,
+        "stats": {
+            "vectors": deleted_vectors,
+            "ngrams": deleted_ngrams,
+            "tags": deleted_tags
+        }
     }
 
 
@@ -718,6 +794,244 @@ async def rebuild_index_task():
 async def get_rebuild_progress():
     """获取重建进度"""
     return rebuild_progress
+
+
+# ============================================================================
+# 图扩展接口
+# ============================================================================
+
+class GraphSearchRequest(BaseModel):
+    query: str
+    initial_k: int = 5
+    expand_layers: int = 0
+    nodes_per_layer: int = 3
+
+
+class NodeExpandRequest(BaseModel):
+    doc_id: int
+    top_k: int = 5
+    min_similarity: float = 0.7  # 最小相似度阈值，默认70%
+
+
+class EdgeDetailsRequest(BaseModel):
+    doc_id1: int
+    doc_id2: int
+    top_k: int = 10
+
+
+class NodeRelationsRequest(BaseModel):
+    doc_id: int
+    top_k_per_vector: int = 3
+    min_similarity: float = 0.3
+
+
+@app.post("/graph/search")
+async def graph_search(req: GraphSearchRequest):
+    """搜索并动态扩展图节点
+
+    Args:
+        query: 搜索查询
+        initial_k: 初始返回的主节点数
+        expand_layers: 扩展层数（0=不扩展，1=扩展1层，2=扩展2层）
+        nodes_per_layer: 每层扩展的节点数
+
+    Returns:
+        {
+            "layer0": [主节点列表],
+            "layer1": [第1层关联节点],
+            "layer2": [第2层关联节点],
+            ...
+        }
+    """
+    await ensure_initialized()
+
+    try:
+        result = await graph_expander.search_and_expand(
+            query=req.query,
+            initial_k=req.initial_k,
+            expand_layers=req.expand_layers,
+            nodes_per_layer=req.nodes_per_layer
+        )
+
+        return {
+            "success": True,
+            "query": req.query,
+            "layers": result
+        }
+    except Exception as e:
+        import traceback
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+@app.post("/graph/expand")
+async def expand_node(req: NodeExpandRequest):
+    """从指定节点扩展一层关联节点
+
+    Args:
+        doc_id: 文档ID
+        top_k: 返回的关联节点数
+        min_similarity: 最小相似度阈值（0-1之间，默认0.7即70%）
+
+    Returns:
+        关联节点列表
+    """
+    await ensure_initialized()
+
+    try:
+        # 获取节点信息
+        node_info = graph_expander.get_document_info(req.doc_id)
+        if not node_info:
+            raise HTTPException(status_code=404, detail=f"Document {req.doc_id} not found")
+
+        # 扩展节点（使用相似度阈值）
+        related_nodes = graph_expander.expand_from_node(
+            req.doc_id,
+            req.top_k,
+            req.min_similarity
+        )
+
+        return {
+            "success": True,
+            "node": node_info,
+            "related_nodes": related_nodes,
+            "count": len(related_nodes),
+            "min_similarity": req.min_similarity  # 返回使用的阈值
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        return {
+            "success": False,
+            "error": str(e),
+            "traceback": traceback.format_exc()
+        }
+
+
+@app.get("/graph/node/{doc_id}")
+async def get_node_info(doc_id: int):
+    """获取节点详细信息
+
+    Args:
+        doc_id: 文档ID
+
+    Returns:
+        节点详细信息
+    """
+    await ensure_initialized()
+
+    node_info = graph_expander.get_document_info(doc_id)
+    if not node_info:
+        raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
+
+    # 获取文档的向量数量
+    vectors = graph_expander.get_document_vectors(doc_id)
+    node_info['vector_count'] = len(vectors)
+
+    return {
+        "success": True,
+        "node": node_info
+    }
+
+
+@app.post("/graph/node-relations")
+async def get_node_relations(req: NodeRelationsRequest):
+    """从一个节点出发，发现所有关联节点及其详细匹配信息
+
+    这是核心接口：
+    1. 遍历源节点的所有子向量
+    2. 对每个子向量搜索相似向量
+    3. 反向查找相似向量属于哪些文档
+    4. 返回所有关联节点及其匹配详情
+
+    Args:
+        doc_id: 源文档ID
+        top_k_per_vector: 每个子向量最多返回多少个相似向量
+        min_similarity: 最小相似度阈值
+
+    Returns:
+        {
+            "success": true,
+            "doc_id": 源文档ID,
+            "relations": {
+                "123": [  // 目标文档ID
+                    {
+                        "source_vec_content": "源向量内容",
+                        "source_vec_granularity": "paragraph",
+                        "target_vec_content": "目标向量内容",
+                        "target_vec_granularity": "sentence",
+                        "similarity": 0.89
+                    },
+                    ...
+                ],
+                ...
+            },
+            "related_count": 关联节点数量
+        }
+    """
+    await ensure_initialized()
+
+    try:
+        relations = graph_expander.get_node_relations(
+            req.doc_id,
+            req.top_k_per_vector,
+            req.min_similarity
+        )
+
+        # 获取关联节点的基本信息
+        related_nodes = {}
+        for target_doc_id in relations.keys():
+            doc_info = graph_expander.get_document_info(target_doc_id)
+            if doc_info:
+                related_nodes[target_doc_id] = {
+                    'doc_id': target_doc_id,
+                    'problem': doc_info.get('problem', ''),
+                    'path': doc_info.get('path', ''),
+                    'tags': doc_info.get('tags', ''),
+                    'match_count': len(relations[target_doc_id])
+                }
+
+        return {
+            "success": True,
+            "doc_id": req.doc_id,
+            "relations": relations,
+            "related_nodes": related_nodes,
+            "related_count": len(relations)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/graph/edge-details")
+async def get_edge_details(req: EdgeDetailsRequest):
+    """获取两个节点之间的详细向量匹配信息（兼容旧接口）
+
+    Args:
+        doc_id1: 第一个文档ID
+        doc_id2: 第二个文档ID
+        top_k: 返回最多多少对匹配向量
+
+    Returns:
+        匹配向量对列表
+    """
+    await ensure_initialized()
+
+    try:
+        matches = graph_expander.get_edge_details(req.doc_id1, req.doc_id2, req.top_k)
+
+        return {
+            "success": True,
+            "doc_id1": req.doc_id1,
+            "doc_id2": req.doc_id2,
+            "matches": matches,
+            "count": len(matches)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 # ============================================================================

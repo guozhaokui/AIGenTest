@@ -5,14 +5,17 @@
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
-    "dev": "node server.js",
-    "start": "node server.js"
+    "dev": "concurrently --names \"BACKEND,QWEN-LLM\" --prefix-colors \"cyan,magenta\" \"node server.js\" \"node start-qwen-llm.js\"",
+    "start": "node server.js",
+    "start:backend": "node server.js",
+    "start:qwen": "node start-qwen-llm.js"
   },
   "dependencies": {
     "@google/genai": "^1.30.0",
     "adm-zip": "^0.5.16",
     "axios": "^1.7.7",
     "better-sqlite3": "^12.6.2",
+    "concurrently": "^8.2.2",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

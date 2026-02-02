@@ -103,3 +103,12 @@
 {"timestamp": "2026-01-31T16:01:21.753806", "query": "居儿城是什么", "result_count": 3, "search_time_ms": 443.58, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
 {"timestamp": "2026-01-31T16:01:38.696688", "query": "捷德的全名是什么", "result_count": 4, "search_time_ms": 224.19, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
 {"timestamp": "2026-01-31T16:14:14.336825", "query": "配置亚马逊", "result_count": 5, "search_time_ms": 316.55, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T16:45:39.481582", "query": "向量数据库", "result_count": 3, "search_time_ms": 303.27, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T17:10:03.677753", "query": "metagpt", "result_count": 1, "search_time_ms": 831.24, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T17:10:20.657833", "query": "原神里面的捷德", "result_count": 2, "search_time_ms": 218.04, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T18:11:13.417276", "query": "向量数据的优化", "result_count": 3, "search_time_ms": 460.86, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-01-31T18:39:13.867989", "query": "智谱平台的费用在哪里看", "result_count": 3, "search_time_ms": 813.17, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-02-02T09:33:11.540784", "query": "智谱金额", "result_count": 2, "search_time_ms": 578.14, "options": {"limit": 5, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-02-02T15:00:13.855746", "query": "部署地址", "result_count": 9, "search_time_ms": 239.12, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-02-02T15:00:23.448344", "query": "部署地址", "result_count": 3, "search_time_ms": 227.76, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-02-02T15:01:03.246678", "query": "部署地址", "result_count": 9, "search_time_ms": 195.15, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}

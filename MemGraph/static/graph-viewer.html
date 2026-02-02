@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemGraph 知识图谱可视化</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* 左侧控制面板 */
+        .control-panel {
+            width: 350px;
+            background: white;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+            z-index: 10;
+        }
+
+        .panel-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .panel-header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .panel-header p {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .search-box {
+            padding: 20px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-box button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .search-box button:hover {
+            transform: translateY(-1px);
+        }
+
+        .search-box button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .options {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            background: #f8f9fa;
+        }
+
+        .option-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .option-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .option-row label {
+            flex: 1;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .option-row input[type="number"] {
+            width: 60px;
+            padding: 6px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .node-info {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .node-info h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 15px;
+        }
+
+        .info-empty {
+            color: #999;
+            font-size: 14px;
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .info-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .info-section-title {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .info-section-content {
+            font-size: 14px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .info-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: #e0e7ff;
+            color: #667eea;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .expand-btn {
+            width: 100%;
+            padding: 10px;
+            margin-top: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .expand-btn:hover {
+            background: #5568d3;
+        }
+
+        .expand-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 右侧画布区域 */
+        .canvas-area {
+            flex: 1;
+            position: relative;
+            background: #fafafa;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .canvas-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-btn {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .control-btn:hover {
+            background: #f5f5f5;
+            transform: scale(1.05);
+        }
+
+        .legend {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            font-size: 12px;
+        }
+
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid white;
+            box-shadow: 0 0 0 1px #ddd;
+        }
+
+        .legend-label {
+            color: #666;
+        }
+
+        .status-message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            font-size: 14px;
+            color: #333;
+            display: none;
+            z-index: 100;
+        }
+
+        .status-message.show {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+
+        .loading {
+            color: #667eea;
+        }
+
+        .error {
+            color: #f44336;
+        }
+
+        .success {
+            color: #4caf50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 左侧控制面板 -->
+        <div class="control-panel">
+            <div class="panel-header">
+                <h1>🔍 MemGraph 图谱探索</h1>
+                <p>动态知识图谱可视化</p>
+            </div>
+
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="输入搜索关键词，如：什么是 MemGraph">
+                <button id="searchBtn">搜索节点</button>
+            </div>
+
+            <div class="options">
+                <div class="option-row">
+                    <label>初始节点数</label>
+                    <input type="number" id="initialNodes" value="5" min="1" max="10">
+                </div>
+                <div class="option-row">
+                    <label>扩展层数</label>
+                    <input type="number" id="expandLayers" value="0" min="0" max="2">
+                </div>
+                <div class="option-row">
+                    <label>每层节点数</label>
+                    <input type="number" id="nodesPerLayer" value="3" min="1" max="5">
+                </div>
+            </div>
+
+            <div style="padding: 15px 20px; background: #f0f9ff; border-bottom: 1px solid #e0e0e0; font-size: 12px; color: #0369a1;">
+                <strong>💡 操作提示：</strong>
+                <ul style="margin: 8px 0 0 20px; padding: 0; line-height: 1.8;">
+                    <li><strong>点击</strong>节点：查看节点详情</li>
+                    <li><strong>调整</strong>滑块：设置展开相似度阈值</li>
+                    <li><strong>展开</strong>节点：只显示高相似度关联</li>
+                    <li><strong>点击</strong>连线：查看向量匹配详情</li>
+                    <li><strong>Shift + 拖动</strong>节点：移动位置</li>
+                    <li><strong>拖动</strong>空白：移动画布</li>
+                    <li><strong>滚轮</strong>：缩放视图</li>
+                </ul>
+            </div>
+
+            <div class="node-info" id="nodeInfo">
+                <div class="info-empty">
+                    点击节点查看详细信息
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧画布区域 -->
+        <div class="canvas-area">
+            <canvas id="graphCanvas"></canvas>
+
+            <div class="canvas-controls">
+                <div class="control-btn" id="resetZoomBtn" title="重置视图">🔄</div>
+                <div class="control-btn" id="zoomInBtn" title="放大">+</div>
+                <div class="control-btn" id="zoomOutBtn" title="缩小">−</div>
+            </div>
+
+            <div class="legend">
+                <div class="legend-title">图例</div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #667eea;"></div>
+                    <div class="legend-label">主节点（Layer 0）</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #48bb78;"></div>
+                    <div class="legend-label">一级关联（Layer 1）</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ed8936;"></div>
+                    <div class="legend-label">二级关联（Layer 2）</div>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffd700; border: 3px solid #ff6b6b;"></div>
+                    <div class="legend-label">选中节点</div>
+                </div>
+            </div>
+
+            <div class="status-message" id="statusMessage"></div>
+        </div>
+    </div>
+
+    <script src="graph-viewer.js"></script>
+</body>
+</html>

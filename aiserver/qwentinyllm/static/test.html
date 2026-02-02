@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qwen3 Tiny LLM 测试页面</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 16px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-top: 10px;
+        }
+
+        .status.loading {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status.ready {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #555;
+            font-size: 14px;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            line-height: 1.6;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+
+        .result.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+
+        .result.loading {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+        }
+
+        .result-item {
+            margin-bottom: 8px;
+        }
+
+        .result-item strong {
+            font-weight: 600;
+        }
+
+        .examples {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .examples strong {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+        }
+
+        .model-info {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 6px;
+        }
+
+        .info-item label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .info-item value {
+            display: block;
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 头部 -->
+        <div class="header">
+            <h1>🤖 Qwen3 Tiny LLM 测试页面</h1>
+            <p>基于 Qwen3-0.6B 的知识库判断服务</p>
+            <div id="serviceStatus" class="status loading">⏳ 检查服务状态...</div>
+        </div>
+
+        <!-- 模型信息 -->
+        <div class="model-info">
+            <h2>📊 模型信息</h2>
+            <div id="modelInfo" class="info-grid">
+                <div class="info-item">
+                    <label>状态</label>
+                    <value id="infoStatus">加载中...</value>
+                </div>
+            </div>
+        </div>
+
+        <!-- 测试卡片 -->
+        <div class="grid">
+            <!-- 无意义判断 -->
+            <div class="card">
+                <h2>🔍 无意义短语判断</h2>
+                <form id="meaninglessForm">
+                    <div class="form-group">
+                        <label>输入文本</label>
+                        <input type="text" id="meaninglessText" placeholder="例如：的 是 在" required>
+                    </div>
+                    <button type="submit" class="btn">判断</button>
+                </form>
+                <div id="meaninglessResult" class="result"></div>
+                <div class="examples">
+                    <strong>示例：</strong>
+                    "的 是 在" (无意义) | "向量数据库" (有意义)
+                </div>
+            </div>
+
+            <!-- 相似度判断 -->
+            <div class="card">
+                <h2>🔗 句子相似度判断</h2>
+                <form id="similarityForm">
+                    <div class="form-group">
+                        <label>句子 1</label>
+                        <input type="text" id="similarityText1" placeholder="FAISS 是一个向量数据库" required>
+                    </div>
+                    <div class="form-group">
+                        <label>句子 2</label>
+                        <input type="text" id="similarityText2" placeholder="FAISS 是向量数据库" required>
+                    </div>
+                    <button type="submit" class="btn">判断</button>
+                </form>
+                <div id="similarityResult" class="result"></div>
+            </div>
+
+            <!-- 重要性评分 -->
+            <div class="card">
+                <h2>⭐ N-gram 重要性评分</h2>
+                <form id="importanceForm">
+                    <div class="form-group">
+                        <label>N-gram</label>
+                        <input type="text" id="importanceNgram" placeholder="向量数据库" required>
+                    </div>
+                    <div class="form-group">
+                        <label>上下文（可选）</label>
+                        <input type="text" id="importanceContext" placeholder="使用 FAISS 向量数据库进行检索">
+                    </div>
+                    <button type="submit" class="btn">评分</button>
+                </form>
+                <div id="importanceResult" class="result"></div>
+            </div>
+
+            <!-- 质量评估 -->
+            <div class="card">
+                <h2>📝 文本质量评估</h2>
+                <form id="qualityForm">
+                    <div class="form-group">
+                        <label>输入文本</label>
+                        <textarea id="qualityText" placeholder="输入要评估的文本..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn">评估</button>
+                </form>
+                <div id="qualityResult" class="result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:6015';
+
+        // 检查服务状态
+        async function checkServiceStatus() {
+            const statusEl = document.getElementById('serviceStatus');
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                if (data.status === 'ok') {
+                    statusEl.className = 'status ready';
+                    statusEl.textContent = '✅ 服务运行中';
+                    loadModelInfo();
+                } else {
+                    statusEl.className = 'status loading';
+                    statusEl.textContent = '⏳ 模型加载中...';
+                    setTimeout(checkServiceStatus, 2000);
+                }
+            } catch (error) {
+                statusEl.className = 'status error';
+                statusEl.textContent = '❌ 服务未启动';
+            }
+        }
+
+        // 加载模型信息
+        async function loadModelInfo() {
+            try {
+                const response = await fetch(`${API_BASE}/info`);
+                const data = await response.json();
+
+                const infoGrid = document.getElementById('modelInfo');
+                infoGrid.innerHTML = `
+                    <div class="info-item">
+                        <label>状态</label>
+                        <value>${data.status === 'loaded' ? '✅ 已加载' : '⏳ 加载中'}</value>
+                    </div>
+                    <div class="info-item">
+                        <label>模型</label>
+                        <value>${data.model_name ? 'Qwen3-0.6B' : '-'}</value>
+                    </div>
+                    <div class="info-item">
+                        <label>精度</label>
+                        <value>${data.precision || '-'}</value>
+                    </div>
+                    <div class="info-item">
+                        <label>设备</label>
+                        <value>${data.device || '-'}</value>
+                    </div>
+                    ${data.gpu_name ? `
+                    <div class="info-item">
+                        <label>GPU</label>
+                        <value>${data.gpu_name}</value>
+                    </div>
+                    <div class="info-item">
+                        <label>显存占用</label>
+                        <value>${data.gpu_memory_allocated}</value>
+                    </div>
+                    ` : ''}
+                `;
+            } catch (error) {
+                console.error('加载模型信息失败:', error);
+            }
+        }
+
+        // 显示结果
+        function showResult(elementId, data, isError = false) {
+            const resultEl = document.getElementById(elementId);
+            resultEl.className = `result show ${isError ? 'error' : 'success'}`;
+            resultEl.innerHTML = data;
+        }
+
+        // 显示加载中
+        function showLoading(elementId) {
+            const resultEl = document.getElementById(elementId);
+            resultEl.className = 'result show loading';
+            resultEl.innerHTML = '⏳ 处理中...';
+        }
+
+        // 无意义判断
+        document.getElementById('meaninglessForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = document.getElementById('meaninglessText').value;
+            showLoading('meaninglessResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/judge/meaningless`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text})
+                });
+                const data = await response.json();
+
+                showResult('meaninglessResult', `
+                    <div class="result-item"><strong>无意义:</strong> ${data.is_meaningless ? '是 ✓' : '否 ✗'}</div>
+                    <div class="result-item"><strong>置信度:</strong> ${(data.confidence * 100).toFixed(1)}%</div>
+                    <div class="result-item"><strong>理由:</strong> ${data.reason}</div>
+                `);
+            } catch (error) {
+                showResult('meaninglessResult', `❌ 错误: ${error.message}`, true);
+            }
+        });
+
+        // 相似度判断
+        document.getElementById('similarityForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text1 = document.getElementById('similarityText1').value;
+            const text2 = document.getElementById('similarityText2').value;
+            showLoading('similarityResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/judge/similarity`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text1, text2})
+                });
+                const data = await response.json();
+
+                showResult('similarityResult', `
+                    <div class="result-item"><strong>相似:</strong> ${data.is_similar ? '是 ✓' : '否 ✗'}</div>
+                    <div class="result-item"><strong>相似度:</strong> ${(data.similarity_score * 100).toFixed(1)}%</div>
+                    <div class="result-item"><strong>可合并:</strong> ${data.can_merge ? '是 ✓' : '否 ✗'}</div>
+                    <div class="result-item"><strong>理由:</strong> ${data.reason}</div>
+                `);
+            } catch (error) {
+                showResult('similarityResult', `❌ 错误: ${error.message}`, true);
+            }
+        });
+
+        // 重要性评分
+        document.getElementById('importanceForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ngram = document.getElementById('importanceNgram').value;
+            const context = document.getElementById('importanceContext').value;
+            showLoading('importanceResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/judge/importance`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ngram, context})
+                });
+                const data = await response.json();
+
+                showResult('importanceResult', `
+                    <div class="result-item"><strong>重要性:</strong> ${(data.importance_score * 100).toFixed(1)}%</div>
+                    <div class="result-item"><strong>应生成向量:</strong> ${data.should_vectorize ? '是 ✓' : '否 ✗'}</div>
+                    <div class="result-item"><strong>类别:</strong> ${data.category}</div>
+                    <div class="result-item"><strong>理由:</strong> ${data.reason}</div>
+                `);
+            } catch (error) {
+                showResult('importanceResult', `❌ 错误: ${error.message}`, true);
+            }
+        });
+
+        // 质量评估
+        document.getElementById('qualityForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = document.getElementById('qualityText').value;
+            showLoading('qualityResult');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/judge/quality`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({text})
+                });
+                const data = await response.json();
+
+                showResult('qualityResult', `
+                    <div class="result-item"><strong>质量分:</strong> ${(data.quality_score * 100).toFixed(1)}%</div>
+                    <div class="result-item"><strong>信息密度:</strong> ${(data.information_density * 100).toFixed(1)}%</div>
+                    <div class="result-item"><strong>完整性:</strong> ${(data.completeness * 100).toFixed(1)}%</div>
+                    <div class="result-item"><strong>检索价值:</strong> ${(data.retrieval_value * 100).toFixed(1)}%</div>
+                    <div class="result-item"><strong>应索引:</strong> ${data.should_index ? '是 ✓' : '否 ✗'}</div>
+                    <div class="result-item"><strong>理由:</strong> ${data.reason}</div>
+                `);
+            } catch (error) {
+                showResult('qualityResult', `❌ 错误: ${error.message}`, true);
+            }
+        });
+
+        // 初始化
+        checkServiceStatus();
+    </script>
+</body>
+</html>
