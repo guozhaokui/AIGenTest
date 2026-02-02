@@ -9,24 +9,20 @@
         >
           <el-menu-item index="query">
             <el-icon><Search /></el-icon>
-            <span>智能问答</span>
+            <span>智能对话</span>
           </el-menu-item>
           <el-menu-item index="search">
             <el-icon><Connection /></el-icon>
-            <span>纯检索</span>
+            <span>知识检索</span>
           </el-menu-item>
-          <el-menu-item index="docs">
+          <el-menu-item index="add-memory">
+            <el-icon><Memo /></el-icon>
+            <span>记忆管理</span>
+          </el-menu-item>
+          <el-menu-item index="memory">
             <el-icon><Document /></el-icon>
-            <span>文档管理</span>
+            <span>知识图谱</span>
           </el-menu-item>
-          <el-sub-menu index="memory-group">
-            <template #title>
-              <el-icon><Memo /></el-icon>
-              <span>记忆管理</span>
-            </template>
-            <el-menu-item index="memory">知识图谱</el-menu-item>
-            <el-menu-item index="add-memory">添加记忆</el-menu-item>
-          </el-sub-menu>
         </el-menu>
 
         <!-- 统计信息 -->

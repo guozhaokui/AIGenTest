@@ -1,303 +1,187 @@
 <template>
   <div class="document-management">
-    <el-card shadow="never" class="header-card">
+    <el-card shadow="never" class="main-card">
       <template #header>
-        <div class="card-header">
-          <span>文档管理</span>
-          <div class="header-actions">
-            <el-upload
-              :action="uploadUrl"
-              :show-file-list="false"
-              :on-success="handleUploadSuccess"
-              :on-error="handleUploadError"
-              :before-upload="beforeUpload"
-              accept=".txt,.md,.py,.js,.json,.csv,.xml,.html,.css,.yaml,.yml,.log"
-            >
-              <el-button type="success" :loading="uploading">
-                <el-icon><Upload /></el-icon>
-                上传文件
-              </el-button>
-            </el-upload>
-            <el-button type="primary" @click="handleScan" :loading="scanning">
-              <el-icon><Folder /></el-icon>
-              扫描目录
-            </el-button>
-          </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 18px; font-weight: 600;">文档管理</span>
         </div>
       </template>
 
-      <!-- 目录路径配置 -->
-      <div class="path-config">
-        <el-input
-          v-model="docsPath"
-          placeholder="文档目录路径"
-          style="width: 500px"
-        >
-          <template #prepend>文档路径</template>
-        </el-input>
+      <!-- 统计信息 -->
+      <div class="stats-container">
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #ecf5ff; color: #409eff;">
+                <el-icon :size="32"><Document /></el-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.documents }}</div>
+                <div class="stat-label">文档数量</div>
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #f0f9ff; color: #67c23a;">
+                <el-icon :size="32"><Grid /></el-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.faiss_vectors }}</div>
+                <div class="stat-label">向量数量</div>
+              </div>
+            </div>
+          </el-col>
+          <el-col :span="8">
+            <div class="stat-card">
+              <div class="stat-icon" style="background: #fef0f0; color: #f56c6c;">
+                <el-icon :size="32"><DataAnalysis /></el-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-value">{{ stats.dimension }}</div>
+                <div class="stat-label">向量维度</div>
+              </div>
+            </div>
+          </el-col>
+        </el-row>
       </div>
-    </el-card>
 
-    <!-- 文档列表 -->
-    <el-card shadow="never" class="list-card" v-if="files.length > 0">
-      <template #header>
-        <div class="card-header">
-          <span>文档列表（共 {{ files.length }} 个文件）</span>
-          <div>
-            <el-button
-              type="success"
-              @click="handleIndexSelected"
-              :disabled="selectedFiles.length === 0"
-              :loading="indexing"
-            >
-              <el-icon><Upload /></el-icon>
-              索引选中（{{ selectedFiles.length }}）
-            </el-button>
-            <el-button
-              type="danger"
-              @click="handleClearAll"
-              :loading="clearing"
-            >
-              <el-icon><Delete /></el-icon>
-              清空知识库
-            </el-button>
-          </div>
-        </div>
-      </template>
-
-      <el-table
-        :data="files"
-        @selection-change="handleSelectionChange"
-        style="width: 100%"
-      >
-        <el-table-column type="selection" width="55" />
-        <el-table-column prop="name" label="文件名" min-width="200">
-          <template #default="scope">
-            <el-tooltip :content="scope.row.path" placement="top">
-              <span>{{ scope.row.name }}</span>
-            </el-tooltip>
-          </template>
-        </el-table-column>
-        <el-table-column prop="size" label="大小" width="120">
-          <template #default="scope">
-            {{ formatSize(scope.row.size) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="length" label="字数" width="120" />
-        <el-table-column prop="modified" label="修改时间" width="180">
-          <template #default="scope">
-            {{ formatDate(scope.row.modified) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="indexed" label="状态" width="100">
-          <template #default="scope">
-            <el-tag v-if="scope.row.indexed" type="success" size="small">
-              已索引
-            </el-tag>
-            <el-tag v-else type="info" size="small">未索引</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180">
-          <template #default="scope">
-            <el-button
-              v-if="!scope.row.indexed"
-              size="small"
-              type="primary"
-              @click="handleIndexSingle(scope.row)"
-            >
-              索引
-            </el-button>
-            <el-button
-              v-else
-              size="small"
-              type="warning"
-              @click="handleReindex(scope.row)"
-            >
-              重新索引
-            </el-button>
-            <el-button
-              v-if="scope.row.indexed"
-              size="small"
-              type="danger"
-              @click="handleDelete(scope.row)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
-
-    <!-- 索引进度 -->
-    <el-dialog v-model="showProgress" title="索引进度" width="500px" :close-on-click-modal="false">
-      <div v-if="indexResults.length > 0">
-        <el-timeline>
-          <el-timeline-item
-            v-for="result in indexResults"
-            :key="result.file"
-            :type="result.success ? 'success' : 'danger'"
-            :timestamp="result.file"
+      <!-- 操作按钮 -->
+      <el-divider content-position="left">操作</el-divider>
+      <div class="action-area">
+        <el-space :size="15" wrap>
+          <el-button type="primary" @click="handleRefresh" :loading="refreshing" size="large">
+            <el-icon><Refresh /></el-icon>
+            刷新索引
+          </el-button>
+          <el-upload
+            :action="uploadUrl"
+            :show-file-list="false"
+            :on-success="handleUploadSuccess"
+            :on-error="handleUploadError"
+            :before-upload="beforeUpload"
+            accept=".txt,.md,.py,.js,.json,.csv,.xml,.html,.css,.yaml,.yml,.log"
           >
-            <template v-if="result.success">
-              成功索引，生成 {{ result.chunks }} 个文档块
-            </template>
-            <template v-else>
-              索引失败: {{ result.error }}
-            </template>
-          </el-timeline-item>
-        </el-timeline>
+            <el-button type="success" :loading="uploading" size="large">
+              <el-icon><Upload /></el-icon>
+              上传文件
+            </el-button>
+          </el-upload>
+          <el-button type="danger" @click="handleClearAll" :loading="clearing" size="large">
+            <el-icon><Delete /></el-icon>
+            清空知识库
+          </el-button>
+        </el-space>
       </div>
-      <div v-else style="text-align: center; padding: 20px;">
-        <el-icon class="is-loading" :size="40"><Loading /></el-icon>
-        <p style="margin-top: 10px;">正在索引文档...</p>
+
+      <!-- 进度提示 -->
+      <div v-if="progressMessage" class="progress-message">
+        <el-alert :title="progressMessage" type="info" :closable="false" show-icon>
+          <template #default>
+            <div v-if="progressDetails">
+              {{ progressDetails }}
+            </div>
+          </template>
+        </el-alert>
       </div>
-      <template #footer>
-        <el-button @click="showProgress = false" :disabled="indexing">
-          关闭
-        </el-button>
-      </template>
-    </el-dialog>
+    </el-card>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Folder, Upload, Delete, Loading } from '@element-plus/icons-vue';
-import {
-  scanDocuments,
-  indexDocuments,
-  deleteDocument,
-  clearKnowledge
-} from '@/services/api';
+import { Refresh, Upload, Delete, Document, Grid, DataAnalysis } from '@element-plus/icons-vue';
+import { scanDocuments, clearKnowledge, getStats } from '@/services/api';
 
-const docsPath = ref('/mnt/e/TEST/work/日志');
-const scanning = ref(false);
-const indexing = ref(false);
+const refreshing = ref(false);
 const clearing = ref(false);
 const uploading = ref(false);
-const files = ref([]);
-const selectedFiles = ref([]);
-const showProgress = ref(false);
-const indexResults = ref([]);
+const progressMessage = ref('');
+const progressDetails = ref('');
+const stats = ref({
+  documents: 0,
+  faiss_vectors: 0,
+  dimension: 512
+});
 
 // 上传URL
 const uploadUrl = 'http://localhost:8848/upload';
 
-const handleScan = async () => {
-  scanning.value = true;
+// 加载统计信息
+const loadStats = async () => {
   try {
-    const result = await scanDocuments({ path: docsPath.value });
+    const result = await getStats();
     if (result.success) {
-      files.value = result.data.files;
-      ElMessage.success(`扫描完成，找到 ${result.data.total} 个文档`);
-    } else {
-      ElMessage.error(result.error || '扫描失败');
+      stats.value = result.data;
     }
   } catch (error) {
-    console.error('扫描失败:', error);
-    ElMessage.error('扫描失败: ' + error.message);
-  } finally {
-    scanning.value = false;
+    console.error('加载统计失败:', error);
   }
 };
 
-const handleSelectionChange = (selection) => {
-  selectedFiles.value = selection;
-};
-
-const handleIndexSelected = async () => {
-  if (selectedFiles.value.length === 0) {
-    ElMessage.warning('请先选择要索引的文件');
-    return;
-  }
-
-  indexing.value = true;
-  showProgress.value = true;
-  indexResults.value = [];
+const handleRefresh = async () => {
+  refreshing.value = true;
+  progressMessage.value = '正在刷新索引...';
+  progressDetails.value = '';
 
   try {
-    const filePaths = selectedFiles.value.map(f => f.path);
-    const result = await indexDocuments({ files: filePaths });
-
+    // 启动rebuild
+    const result = await scanDocuments();
     if (result.success) {
-      indexResults.value = result.data.results;
+      // 轮询进度
+      const checkProgress = async () => {
+        try {
+          const progressRes = await fetch('http://localhost:8848/rebuild/progress');
+          const progress = await progressRes.json();
 
-      // 更新文件状态
-      selectedFiles.value.forEach(file => {
-        file.indexed = true;
-      });
+          if (progress.in_progress) {
+            progressMessage.value = '正在刷新索引...';
+            progressDetails.value = `${progress.message} (${progress.current}/${progress.total})`;
+          }
 
-      ElMessage.success(
-        `索引完成：成功 ${result.data.success_count}/${result.data.total_files} 个文件，` +
-        `共 ${result.data.total_chunks} 个文档块`
-      );
+          if (progress.phase === 'completed') {
+            progressMessage.value = '';
+            progressDetails.value = '';
+            ElMessage.success('刷新完成');
+            refreshing.value = false;
+            // 重新加载统计信息
+            await loadStats();
+          } else if (progress.phase === 'error') {
+            progressMessage.value = '';
+            progressDetails.value = '';
+            ElMessage.error('刷新失败: ' + progress.message);
+            refreshing.value = false;
+          } else if (progress.in_progress) {
+            // 继续轮询
+            setTimeout(checkProgress, 1000);
+          } else {
+            progressMessage.value = '';
+            progressDetails.value = '';
+            refreshing.value = false;
+          }
+        } catch (error) {
+          console.error('检查进度失败:', error);
+          progressMessage.value = '';
+          progressDetails.value = '';
+          refreshing.value = false;
+        }
+      };
+
+      // 开始轮询
+      setTimeout(checkProgress, 1000);
     } else {
-      ElMessage.error(result.error || '索引失败');
+      ElMessage.error(result.error || '刷新失败');
+      progressMessage.value = '';
+      progressDetails.value = '';
+      refreshing.value = false;
     }
   } catch (error) {
-    console.error('索引失败:', error);
-    ElMessage.error('索引失败: ' + error.message);
-  } finally {
-    indexing.value = false;
-  }
-};
-
-const handleIndexSingle = async (file) => {
-  selectedFiles.value = [file];
-  await handleIndexSelected();
-};
-
-const handleReindex = async (file) => {
-  try {
-    await ElMessageBox.confirm(
-      '重新索引会先删除该文件的旧索引，确定继续吗？',
-      '确认',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    );
-
-    // 先删除
-    await deleteDocument({ source: file.name });
-
-    // 再索引
-    file.indexed = false;
-    await handleIndexSingle(file);
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('重新索引失败:', error);
-      ElMessage.error('重新索引失败');
-    }
-  }
-};
-
-const handleDelete = async (file) => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除文档 "${file.name}" 的索引吗？`,
-      '确认删除',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    );
-
-    const result = await deleteDocument({ source: file.name });
-    if (result.success) {
-      file.indexed = false;
-      ElMessage.success(`删除成功，共删除 ${result.data.deleted_count} 个文档块`);
-    } else {
-      ElMessage.error(result.error || '删除失败');
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('删除失败:', error);
-      ElMessage.error('删除失败');
-    }
+    console.error('刷新失败:', error);
+    ElMessage.error('刷新失败: ' + error.message);
+    progressMessage.value = '';
+    progressDetails.value = '';
+    refreshing.value = false;
   }
 };
 
@@ -317,11 +201,8 @@ const handleClearAll = async () => {
     const result = await clearKnowledge();
 
     if (result.success) {
-      // 更新所有文件状态
-      files.value.forEach(file => {
-        file.indexed = false;
-      });
       ElMessage.success('知识库已清空');
+      await loadStats();
     } else {
       ElMessage.error(result.error || '清空失败');
     }
@@ -333,17 +214,6 @@ const handleClearAll = async () => {
   } finally {
     clearing.value = false;
   }
-};
-
-const formatSize = (bytes) => {
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-};
-
-const formatDate = (dateStr) => {
-  const date = new Date(dateStr);
-  return date.toLocaleString('zh-CN');
 };
 
 // 上传前验证
@@ -362,8 +232,8 @@ const handleUploadSuccess = (response) => {
   uploading.value = false;
   if (response.success) {
     ElMessage.success(`文件上传成功: ${response.filename}`);
-    // 刷新文档列表
-    handleScan();
+    // 刷新索引
+    handleRefresh();
   } else {
     ElMessage.error('上传失败: ' + (response.error || '未知错误'));
   }
@@ -377,70 +247,74 @@ const handleUploadError = (error) => {
 };
 
 onMounted(() => {
-  // 自动扫描
-  handleScan();
+  // 加载统计信息
+  loadStats();
 });
 </script>
 
 <style scoped>
 .document-management {
-  padding: 0;
+  padding: 20px;
   height: 100%;
+  overflow-y: auto;
+}
+
+.main-card {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.stats-container {
+  margin-bottom: 20px;
+}
+
+.stat-card {
   display: flex;
-  flex-direction: column;
-}
-
-.header-card {
-  border-radius: 0;
-  border-bottom: 1px solid #dcdfe6;
-  flex-shrink: 0;
-}
-
-.header-card :deep(.el-card__header) {
-  padding: 16px;
-  border-bottom: 1px solid #dcdfe6;
-}
-
-.header-card :deep(.el-card__body) {
-  padding: 16px;
-}
-
-.list-card {
-  flex: 1;
-  border-radius: 0;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-
-.list-card :deep(.el-card__header) {
-  padding: 16px;
-  border-bottom: 1px solid #dcdfe6;
-  flex-shrink: 0;
-}
-
-.list-card :deep(.el-card__body) {
-  padding: 0;
-  flex: 1;
-  overflow: hidden;
-}
-
-.list-card :deep(.el-table) {
-  height: 100%;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
   align-items: center;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  transition: all 0.3s;
 }
 
-.header-actions {
+.stat-card:hover {
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.stat-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
   display: flex;
-  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 16px;
 }
 
-.path-config {
-  margin-bottom: 0;
+.stat-content {
+  flex: 1;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: 600;
+  color: #303133;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #909399;
+}
+
+.action-area {
+  margin-top: 20px;
+}
+
+.progress-message {
+  margin-top: 20px;
 }
 </style>

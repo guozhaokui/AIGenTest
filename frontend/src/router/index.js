@@ -23,7 +23,6 @@ const BatchImport = () => import('../views/ImageMgr/BatchImport.vue');
 const KnowledgeIndex = () => import('../views/KnowledgeQuery/index.vue');
 const QueryInterface = () => import('../views/KnowledgeQuery/QueryInterface.vue');
 const VectorSearch = () => import('../views/KnowledgeQuery/VectorSearch.vue');
-const DocumentManagement = () => import('../views/KnowledgeQuery/DocumentManagement.vue');
 const MemoryManagement = () => import('../views/KnowledgeQuery/MemoryManagement.vue');
 const AddMemory = () => import('../views/KnowledgeQuery/AddMemory.vue');
 
@@ -76,7 +75,6 @@ const routes = [
       { path: '', redirect: '/knowledge/query' },
       { path: 'query', name: 'QueryInterface', component: QueryInterface },
       { path: 'search', name: 'VectorSearch', component: VectorSearch },
-      { path: 'docs', name: 'DocumentManagement', component: DocumentManagement },
       { path: 'memory', name: 'MemoryManagement', component: MemoryManagement },
       { path: 'add-memory', name: 'AddMemory', component: AddMemory }
     ]

@@ -123,9 +123,9 @@ export function getKnowledgeStatus() {
   return knowledgeApi.get('/status').then(r => r.data);
 }
 
-export function scanDocuments(payload) {
-  // { path: string }
-  return knowledgeApi.post('/scan', payload).then(r => r.data);
+export function scanDocuments() {
+  // 刷新索引：扫描records目录并增量索引新文档/修改的文档
+  return knowledgeApi.post('/rebuild', {}).then(r => r.data);
 }
 
 export function indexDocuments(payload) {

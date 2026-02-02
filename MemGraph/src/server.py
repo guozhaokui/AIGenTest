@@ -785,7 +785,7 @@ async def rebuild_index_task():
                 elif message.startswith("索引"):
                     rebuild_progress["phase"] = "indexing"
 
-        indexer.clear_all()
+        # 不清空索引，利用hash机制增量更新
         await sync_existing_documents(progress_callback)
 
         stats = indexer.get_stats()

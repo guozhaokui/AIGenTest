@@ -4,8 +4,7 @@
       <template #header>
         <div class="card-header">
           <div class="header-left">
-            <span>智能问答</span>
-            <el-segmented v-model="mode" :options="modeOptions" style="margin-left: 20px" />
+            <span>智能对话</span>
           </div>
           <el-select
             v-model="selectedModel"
@@ -27,31 +26,8 @@
         </div>
       </template>
 
-      <!-- 知识问答模式 -->
-      <div v-if="mode === 'knowledge'" class="knowledge-mode">
-        <!-- 问题输入 -->
-        <div class="query-input">
-          <el-input
-            v-model="question"
-            type="textarea"
-            :rows="3"
-            placeholder="请输入你的问题..."
-            @keydown.ctrl.enter="handleQuery"
-          />
-          <el-button
-            type="primary"
-            :loading="querying"
-            @click="handleQuery"
-            style="margin-top: 10px"
-          >
-            <el-icon><Search /></el-icon>
-            查询 (Ctrl+Enter)
-          </el-button>
-        </div>
-      </div>
-
       <!-- 纯聊天模式 -->
-      <div v-else class="chat-mode">
+      <div class="chat-mode">
         <!-- 聊天历史 -->
         <div class="chat-history" ref="chatHistory">
           <div v-if="chatMessages.length === 0" class="empty-chat">
@@ -119,87 +95,17 @@
         </div>
       </div>
     </el-card>
-
-    <!-- 知识问答历史 -->
-    <div v-if="mode === 'knowledge'" class="query-history">
-      <div v-if="queryHistory.length === 0 && !querying">
-        <el-empty description="请输入问题开始查询" />
-      </div>
-      <el-card
-        v-for="(item, index) in queryHistory"
-        :key="index"
-        shadow="never"
-        class="history-card"
-      >
-        <template #header>
-          <div class="history-header">
-            <strong>问题:</strong> {{ item.question }}
-            <span class="timestamp">{{ formatTime(item.timestamp) }}</span>
-          </div>
-        </template>
-
-        <!-- AI回答 -->
-        <div class="answer-section">
-          <el-alert
-            v-if="!item.answer"
-            title="MemGraph 搜索引擎 - 仅提供文档检索，不生成AI回答"
-            type="info"
-            :closable="false"
-          >
-            <template #default>
-              提示：MemGraph 使用激活式搜索 + FAISS向量检索，快速找到最相关的文档。
-              如需 AI 生成答案，请使用"纯聊天"模式。
-            </template>
-          </el-alert>
-          <div v-else class="answer-content">
-            <strong>回答:</strong>
-            <div class="answer-text">{{ item.answer }}</div>
-            <el-tag size="small" style="margin-top: 10px">
-              模型: {{ item.model }}
-            </el-tag>
-          </div>
-        </div>
-
-        <!-- 检索到的文档 -->
-        <el-divider content-position="left">
-          MemGraph 检索结果 (共 {{ item.context.length }} 条)
-        </el-divider>
-        <div class="context-docs">
-          <el-collapse>
-            <el-collapse-item
-              v-for="doc in item.context"
-              :key="doc.index"
-              :title="`#${doc.index} ${doc.source} - 相似度: ${(doc.similarity * 100).toFixed(1)}%`"
-            >
-              <pre class="doc-content">{{ doc.content }}</pre>
-            </el-collapse-item>
-          </el-collapse>
-        </div>
-      </el-card>
-    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
-import { Search, User, Cpu, Promotion } from '@element-plus/icons-vue';
-import { queryKnowledge, getKnowledgeModels } from '@/services/api';
-
-// 模式切换
-const mode = ref('chat');
-const modeOptions = [
-  { label: '纯聊天', value: 'chat' },
-  { label: '知识问答', value: 'knowledge' }
-];
-
-// 知识问答相关
-const question = ref('');
-const selectedModel = ref('deepseek-ai/deepseek-v3.2');
-const querying = ref(false);
-const queryHistory = ref([]);
+import { User, Cpu, Promotion } from '@element-plus/icons-vue';
+import { getKnowledgeModels } from '@/services/api';
 
 // 纯聊天相关
+const selectedModel = ref('deepseek-ai/deepseek-v3.2');
 const chatMessage = ref('');
 const chatMessages = ref([]);
 const chatting = ref(false);
@@ -207,43 +113,6 @@ const chatHistory = ref(null);
 
 // 模型列表
 const models = ref([]);
-
-// 知识问答处理
-const handleQuery = async () => {
-  if (!question.value.trim()) {
-    ElMessage.warning('请输入问题');
-    return;
-  }
-
-  querying.value = true;
-
-  try {
-    const result = await queryKnowledge({
-      question: question.value,
-      model: selectedModel.value,
-      top_k: 3
-    });
-
-    if (result.success) {
-      queryHistory.value.unshift({
-        ...result.data,
-        timestamp: Date.now()
-      });
-
-      // 清空输入
-      question.value = '';
-
-      ElMessage.success('查询完成');
-    } else {
-      ElMessage.error(result.error || '查询失败');
-    }
-  } catch (error) {
-    console.error('查询失败:', error);
-    ElMessage.error('查询失败: ' + error.message);
-  } finally {
-    querying.value = false;
-  }
-};
 
 // 纯聊天处理（流式）
 const handleChat = async () => {
@@ -466,10 +335,6 @@ onMounted(() => {
   align-items: center;
 }
 
-.query-input {
-  margin-bottom: 16px;
-}
-
 /* 聊天模式样式 */
 .chat-mode {
   display: flex;
@@ -667,73 +532,5 @@ onMounted(() => {
   display: flex;
   gap: 10px;
   margin-top: 10px;
-}
-
-/* 知识问答历史样式 */
-.query-history {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-
-.history-card {
-  border-radius: 0;
-  border-bottom: 1px solid #dcdfe6;
-  margin-bottom: 0;
-}
-
-.history-card:last-child {
-  border-bottom: none;
-}
-
-.history-card :deep(.el-card__header) {
-  padding: 16px;
-  border-bottom: 1px solid #dcdfe6;
-}
-
-.history-card :deep(.el-card__body) {
-  padding: 16px;
-}
-
-.history-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.timestamp {
-  color: #909399;
-  font-size: 12px;
-}
-
-.answer-section {
-  margin-bottom: 20px;
-}
-
-.answer-content {
-  padding: 15px;
-  background-color: #f5f7fa;
-  border-radius: 0;
-  border: 1px solid #e4e7ed;
-}
-
-.answer-text {
-  margin-top: 10px;
-  white-space: pre-wrap;
-  line-height: 1.6;
-}
-
-.context-docs {
-  margin-top: 10px;
-}
-
-.doc-content {
-  white-space: pre-wrap;
-  background-color: #f9f9f9;
-  padding: 10px;
-  border-radius: 0;
-  border: 1px solid #e4e7ed;
-  max-height: 300px;
-  overflow-y: auto;
 }
 </style>

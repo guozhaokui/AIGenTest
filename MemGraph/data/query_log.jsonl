@@ -113,3 +113,4 @@
 {"timestamp": "2026-02-02T15:00:23.448344", "query": "部署地址", "result_count": 3, "search_time_ms": 227.76, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
 {"timestamp": "2026-02-02T15:01:03.246678", "query": "部署地址", "result_count": 9, "search_time_ms": 195.15, "options": {"limit": 10, "min_score": 0.1, "use_vector": true}, "top_score": null}
 {"timestamp": "2026-02-02T16:09:54.007928", "query": "部署地址", "result_count": 3, "search_time_ms": 256.54, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
+{"timestamp": "2026-02-02T18:24:51.534479", "query": "怎么压缩向量数据库\n", "result_count": 3, "search_time_ms": 227.45, "options": {"limit": 3, "min_score": 0.1, "use_vector": true}, "top_score": null}
