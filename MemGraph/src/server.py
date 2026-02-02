@@ -376,14 +376,24 @@ tags: [{', '.join(req.tags)}]
         'solution': req.solution
     }
 
-    # 使用智能索引（自动去重和更新检测）
-    result = await indexer.index_document_smart(document)
+    # 立即返回响应，然后在后台异步索引
+    import asyncio
+
+    # 创建后台任务进行索引
+    async def background_index():
+        try:
+            await indexer.index_document_smart(document)
+        except Exception as e:
+            print(f"后台索引失败: {e}")
+
+    # 启动后台任务（不等待完成）
+    asyncio.create_task(background_index())
 
     return {
         "success": True,
-        "doc_id": result['doc_id'],
-        "action": result['action'],  # 'added', 'updated', 或 'skipped'
-        "message": result['message'],
+        "doc_id": 0,  # 后台索引，暂时返回0
+        "action": "indexing",  # 表示正在后台索引
+        "message": "文档已保存，正在后台索引",
         "path": relative_path,
         "full_path": str(full_file_path)
     }

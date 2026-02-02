@@ -19,6 +19,14 @@ class GraphExpander:
         self.indexer = indexer
         self.search_engine = search_engine
 
+    def _get_document_tags(self, doc_id: int) -> List[str]:
+        """获取文档标签列表"""
+        cursor = self.indexer.conn.execute(
+            'SELECT tag FROM document_tags WHERE doc_id = ?',
+            (doc_id,)
+        )
+        return [row[0] for row in cursor.fetchall()]
+
     def get_document_vectors(self, doc_id: int) -> List[Dict]:
         """获取文档的所有向量
 
@@ -54,7 +62,7 @@ class GraphExpander:
             文档信息字典，包含 doc_id 和基本信息
         """
         cursor = self.indexer.conn.execute('''
-            SELECT dv.doc_id, d.path, d.problem, d.solution, d.tags
+            SELECT dv.doc_id, d.path, d.problem, d.solution
             FROM document_vectors dv
             JOIN documents d ON dv.doc_id = d.id
             WHERE dv.faiss_idx = ?
@@ -63,12 +71,13 @@ class GraphExpander:
 
         row = cursor.fetchone()
         if row:
+            tags = self._get_document_tags(row[0])
             return {
                 'doc_id': row[0],
                 'path': row[1],
                 'problem': row[2],
                 'solution': row[3],
-                'tags': row[4]
+                'tags': tags
             }
         return None
 
@@ -82,22 +91,23 @@ class GraphExpander:
             文档详细信息
         """
         cursor = self.indexer.conn.execute('''
-            SELECT id, path, problem, solution, tags, role, project, timestamp
+            SELECT id, path, problem, solution, role, project, timestamp
             FROM documents
             WHERE id = ?
         ''', (doc_id,))
 
         row = cursor.fetchone()
         if row:
+            tags = self._get_document_tags(row[0])
             return {
                 'doc_id': row[0],
                 'path': row[1],
                 'problem': row[2],
-                'solution': row[3][:500] if row[3] else '',  # 截取前500字符
-                'tags': row[4],
-                'role': row[5],
-                'project': row[6],
-                'timestamp': row[7]
+                'solution': row[3] or '',  # 完整内容
+                'tags': tags,
+                'role': row[4],
+                'project': row[5],
+                'timestamp': row[6]
             }
         return None
 
