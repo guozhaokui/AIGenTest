@@ -10,6 +10,7 @@ from typing import List, Optional, Dict, Any
 import uvicorn
 from pathlib import Path
 import shutil
+import numpy as np
 
 from .config import SERVICE_PORT, SERVICE_HOST, RECORDS_DIR, BASE_DIR
 from .knowledge_indexer import KnowledgeIndexer
@@ -640,6 +641,59 @@ async def search_lessons(req: SearchRequest):
 
     search_time_ms = (time.time() - start_time) * 1000
 
+    # 为每个结果添加细粒度匹配信息
+    query_vector = None
+    try:
+        import asyncio
+        # 设置10秒超时，避免长时间等待嵌入服务
+        query_vector = await asyncio.wait_for(
+            indexer.embedding_client.embed_text(req.query),
+            timeout=10.0
+        )
+        # 归一化查询向量
+        norm = np.linalg.norm(query_vector)
+        if norm > 0:
+            query_vector = query_vector / norm
+        print(f"✓ Generated query embedding for fine-grained matching")
+    except asyncio.TimeoutError:
+        print(f"⚠️ Query embedding timeout (10s), skipping fine-grained matching")
+    except Exception as e:
+        print(f"⚠️ Failed to generate query embedding: {e}, skipping fine-grained matching")
+
+    if query_vector is not None:
+        for result in results:
+            doc_id = result.get('doc_id')
+            if doc_id:
+                # 获取文档的所有向量片段
+                cursor = indexer.conn.execute('''
+                    SELECT content, granularity, faiss_idx
+                    FROM document_vectors
+                    WHERE doc_id = ? AND granularity IN ('paragraph', 'sentence')
+                    ORDER BY position
+                ''', (doc_id,))
+
+                segments = []
+                for row in cursor.fetchall():
+                    content, granularity, faiss_idx = row
+                    if faiss_idx is not None:
+                        try:
+                            seg_vector = indexer.get_vector(faiss_idx)
+                            if seg_vector is not None:
+                                # 计算相似度
+                                similarity = float(np.dot(query_vector, seg_vector) /
+                                                 (np.linalg.norm(query_vector) * np.linalg.norm(seg_vector)))
+                                segments.append({
+                                    'content': content,
+                                    'granularity': granularity,
+                                    'similarity': similarity
+                                })
+                        except:
+                            pass
+
+                # 按相似度排序
+                segments.sort(key=lambda x: x['similarity'], reverse=True)
+                result['segments'] = segments[:10]  # 最多返回10个最相似的片段
+
     # 记录查询日志
     top_score = None
     if results and len(results) > 0:
@@ -660,7 +714,8 @@ async def search_lessons(req: SearchRequest):
     return {
         "query": req.query,
         "count": len(results),
-        "results": results
+        "results": results,
+        "search_time_ms": search_time_ms
     }
 
 
