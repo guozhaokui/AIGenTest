@@ -62,7 +62,7 @@ class GraphExpander:
             文档信息字典，包含 doc_id 和基本信息
         """
         cursor = self.indexer.conn.execute('''
-            SELECT dv.doc_id, d.path, d.problem, d.solution
+            SELECT dv.doc_id, d.path, d.title, d.content
             FROM document_vectors dv
             JOIN documents d ON dv.doc_id = d.id
             WHERE dv.faiss_idx = ?
@@ -72,11 +72,13 @@ class GraphExpander:
         row = cursor.fetchone()
         if row:
             tags = self._get_document_tags(row[0])
+            title = row[2] or f"Doc{row[0]}"  # 如果没有title，使用DocID
             return {
                 'doc_id': row[0],
                 'path': row[1],
-                'problem': row[2],
-                'solution': row[3],
+                'title': title,
+                'label': title,  # 添加label字段用于图谱显示
+                'content': row[3],
                 'tags': tags
             }
         return None
@@ -91,7 +93,7 @@ class GraphExpander:
             文档详细信息
         """
         cursor = self.indexer.conn.execute('''
-            SELECT id, path, problem, solution, role, project, timestamp
+            SELECT id, path, title, content, role, project, timestamp
             FROM documents
             WHERE id = ?
         ''', (doc_id,))
@@ -99,11 +101,13 @@ class GraphExpander:
         row = cursor.fetchone()
         if row:
             tags = self._get_document_tags(row[0])
+            title = row[2] or f"Doc{row[0]}"  # 如果没有title，使用DocID
             return {
                 'doc_id': row[0],
                 'path': row[1],
-                'problem': row[2],
-                'solution': row[3] or '',  # 完整内容
+                'title': title,
+                'label': title,  # 添加label字段用于图谱显示
+                'content': row[3] or '',  # 完整内容
                 'tags': tags,
                 'role': row[4],
                 'project': row[5],
@@ -430,6 +434,13 @@ class GraphExpander:
         Returns:
             匹配向量对列表
         """
+        # 获取两个文档的信息
+        doc1_info = self.get_document_info(doc_id1)
+        doc2_info = self.get_document_info(doc_id2)
+
+        doc1_title = doc1_info.get('title', f"Doc{doc_id1}") if doc1_info else f"Doc{doc_id1}"
+        doc2_title = doc2_info.get('title', f"Doc{doc_id2}") if doc2_info else f"Doc{doc_id2}"
+
         # 使用新方法获取关联
         # 为了找到两个节点之间的所有匹配，我们：
         # 1. 让每个向量多返回一些结果（top_k_per_vector=5）
@@ -444,8 +455,12 @@ class GraphExpander:
         # 提取特定目标节点的匹配
         if doc_id2 in all_relations:
             matches = all_relations[doc_id2][:top_k]
-            # 转换字段名以兼容旧接口
+            # 转换字段名以兼容旧接口，并添加文档信息
             return [{
+                'doc1_id': doc_id1,
+                'doc1_title': doc1_title,
+                'doc2_id': doc_id2,
+                'doc2_title': doc2_title,
                 'vec1_content': m['source_vec_content'],
                 'vec1_granularity': m['source_vec_granularity'],
                 'vec1_faiss_idx': m['source_vec_faiss_idx'],

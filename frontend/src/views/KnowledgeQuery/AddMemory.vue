@@ -72,13 +72,24 @@
 
       <!-- 进度提示 -->
       <div v-if="progressMessage" class="progress-message">
-        <el-alert :title="progressMessage" type="info" :closable="false" show-icon>
-          <template #default>
-            <div v-if="progressDetails">
+        <el-card shadow="never">
+          <div class="progress-content">
+            <div class="progress-header">
+              <el-icon class="is-loading" color="#409eff" :size="20"><Loading /></el-icon>
+              <span class="progress-title">{{ progressMessage }}</span>
+            </div>
+            <div v-if="progressDetails" class="progress-details">
               {{ progressDetails }}
             </div>
-          </template>
-        </el-alert>
+            <el-progress
+              v-if="progressPercentage >= 0"
+              :percentage="progressPercentage"
+              :stroke-width="12"
+              :color="progressPercentage === 100 ? '#67c23a' : '#409eff'"
+              style="margin-top: 12px"
+            />
+          </div>
+        </el-card>
       </div>
     </el-card>
 
@@ -181,7 +192,7 @@
 <script setup>
 import { ref, nextTick, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { Plus, Refresh, Upload, Delete, Document, Grid, DataAnalysis } from '@element-plus/icons-vue';
+import { Plus, Refresh, Upload, Delete, Document, Grid, DataAnalysis, Loading } from '@element-plus/icons-vue';
 import { scanDocuments, clearKnowledge, getStats } from '@/services/api';
 
 const memoryTitle = ref('');
@@ -201,6 +212,7 @@ const clearing = ref(false);
 const uploading = ref(false);
 const progressMessage = ref('');
 const progressDetails = ref('');
+const progressPercentage = ref(-1);
 const stats = ref({
   documents: 0,
   faiss_vectors: 0,
@@ -223,62 +235,93 @@ const loadStats = async () => {
 // 刷新索引
 const handleRefresh = async () => {
   refreshing.value = true;
-  progressMessage.value = '正在刷新索引...';
+  progressMessage.value = '启动刷新任务...';
   progressDetails.value = '';
+  progressPercentage.value = 0;
 
-  try {
-    const result = await scanDocuments();
-    if (result.success) {
-      const checkProgress = async () => {
-        try {
-          const progressRes = await fetch('http://localhost:8848/rebuild/progress');
-          const progress = await progressRes.json();
-
-          if (progress.in_progress) {
-            progressMessage.value = '正在刷新索引...';
-            progressDetails.value = `${progress.message} (${progress.current}/${progress.total})`;
-          }
-
-          if (progress.phase === 'completed') {
-            progressMessage.value = '';
-            progressDetails.value = '';
-            ElMessage.success('刷新完成');
-            refreshing.value = false;
-            await loadStats();
-          } else if (progress.phase === 'error') {
-            progressMessage.value = '';
-            progressDetails.value = '';
-            ElMessage.error('刷新失败: ' + progress.message);
-            refreshing.value = false;
-          } else if (progress.in_progress) {
-            setTimeout(checkProgress, 1000);
-          } else {
-            progressMessage.value = '';
-            progressDetails.value = '';
-            refreshing.value = false;
-          }
-        } catch (error) {
-          console.error('检查进度失败:', error);
-          progressMessage.value = '';
-          progressDetails.value = '';
-          refreshing.value = false;
-        }
-      };
-
-      setTimeout(checkProgress, 1000);
-    } else {
-      ElMessage.error(result.error || '刷新失败');
+  // 启动rebuild任务，不等待响应
+  fetch('http://localhost:8848/rebuild', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' }
+  }).then(response => response.json())
+    .then(result => {
+      if (result.success) {
+        progressMessage.value = '正在刷新索引...';
+      } else {
+        ElMessage.error('启动刷新失败: ' + (result.error || '未知错误'));
+        refreshing.value = false;
+        progressMessage.value = '';
+        progressDetails.value = '';
+        progressPercentage.value = -1;
+      }
+    })
+    .catch(error => {
+      console.error('启动刷新失败:', error);
+      ElMessage.error('启动刷新失败: ' + error.message);
+      refreshing.value = false;
       progressMessage.value = '';
       progressDetails.value = '';
-      refreshing.value = false;
+      progressPercentage.value = -1;
+    });
+
+  // 立即开始轮询进度
+  const checkProgress = async () => {
+    try {
+      const progressRes = await fetch('http://localhost:8848/rebuild/progress');
+      const progress = await progressRes.json();
+
+      if (progress.in_progress) {
+        // 更新进度信息
+        progressMessage.value = '正在刷新索引...';
+        const percentage = progress.total > 0
+          ? Math.round((progress.current / progress.total) * 100)
+          : 0;
+        progressPercentage.value = percentage;
+        progressDetails.value = `${progress.message} - ${progress.current}/${progress.total}`;
+      }
+
+      if (progress.phase === 'completed') {
+        progressPercentage.value = 100;
+        progressMessage.value = '刷新完成';
+        progressDetails.value = `共处理 ${progress.total} 个文档`;
+
+        // 延迟1秒后清除进度显示
+        setTimeout(() => {
+          progressMessage.value = '';
+          progressDetails.value = '';
+          progressPercentage.value = -1;
+        }, 2000);
+
+        ElMessage.success(`刷新完成！共处理 ${progress.total} 个文档`);
+        refreshing.value = false;
+        await loadStats();
+      } else if (progress.phase === 'error') {
+        progressMessage.value = '';
+        progressDetails.value = '';
+        progressPercentage.value = -1;
+        ElMessage.error('刷新失败: ' + progress.message);
+        refreshing.value = false;
+      } else if (progress.in_progress) {
+        // 继续轮询
+        setTimeout(checkProgress, 500); // 500ms轮询一次，更快速的进度更新
+      } else {
+        // 未开始或已结束但没有明确状态
+        progressMessage.value = '';
+        progressDetails.value = '';
+        progressPercentage.value = -1;
+        refreshing.value = false;
+      }
+    } catch (error) {
+      console.error('检查进度失败:', error);
+      // 进度检查失败时，继续重试
+      if (refreshing.value) {
+        setTimeout(checkProgress, 1000);
+      }
     }
-  } catch (error) {
-    console.error('刷新失败:', error);
-    ElMessage.error('刷新失败: ' + error.message);
-    progressMessage.value = '';
-    progressDetails.value = '';
-    refreshing.value = false;
-  }
+  };
+
+  // 延迟500ms后开始第一次轮询，给后端时间启动任务
+  setTimeout(checkProgress, 500);
 };
 
 // 清空知识库
@@ -496,6 +539,30 @@ onMounted(() => {
 
 .progress-message {
   margin-top: 20px;
+}
+
+.progress-content {
+  padding: 10px;
+}
+
+.progress-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.progress-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.progress-details {
+  font-size: 13px;
+  color: #606266;
+  margin-bottom: 8px;
+  padding-left: 30px;
 }
 
 .add-card :deep(.el-card__header) {

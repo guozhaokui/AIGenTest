@@ -152,9 +152,11 @@ export function queryKnowledge(payload) {
 
     const contextDocs = data.results.slice(0, payload.top_k || 3).map((result, index) => ({
       index: index + 1,
-      source: result.path || result.problem_preview || 'Unknown',
-      content: `问题: ${result.problem || ''}\n\n解决方法: ${result.solution || result.solution_preview || ''}`,
-      similarity: result.vector_similarity || result.total_score / 100 || 0
+      source: result.path || result.problem || 'Unknown',
+      // 直接使用文档的原始内容，保持Markdown结构
+      content: result.solution || result.solution_preview || '(无内容)',
+      similarity: result.vector_similarity || result.total_score / 100 || 0,
+      segments: result.segments || []  // 添加细粒度匹配片段
     }));
 
     return {

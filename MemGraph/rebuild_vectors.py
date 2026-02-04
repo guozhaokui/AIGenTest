@@ -59,34 +59,43 @@ async def main():
                             metadata[key] = value
 
             # 解析文档内容
-            problem_match = re.search(r'## 问题\s*\n+(.*?)(?=\n##|\Z)', body, re.DOTALL)
-            solution_match = re.search(r'## 解决[方法办]*\s*\n+(.*)', body, re.DOTALL)
-
-            if problem_match or solution_match:
-                metadata['problem'] = problem_match.group(1).strip() if problem_match else ''
-                metadata['solution'] = solution_match.group(1).strip() if solution_match else ''
+            # 提取标题：优先使用第一个一级标题，否则使用文件名
+            first_h1 = re.search(r'^#\s+(.+?)$', body, re.MULTILINE)
+            if first_h1:
+                metadata['title'] = first_h1.group(1).strip()
             else:
-                # 没有标准格式，整体作为solution
-                metadata['solution'] = body.strip()
+                # 从文件名提取（去掉日期时间前缀）
+                filename = md_file.stem
+                title_from_filename = re.sub(r'^\d{4}[/-]\d{2}[/-]\d{2}[_-]\d{2}[-:]\d{2}[-:]\d{2}[_-]?', '', filename)
+                metadata['title'] = title_from_filename if title_from_filename else filename
+
+            # content 包含整个文档内容（保持原始Markdown格式）
+            metadata['content'] = body.strip()
 
             # 构建文档对象
+            relative_path = md_file.relative_to(RECORDS_DIR)
             document = {
                 'role': metadata.get('role', 'AI'),
                 'project': metadata.get('project', ''),
                 'directory': metadata.get('directory', ''),
                 'timestamp': metadata.get('timestamp', datetime.now().strftime("%Y-%m-%d")),
                 'tags': metadata.get('tags', []),
-                'problem': metadata.get('problem', ''),
-                'solution': metadata.get('solution', ''),
-                'path': str(md_file.relative_to(RECORDS_DIR))
+                'title': metadata.get('title', ''),
+                'content': metadata.get('content', ''),
+                'path': str(relative_path).replace('\\', '/')
             }
 
-            # 索引文档
-            await indexer.index_document(document)
+            # 索引文档（使用智能方法，自动去重）
+            await indexer.index_document_smart(document, save_index=False, generate_ngram_vectors=True, force_update=False)
 
         except Exception as e:
             print(f"   ⚠️  处理失败: {e}")
             continue
+
+    # 保存索引
+    print("\n4. 保存索引...")
+    indexer._save_index()
+    print("   ✓ 索引已保存")
 
     # 获取统计
     print("\n" + "=" * 80)

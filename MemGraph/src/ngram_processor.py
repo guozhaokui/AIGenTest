@@ -85,7 +85,7 @@ class NgramProcessor:
         处理文档，生成所有n-gram
 
         Args:
-            document: 文档字典，包含 problem, solution, project, tags 等
+            document: 文档字典，包含 title, content, project, tags 等
 
         Returns:
             n-gram列表
@@ -107,66 +107,43 @@ class NgramProcessor:
                 gram_type="metadata"
             ))
 
-        # 2. 处理问题部分（按 Markdown 章节拆分）
-        if document.get("problem"):
-            problem_sections = self._parse_markdown_sections(document["problem"])
-            if problem_sections:
-                # 如果有章节结构，为每个章节生成 N-gram
-                for section in problem_sections:
-                    if section['title'] == '__preamble__':
-                        # 前言部分
-                        ngrams.extend(self._extract_all_ngrams(
-                            section['content'],
-                            section="problem"
-                        ))
-                    else:
-                        # 标题本身作为重要的 N-gram
-                        ngrams.extend(self._process_text(
-                            section['title'],
-                            section="problem",
-                            gram_type="metadata"  # 标题使用 metadata 权重
-                        ))
-                        # 标题下的内容
-                        ngrams.extend(self._extract_all_ngrams(
-                            section['content'],
-                            section="problem"
-                        ))
-            else:
-                # 没有章节结构，按原来的方式处理
-                ngrams.extend(self._extract_all_ngrams(
-                    document["problem"],
-                    section="problem"
-                ))
+        # 2. 处理标题
+        if document.get("title"):
+            ngrams.extend(self._process_text(
+                document["title"],
+                section="metadata",
+                gram_type="metadata"
+            ))
 
-        # 3. 处理解决方案部分（按 Markdown 章节拆分）
-        if document.get("solution"):
-            solution_sections = self._parse_markdown_sections(document["solution"])
-            if solution_sections:
+        # 3. 处理内容（按 Markdown 章节拆分）
+        if document.get("content"):
+            content_sections = self._parse_markdown_sections(document["content"])
+            if content_sections:
                 # 如果有章节结构，为每个章节生成 N-gram
-                for section in solution_sections:
+                for section in content_sections:
                     if section['title'] == '__preamble__':
                         # 前言部分
                         ngrams.extend(self._extract_all_ngrams(
                             section['content'],
-                            section="solution"
+                            section="content"
                         ))
                     else:
                         # 标题本身作为重要的 N-gram
                         ngrams.extend(self._process_text(
                             section['title'],
-                            section="solution",
+                            section="content",
                             gram_type="metadata"  # 标题使用 metadata 权重
                         ))
                         # 标题下的内容
                         ngrams.extend(self._extract_all_ngrams(
                             section['content'],
-                            section="solution"
+                            section="content"
                         ))
             else:
                 # 没有章节结构，按原来的方式处理
                 ngrams.extend(self._extract_all_ngrams(
-                    document["solution"],
-                    section="solution"
+                    document["content"],
+                    section="content"
                 ))
 
         return ngrams

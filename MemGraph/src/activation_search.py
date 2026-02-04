@@ -511,9 +511,14 @@ class ActivationSearch:
                 'directory': row[4],  # directory
                 'timestamp': row[5],  # timestamp
                 'tags': tags,
-                'problem': row[7],  # problem
-                'solution': row[8],  # solution
-                'problem_preview': row[7][:300] if row[7] else '',
+                'title': row[7],  # title
+                'content': row[8],  # content
+                'title_preview': row[7][:100] if row[7] else '',
+                'content_preview': row[8][:500] if row[8] else '',
+                # 为兼容性保留旧字段名
+                'problem': row[7],
+                'solution': row[8],
+                'problem_preview': row[7][:100] if row[7] else '',
                 'solution_preview': row[8][:500] if row[8] else ''
             })
 
@@ -541,9 +546,14 @@ class ActivationSearch:
                 'directory': row[4],
                 'timestamp': row[5],
                 'tags': tags,
+                'title': row[7],
+                'content': row[8],
+                'title_preview': row[7][:100] if row[7] else '',
+                'content_preview': row[8][:500] if row[8] else '',
+                # 为兼容性保留
                 'problem': row[7],
                 'solution': row[8],
-                'problem_preview': row[7][:300] if row[7] else '',
+                'problem_preview': row[7][:100] if row[7] else '',
                 'solution_preview': row[8][:500] if row[8] else ''
             })
 
@@ -568,9 +578,14 @@ class ActivationSearch:
                 'directory': row[4],
                 'timestamp': row[5],
                 'tags': tags,
+                'title': row[7],
+                'content': row[8],
+                'title_preview': row[7][:100] if row[7] else '',
+                'content_preview': row[8][:500] if row[8] else '',
+                # 为兼容性保留
                 'problem': row[7],
                 'solution': row[8],
-                'problem_preview': row[7][:300] if row[7] else '',
+                'problem_preview': row[7][:100] if row[7] else '',
                 'solution_preview': row[8][:500] if row[8] else ''
             })
 

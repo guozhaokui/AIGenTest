@@ -53,22 +53,16 @@ class KnowledgeIndexer:
                 directory TEXT,
                 timestamp TEXT,
                 tags TEXT,
-                problem TEXT,
-                solution TEXT,
-                full_content TEXT,
+                title TEXT,
+                content TEXT,
+                content_hash TEXT,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
 
-        # 添加 content_hash 列（如果不存在）
-        try:
-            self.conn.execute('ALTER TABLE documents ADD COLUMN content_hash TEXT')
-        except sqlite3.OperationalError:
-            # 列已存在，忽略
-            pass
-
-        # 为 documents 表添加 content_hash 索引
+        # 为 documents 表添加索引
         self.conn.execute('CREATE INDEX IF NOT EXISTS idx_documents_hash ON documents(content_hash)')
+        self.conn.execute('CREATE INDEX IF NOT EXISTS idx_documents_path ON documents(path)')
 
         # N-gram表
         self.conn.execute('''
@@ -662,7 +656,8 @@ class KnowledgeIndexer:
             }
         """
         # 计算内容哈希
-        full_content = f"{document.get('problem', '')}\n\n{document.get('solution', '')}"
+        # content 包含完整内容
+        full_content = document.get('content', '')
         content_hash = self.compute_content_hash(full_content)
         path = document.get('path', '')
 
@@ -684,7 +679,7 @@ class KnowledgeIndexer:
                     }
                 else:
                     # 跳过重复内容
-                    print(f"⏭️  跳过重复文档: {document.get('problem', path)} (哈希: {content_hash[:16]}...)")
+                    print(f"⏭️  跳过重复文档: {document.get('title', path)} (哈希: {content_hash[:16]}...)")
                     return {
                         'action': 'skipped',
                         'doc_id': existing['doc_id'],
@@ -708,7 +703,7 @@ class KnowledgeIndexer:
                 }
         else:
             # 新文档，添加
-            print(f"➕ 添加新文档: {document.get('problem', path)} (哈希: {content_hash[:16]}...)")
+            print(f"➕ 添加新文档: {document.get('title', path)} (哈希: {content_hash[:16]}...)")
             doc_id = await self.index_document(document, save_index, generate_ngram_vectors)
             return {
                 'action': 'added',
@@ -729,7 +724,7 @@ class KnowledgeIndexer:
             save_index: 是否立即保存FAISS索引
             generate_ngram_vectors: 是否生成N-gram向量
         """
-        print(f"🔄 更新文档 {doc_id}: {document.get('problem', document.get('path', 'N/A'))}")
+        print(f"🔄 更新文档 {doc_id}: {document.get('title', document.get('path', 'N/A'))}")
 
         # 1. 删除旧的FAISS向量
         if doc_id in self.doc_id_to_index:
@@ -753,13 +748,14 @@ class KnowledgeIndexer:
 
         # 3. 更新文档基本信息
         tags_str = ','.join(document.get('tags', []))
-        full_content = f"{document.get('problem', '')}\n\n{document.get('solution', '')}"
+        # content 包含完整内容
+        full_content = document.get('content', '')
         content_hash = self.compute_content_hash(full_content)
 
         self.conn.execute('''
             UPDATE documents
             SET path = ?, role = ?, project = ?, directory = ?,
-                timestamp = ?, tags = ?, problem = ?, solution = ?,
+                timestamp = ?, tags = ?, title = ?, content = ?,
                 full_content = ?, content_hash = ?
             WHERE id = ?
         ''', (
@@ -769,8 +765,8 @@ class KnowledgeIndexer:
             document.get('directory', ''),
             document.get('timestamp', ''),
             tags_str,
-            document.get('problem', ''),
-            document.get('solution', ''),
+            document.get('title', ''),
+            document.get('content', ''),
             full_content,
             content_hash,
             doc_id
@@ -864,13 +860,14 @@ class KnowledgeIndexer:
         """
         # 1. 准备文档数据并计算哈希
         tags_str = ','.join(document.get('tags', []))
-        full_content = f"{document.get('problem', '')}\n\n{document.get('solution', '')}"
+        # content 包含完整内容
+        full_content = document.get('content', '')
         content_hash = self.compute_content_hash(full_content)
 
         # 插入文档（包含 content_hash）
         cursor = self.conn.execute('''
-            INSERT INTO documents (path, role, project, directory, timestamp, tags, problem, solution, full_content, content_hash)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO documents (path, role, project, directory, timestamp, tags, title, content, content_hash)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             document['path'],
             document.get('role', 'AI'),
@@ -878,9 +875,8 @@ class KnowledgeIndexer:
             document.get('directory', ''),
             document.get('timestamp', ''),
             tags_str,
-            document.get('problem', ''),
-            document.get('solution', ''),
-            full_content,
+            document.get('title', ''),
+            document.get('content', ''),
             content_hash
         ))
 
@@ -1033,13 +1029,14 @@ class KnowledgeIndexer:
 
         # 4. 更新文档记录（包含 content_hash）
         tags_str = ','.join(document.get('tags', []))
-        full_content = f"{document.get('problem', '')}\n\n{document.get('solution', '')}"
+        # content 包含完整内容
+        full_content = document.get('content', '')
         content_hash = self.compute_content_hash(full_content)
 
         self.conn.execute('''
             UPDATE documents
             SET role = ?, project = ?, directory = ?, timestamp = ?,
-                tags = ?, problem = ?, solution = ?, full_content = ?, content_hash = ?
+                tags = ?, title = ?, content = ?, content_hash = ?
             WHERE id = ?
         ''', (
             document.get('role', 'AI'),
@@ -1047,8 +1044,8 @@ class KnowledgeIndexer:
             document.get('directory', ''),
             document.get('timestamp', ''),
             tags_str,
-            document.get('problem', ''),
-            document.get('solution', ''),
+            document.get('title', ''),
+            document.get('content', ''),
             full_content,
             content_hash,
             doc_id

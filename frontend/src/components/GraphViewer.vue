@@ -230,7 +230,7 @@
 
           <div style="margin-bottom: 10px;">
             <div style="font-size: 11px; color: #667eea; font-weight: 600; margin-bottom: 4px;">
-              📄 {{ edgeDetails.node1?.problem || `文档 ${edgeDetails.fromId}` }} [{{ match.vec1_granularity || 'N/A' }}]
+              📄 {{ match.doc1_title || edgeDetails.node1?.title || edgeDetails.node1?.label || `文档 ${edgeDetails.fromId}` }} [{{ match.vec1_granularity || 'N/A' }}]
             </div>
             <div style="font-size: 13px; color: #333; line-height: 1.5; padding: 6px; background: white; border-radius: 4px;">
               {{ match.vec1_content || '(无内容)' }}
@@ -241,7 +241,7 @@
 
           <div>
             <div style="font-size: 11px; color: #48bb78; font-weight: 600; margin-bottom: 4px;">
-              📄 {{ edgeDetails.node2?.problem || `文档 ${edgeDetails.toId}` }} [{{ match.vec2_granularity || 'N/A' }}]
+              📄 {{ match.doc2_title || edgeDetails.node2?.title || edgeDetails.node2?.label || `文档 ${edgeDetails.toId}` }} [{{ match.vec2_granularity || 'N/A' }}]
             </div>
             <div style="font-size: 13px; color: #333; line-height: 1.5; padding: 6px; background: white; border-radius: 4px;">
               {{ match.vec2_content || '(无内容)' }}

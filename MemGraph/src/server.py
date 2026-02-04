@@ -206,32 +206,20 @@ async def sync_existing_documents(progress_callback=None):
                                 value = [t.strip() for t in value.strip('[]').split(',')]
                             metadata[key] = value
 
-            # 解析文档内容（无论是否有 frontmatter）
-            # 策略1: 如果有标准的 "## 问题" 和 "## 解决方案" 格式，优先使用
-            problem_match = re.search(r'## 问题\s*\n+(.*?)(?=\n##|\Z)', body, re.DOTALL)
-            solution_match = re.search(r'## 解决[方法办]*\s*\n+(.*)', body, re.DOTALL)
-
-            if problem_match or solution_match:
-                # 标准格式
-                metadata['problem'] = problem_match.group(1).strip() if problem_match else ''
-                metadata['solution'] = solution_match.group(1).strip() if solution_match else ''
+            # 解析文档内容
+            # 提取标题：优先使用第一个一级标题，否则使用文件名
+            first_h1 = re.search(r'^#\s+(.+?)$', body, re.MULTILINE)
+            if first_h1:
+                metadata['title'] = first_h1.group(1).strip()
             else:
-                # 策略2: 通用文档格式
-                # problem = 文件名（去掉日期和扩展名）或第一个一级标题
-                # solution = 整个 body（包含所有标题和内容）
+                # 从文件名提取（去掉日期时间前缀）
+                filename = md_file.stem
+                title_from_filename = re.sub(r'^\d{4}[/-]\d{2}[/-]\d{2}[_-]\d{2}[-:]\d{2}[-:]\d{2}[_-]?', '', filename)
+                metadata['title'] = title_from_filename if title_from_filename else filename
 
-                # 尝试提取第一个一级标题作为 problem
-                first_h1 = re.search(r'^#\s+(.+?)$', body, re.MULTILINE)
-                if first_h1:
-                    metadata['problem'] = first_h1.group(1).strip()
-                else:
-                    # 从文件名提取（去掉日期时间前缀）
-                    filename = md_file.stem
-                    problem_from_filename = re.sub(r'^\d{4}[/-]\d{2}[/-]\d{2}[_-]\d{2}[-:]\d{2}[-:]\d{2}[_-]?', '', filename)
-                    metadata['problem'] = problem_from_filename if problem_from_filename else filename
+            # content 包含整个文档内容（保持原始Markdown格式）
+            metadata['content'] = body.strip()
 
-                # solution 包含整个文档内容
-                metadata['solution'] = body.strip()
 
             relative_path = md_file.relative_to(RECORDS_DIR)
 
@@ -242,8 +230,8 @@ async def sync_existing_documents(progress_callback=None):
                 'directory': metadata.get('directory', ''),
                 'timestamp': metadata.get('timestamp', datetime.now().isoformat()),
                 'tags': metadata.get('tags', []) if isinstance(metadata.get('tags'), list) else [],
-                'problem': metadata.get('problem', ''),
-                'solution': metadata.get('solution', '')
+                'title': metadata.get('title', ''),
+                'content': metadata.get('content', '')
             }
 
             documents.append(document)
@@ -333,7 +321,9 @@ async def record_lesson(req: RecordLessonRequest):
     timestamp = now.strftime("%d_%H-%M-%S")  # 例如：28_12-21-49
 
     # 清理文件名中的非法字符（Windows: \ / : * ? " < > |）
-    slug = req.problem[:30]
+    # 使用 problem 作为文件名（如果提供），否则生成默认名称
+    title = req.problem if req.problem else "新记录"
+    slug = title[:30]
     for char in ['\\', '/', ':', '*', '?', '"', '<', '>', '|']:
         slug = slug.replace(char, '-')
     slug = slug.replace(' ', '-')
@@ -345,7 +335,7 @@ async def record_lesson(req: RecordLessonRequest):
     file_path = RECORDS_DIR / date_str
     file_path.mkdir(parents=True, exist_ok=True)
 
-    # 写入Markdown文件
+    # 写入Markdown文件（不使用"问题/解决"格式，直接用标题+内容）
     full_file_path = file_path / filename
     markdown_content = f"""---
 role: {req.role}
@@ -355,11 +345,7 @@ timestamp: {now.isoformat()}
 tags: [{', '.join(req.tags)}]
 ---
 
-## 问题
-
-{req.problem}
-
-## 解决方法
+# {req.problem if req.problem else '未命名文档'}
 
 {req.solution}
 """
@@ -373,8 +359,8 @@ tags: [{', '.join(req.tags)}]
         'directory': req.directory or '',
         'timestamp': now.isoformat(),
         'tags': req.tags,
-        'problem': req.problem,
-        'solution': req.solution
+        'title': req.problem if req.problem else '未命名文档',
+        'content': req.solution
     }
 
     # 立即返回响应，然后在后台异步索引
@@ -511,7 +497,7 @@ async def update_lesson(req: UpdateLessonRequest):
     # 使用原路径更新文件
     full_file_path = RECORDS_DIR / old_path
 
-    # 生成新的Markdown内容
+    # 生成新的Markdown内容（不使用"问题/解决"格式）
     markdown_content = f"""---
 role: {role}
 project: {project or ''}
@@ -520,11 +506,7 @@ timestamp: {old_timestamp}
 tags: [{', '.join(tags)}]
 ---
 
-## 问题
-
-{problem}
-
-## 解决方法
+# {problem if problem else '未命名文档'}
 
 {req.solution}
 """
@@ -540,8 +522,8 @@ tags: [{', '.join(tags)}]
         'directory': directory or '',
         'timestamp': old_timestamp,
         'tags': tags,
-        'problem': problem,
-        'solution': req.solution
+        'title': problem if problem else '未命名文档',
+        'content': req.solution
     }
 
     # 重新索引文档 (会自动删除旧的向量和N-gram)
@@ -564,7 +546,7 @@ async def delete_document(doc_id: int):
 
     # 1. 获取文档信息
     cursor = indexer.conn.execute(
-        'SELECT path, problem FROM documents WHERE id = ?',
+        'SELECT path, title FROM documents WHERE id = ?',
         (doc_id,)
     )
     row = cursor.fetchone()
@@ -572,7 +554,7 @@ async def delete_document(doc_id: int):
     if not row:
         raise HTTPException(status_code=404, detail=f"Document {doc_id} not found")
 
-    doc_path, problem = row
+    doc_path, title = row
 
     # 2. 删除物理文件（如果存在）
     full_file_path = RECORDS_DIR / doc_path
@@ -613,7 +595,7 @@ async def delete_document(doc_id: int):
     return {
         "success": True,
         "doc_id": doc_id,
-        "problem": problem[:50] + "..." if len(problem) > 50 else problem,
+        "title": title[:50] + "..." if len(title) > 50 else title,
         "file_deleted": file_deleted,
         "stats": {
             "vectors": deleted_vectors,
@@ -1060,7 +1042,7 @@ async def get_node_relations(req: NodeRelationsRequest):
             if doc_info:
                 related_nodes[target_doc_id] = {
                     'doc_id': target_doc_id,
-                    'problem': doc_info.get('problem', ''),
+                    'title': doc_info.get('title', ''),
                     'path': doc_info.get('path', ''),
                     'tags': doc_info.get('tags', ''),
                     'match_count': len(relations[target_doc_id])
@@ -1188,13 +1170,13 @@ async def debug_documents():
         )
         tags = [t[0] for t in tag_cursor.fetchall()]
 
-        # 获取问题预览
-        problem_cursor = indexer.conn.execute(
-            'SELECT problem FROM documents WHERE id = ?',
+        # 获取标题预览
+        title_cursor = indexer.conn.execute(
+            'SELECT title FROM documents WHERE id = ?',
             (doc_id,)
         )
-        problem_row = problem_cursor.fetchone()
-        problem_preview = problem_row[0][:100] if problem_row and problem_row[0] else '-'
+        title_row = title_cursor.fetchone()
+        title_preview = title_row[0][:100] if title_row and title_row[0] else '-'
 
         documents.append({
             "doc_id": doc_id,
@@ -1205,7 +1187,7 @@ async def debug_documents():
             "tags": tags,
             "has_faiss_vector": has_faiss,
             "faiss_index": faiss_index,
-            "problem_preview": problem_preview
+            "title_preview": title_preview
         })
 
     return {
@@ -1367,7 +1349,7 @@ async def debug_vector_similarity(req: VectorSearchRequest):
             doc_id = index_to_doc.get(faiss_idx)
             if doc_id:
                 cursor = indexer.conn.execute('''
-                    SELECT path, role, project, problem, solution
+                    SELECT path, role, project, title, content
                     FROM documents
                     WHERE id = ?
                 ''', (doc_id,))
@@ -1389,8 +1371,8 @@ async def debug_vector_similarity(req: VectorSearchRequest):
                         "role": row[1],
                         "project": row[2] or '-',
                         "tags": tags,
-                        "problem_preview": row[3][:200] if row[3] else '-',
-                        "solution_preview": row[4][:200] if row[4] else '-',
+                        "title_preview": row[3][:200] if row[3] else '-',
+                        "content_preview": row[4][:200] if row[4] else '-',
                         "vector_norm": float(np.linalg.norm(doc_vector))
                     })
 
