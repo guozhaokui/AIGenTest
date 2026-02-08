@@ -581,13 +581,10 @@ async def delete_document(doc_id: int):
     cursor2 = indexer.conn.execute('DELETE FROM ngrams WHERE doc_id = ?', (doc_id,))
     deleted_ngrams = cursor2.rowcount
 
-    cursor3 = indexer.conn.execute('DELETE FROM document_tags WHERE doc_id = ?', (doc_id,))
-    deleted_tags = cursor3.rowcount
-
     indexer.conn.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
 
     indexer.conn.commit()
-    print(f"✓ 删除数据库记录 (向量:{deleted_vectors}, ngrams:{deleted_ngrams}, 标签:{deleted_tags})")
+    print(f"✓ 删除数据库记录 (向量:{deleted_vectors}, ngrams:{deleted_ngrams})")
 
     # 5. 保存更新后的索引
     indexer._save_index()
@@ -599,8 +596,7 @@ async def delete_document(doc_id: int):
         "file_deleted": file_deleted,
         "stats": {
             "vectors": deleted_vectors,
-            "ngrams": deleted_ngrams,
-            "tags": deleted_tags
+            "ngrams": deleted_ngrams
         }
     }
 
@@ -726,19 +722,6 @@ async def list_recent(req: RecentRequest):
     }
 
 
-@app.get("/tags")
-async def list_tags():
-    """列出所有标签"""
-    await ensure_initialized()
-    cursor = indexer.conn.execute(
-        'SELECT DISTINCT tag FROM document_tags ORDER BY tag'
-    )
-    tags = [row[0] for row in cursor.fetchall()]
-
-    return {
-        "count": len(tags),
-        "tags": tags
-    }
 
 
 # ============================================================================

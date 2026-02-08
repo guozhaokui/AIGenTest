@@ -19,13 +19,11 @@ class GraphExpander:
         self.indexer = indexer
         self.search_engine = search_engine
 
-    def _get_document_tags(self, doc_id: int) -> List[str]:
-        """获取文档标签列表"""
-        cursor = self.indexer.conn.execute(
-            'SELECT tag FROM document_tags WHERE doc_id = ?',
-            (doc_id,)
-        )
-        return [row[0] for row in cursor.fetchall()]
+    def _get_document_tags(self, tags_string: str) -> List[str]:
+        """解析文档标签字符串"""
+        if not tags_string:
+            return []
+        return [tag.strip() for tag in tags_string.split(',') if tag.strip()]
 
     def get_document_vectors(self, doc_id: int) -> List[Dict]:
         """获取文档的所有向量
@@ -62,7 +60,7 @@ class GraphExpander:
             文档信息字典，包含 doc_id 和基本信息
         """
         cursor = self.indexer.conn.execute('''
-            SELECT dv.doc_id, d.path, d.title, d.content
+            SELECT dv.doc_id, d.path, d.title, d.content, d.tags
             FROM document_vectors dv
             JOIN documents d ON dv.doc_id = d.id
             WHERE dv.faiss_idx = ?
@@ -71,7 +69,7 @@ class GraphExpander:
 
         row = cursor.fetchone()
         if row:
-            tags = self._get_document_tags(row[0])
+            tags = self._get_document_tags(row[4])  # row[4] is tags TEXT field
             title = row[2] or f"Doc{row[0]}"  # 如果没有title，使用DocID
             return {
                 'doc_id': row[0],
@@ -93,14 +91,14 @@ class GraphExpander:
             文档详细信息
         """
         cursor = self.indexer.conn.execute('''
-            SELECT id, path, title, content, role, project, timestamp
+            SELECT id, path, title, content, role, project, timestamp, tags
             FROM documents
             WHERE id = ?
         ''', (doc_id,))
 
         row = cursor.fetchone()
         if row:
-            tags = self._get_document_tags(row[0])
+            tags = self._get_document_tags(row[7])  # row[7] is tags TEXT field
             title = row[2] or f"Doc{row[0]}"  # 如果没有title，使用DocID
             return {
                 'doc_id': row[0],

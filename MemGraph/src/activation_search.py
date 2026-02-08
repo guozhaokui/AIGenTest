@@ -462,7 +462,12 @@ class ActivationSearch:
 
             # 标签过滤
             if filter_tags:
-                doc_tags = self._get_document_tags(result['doc_id'])
+                cursor = self.indexer.conn.execute(
+                    'SELECT tags FROM documents WHERE id = ?',
+                    (result['doc_id'],)
+                )
+                row = cursor.fetchone()
+                doc_tags = self._get_document_tags(row[0] if row else '')
                 match = any(tag in doc_tags for tag in filter_tags)
 
             # 项目过滤
@@ -479,13 +484,11 @@ class ActivationSearch:
 
         return filtered
 
-    def _get_document_tags(self, doc_id: int) -> List[str]:
-        """获取文档标签"""
-        cursor = self.indexer.conn.execute(
-            'SELECT tag FROM document_tags WHERE doc_id = ?',
-            (doc_id,)
-        )
-        return [row[0] for row in cursor.fetchall()]
+    def _get_document_tags(self, tags_string: str) -> List[str]:
+        """解析文档标签字符串"""
+        if not tags_string:
+            return []
+        return [tag.strip() for tag in tags_string.split(',') if tag.strip()]
 
     def _enrich_results(self, results: List[Dict]) -> List[Dict]:
         """丰富结果，添加文档详细信息"""
@@ -501,7 +504,7 @@ class ActivationSearch:
             if not row:
                 continue
 
-            tags = self._get_document_tags(result['doc_id'])
+            tags = self._get_document_tags(row[6])  # row[6] is tags TEXT field
 
             enriched.append({
                 **result,
@@ -524,40 +527,6 @@ class ActivationSearch:
 
         return enriched
 
-    def search_by_tag(self, tag: str, limit: int = 10) -> List[Dict]:
-        """按标签搜索"""
-        cursor = self.indexer.conn.execute('''
-            SELECT d.*, dt.tag
-            FROM documents d
-            JOIN document_tags dt ON d.id = dt.doc_id
-            WHERE dt.tag = ?
-            ORDER BY d.timestamp DESC
-            LIMIT ?
-        ''', (tag, limit))
-
-        results = []
-        for row in cursor.fetchall():
-            tags = self._get_document_tags(row[0])
-            results.append({
-                'doc_id': row[0],
-                'path': row[1],
-                'role': row[2],
-                'project': row[3],
-                'directory': row[4],
-                'timestamp': row[5],
-                'tags': tags,
-                'title': row[7],
-                'content': row[8],
-                'title_preview': row[7][:100] if row[7] else '',
-                'content_preview': row[8][:500] if row[8] else '',
-                # 为兼容性保留
-                'problem': row[7],
-                'solution': row[8],
-                'problem_preview': row[7][:100] if row[7] else '',
-                'solution_preview': row[8][:500] if row[8] else ''
-            })
-
-        return results
 
     def get_recent(self, limit: int = 10) -> List[Dict]:
         """获取最近的文档"""
@@ -569,7 +538,7 @@ class ActivationSearch:
 
         results = []
         for row in cursor.fetchall():
-            tags = self._get_document_tags(row[0])
+            tags = self._get_document_tags(row[6])  # row[6] is tags TEXT field
             results.append({
                 'doc_id': row[0],
                 'path': row[1],

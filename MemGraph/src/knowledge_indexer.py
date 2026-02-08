@@ -83,18 +83,6 @@ class KnowledgeIndexer:
         self.conn.execute('CREATE INDEX IF NOT EXISTS idx_ngrams_doc_id ON ngrams(doc_id)')
         self.conn.execute('CREATE INDEX IF NOT EXISTS idx_ngrams_type ON ngrams(gram_type)')
 
-        # 标签表
-        self.conn.execute('''
-            CREATE TABLE IF NOT EXISTS document_tags (
-                doc_id INTEGER NOT NULL,
-                tag TEXT NOT NULL,
-                PRIMARY KEY (doc_id, tag),
-                FOREIGN KEY (doc_id) REFERENCES documents(id) ON DELETE CASCADE
-            )
-        ''')
-
-        self.conn.execute('CREATE INDEX IF NOT EXISTS idx_tags_tag ON document_tags(tag)')
-
         # N-gram 向量表（用于 5-gram 以上的语义向量）
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS ngram_vectors (
@@ -111,32 +99,33 @@ class KnowledgeIndexer:
         except sqlite3.OperationalError:
             pass
 
-        # 文档多粒度向量表（用于存储文档的段落、句子级向量）
-        # 注意：移除了 FOREIGN KEY 约束，使得向量表可以独立存在作为缓存
-        # 这样删除 documents 表时不会级联删除向量缓存
+        # 向量缓存表（以 content_hash 为主键，存储实际的向量数据）
+        self.conn.execute('''
+            CREATE TABLE IF NOT EXISTS vector_cache (
+                content_hash TEXT PRIMARY KEY,
+                vector_data BLOB NOT NULL,
+                last_used DATETIME DEFAULT CURRENT_TIMESTAMP,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+
+        # 为 last_used 创建索引，方便定期清理
+        self.conn.execute('CREATE INDEX IF NOT EXISTS idx_vector_cache_last_used ON vector_cache(last_used)')
+
+        # 文档多粒度向量表（只存储元数据和 hash，不存储实际向量）
         self.conn.execute('''
             CREATE TABLE IF NOT EXISTS document_vectors (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 doc_id INTEGER NOT NULL,
                 granularity TEXT NOT NULL,
                 content TEXT NOT NULL,
+                content_hash TEXT NOT NULL,
                 faiss_idx INTEGER UNIQUE,
                 position INTEGER,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (doc_id) REFERENCES documents(id) ON DELETE CASCADE
             )
         ''')
-
-        # 添加 content_hash 列（如果不存在）
-        try:
-            self.conn.execute('ALTER TABLE document_vectors ADD COLUMN content_hash TEXT')
-        except sqlite3.OperationalError:
-            pass
-
-        # 添加 vector_data 列（用于存储向量本身）
-        try:
-            self.conn.execute('ALTER TABLE document_vectors ADD COLUMN vector_data BLOB')
-        except sqlite3.OperationalError:
-            pass
 
         self.conn.execute('CREATE INDEX IF NOT EXISTS idx_doc_vectors_doc_id ON document_vectors(doc_id)')
         self.conn.execute('CREATE INDEX IF NOT EXISTS idx_doc_vectors_granularity ON document_vectors(granularity)')
@@ -223,36 +212,46 @@ class KnowledgeIndexer:
 
         Args:
             content_hash: 内容哈希值
-            vector_type: 向量类型 ('document' 或 'chunk')
+            vector_type: 向量类型（保留参数用于兼容性，实际不再使用）
 
         Returns:
             numpy array if found, None otherwise
         """
-        if vector_type == 'document':
-            # 查找文档向量缓存（从 document_vectors 表，granularity='full'）
-            # 注意：文档全文向量也存在 document_vectors 中，需要特殊标记
-            # 暂时先查 document_vectors 表
-            cursor = self.conn.execute('''
-                SELECT vector_data FROM document_vectors
-                WHERE content_hash = ? AND vector_data IS NOT NULL
-                LIMIT 1
+        cursor = self.conn.execute('''
+            SELECT vector_data FROM vector_cache
+            WHERE content_hash = ?
+            LIMIT 1
+        ''', (content_hash,))
+        row = cursor.fetchone()
+
+        if row and row[0]:
+            # 更新最后使用时间
+            self.conn.execute('''
+                UPDATE vector_cache
+                SET last_used = CURRENT_TIMESTAMP
+                WHERE content_hash = ?
             ''', (content_hash,))
-            row = cursor.fetchone()
-            if row and row[0]:
-                # 从 BLOB 解码向量
-                return np.frombuffer(row[0], dtype='float32')
-        else:
-            # 查找段落/句子向量缓存
-            cursor = self.conn.execute('''
-                SELECT vector_data FROM document_vectors
-                WHERE content_hash = ? AND vector_data IS NOT NULL
-                LIMIT 1
-            ''', (content_hash,))
-            row = cursor.fetchone()
-            if row and row[0]:
-                return np.frombuffer(row[0], dtype='float32')
+            self.conn.commit()
+
+            # 从 BLOB 解码向量
+            return np.frombuffer(row[0], dtype='float32')
 
         return None
+
+    def save_vector_to_cache(self, content_hash: str, vector: np.ndarray):
+        """保存向量到缓存表
+
+        Args:
+            content_hash: 内容哈希值
+            vector: 向量数据
+        """
+        try:
+            self.conn.execute('''
+                INSERT OR REPLACE INTO vector_cache (content_hash, vector_data, last_used)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            ''', (content_hash, vector.tobytes()))
+        except Exception as e:
+            print(f"⚠️  保存向量到缓存失败: {e}")
 
     def _save_index(self):
         """保存FAISS索引"""
@@ -459,11 +458,14 @@ class KnowledgeIndexer:
                     print(f"    ⚠️  段落 {i} 向量生成失败: {e}")
                     continue
 
-            # 保存到数据库（包含 content_hash 和 vector_data）
+            # 保存向量到缓存表
+            self.save_vector_to_cache(content_hash, embedding)
+
+            # 保存元数据到 document_vectors（不包含 vector_data）
             self.conn.execute('''
-                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (doc_id, 'paragraph', para_content, content_hash, faiss_idx, i, embedding.tobytes()))
+                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (doc_id, 'paragraph', para_content, content_hash, faiss_idx, i))
 
             total_vectors += 1
 
@@ -504,11 +506,15 @@ class KnowledgeIndexer:
                     print(f"    ⚠️  句子 {i} 向量生成失败: {e}")
                     continue
 
-            # 保存到数据库（包含 content_hash 和 vector_data）
+            # 保存向量到缓存表（如果是新生成的）
+            if cached_vector is None:
+                self.save_vector_to_cache(content_hash, embedding)
+
+            # 保存元数据到 document_vectors（不包含 vector_data）
             self.conn.execute('''
-                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (doc_id, 'sentence', sent_content, content_hash, faiss_idx, i, embedding.tobytes()))
+                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (doc_id, 'sentence', sent_content, content_hash, faiss_idx, i))
 
             total_vectors += 1
 
@@ -741,9 +747,6 @@ class KnowledgeIndexer:
         # 删除n-grams
         self.conn.execute('DELETE FROM ngrams WHERE doc_id = ?', (doc_id,))
 
-        # 删除标签关联
-        self.conn.execute('DELETE FROM document_tags WHERE doc_id = ?', (doc_id,))
-
         print(f"   删除旧的向量和n-grams")
 
         # 3. 更新文档基本信息
@@ -774,14 +777,7 @@ class KnowledgeIndexer:
 
         print(f"   更新文档元数据 (新hash={content_hash[:16]}...)")
 
-        # 4. 重新生成标签
-        for tag in document.get('tags', []):
-            self.conn.execute(
-                'INSERT OR IGNORE INTO document_tags (doc_id, tag) VALUES (?, ?)',
-                (doc_id, tag)
-            )
-
-        # 5. 重新生成n-grams
+        # 4. 重新生成n-grams
         ngrams = self.ngram_processor.process_document(document)
         for ngram in ngrams:
             self.conn.execute('''
@@ -816,11 +812,14 @@ class KnowledgeIndexer:
             self.doc_id_to_index[doc_id] = faiss_idx
             self.index_to_doc_id[faiss_idx] = doc_id
 
-            # 保存到 document_vectors 表
+            # 保存向量到缓存表
+            self.save_vector_to_cache(content_hash, embedding)
+
+            # 保存元数据到 document_vectors 表（不包含 vector_data）
             self.conn.execute('''
-                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0, embedding.tobytes()))
+                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0))
 
             print(f"   生成新的文档向量 (FAISS idx={faiss_idx})")
 
@@ -882,17 +881,10 @@ class KnowledgeIndexer:
 
         doc_id = cursor.lastrowid
 
-        # 2. 插入标签
-        for tag in document.get('tags', []):
-            self.conn.execute(
-                'INSERT OR IGNORE INTO document_tags (doc_id, tag) VALUES (?, ?)',
-                (doc_id, tag)
-            )
-
-        # 3. 生成n-gram
+        # 2. 生成n-gram
         ngrams = self.ngram_processor.process_document(document)
 
-        # 4. 插入n-gram
+        # 3. 插入n-gram
         for ngram in ngrams:
             self.conn.execute('''
                 INSERT INTO ngrams (doc_id, content, gram_type, gram_size, section, position)
@@ -922,11 +914,11 @@ class KnowledgeIndexer:
                 self.doc_id_to_index[doc_id] = faiss_idx
                 self.index_to_doc_id[faiss_idx] = doc_id
 
-                # 保存到 document_vectors 表（作为文档全文向量）
+                # 保存元数据到 document_vectors 表（向量已在缓存中）
                 self.conn.execute('''
-                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0, cached_vector.tobytes()))
+                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0))
 
             except Exception as e:
                 print(f"⚠️  复用向量失败，将重新生成: {e}")
@@ -951,11 +943,14 @@ class KnowledgeIndexer:
                 self.doc_id_to_index[doc_id] = faiss_idx
                 self.index_to_doc_id[faiss_idx] = doc_id
 
-                # 保存向量到数据库
+                # 保存向量到缓存表
+                self.save_vector_to_cache(content_hash, embedding)
+
+                # 保存元数据到 document_vectors 表（不包含 vector_data）
                 self.conn.execute('''
-                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position, vector_data)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0, embedding.tobytes()))
+                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0))
 
                 print(f"✓ 生成新文档向量 (doc_id={doc_id}, faiss_idx={faiss_idx}, hash={content_hash[:8]}...)")
 
@@ -1024,10 +1019,7 @@ class KnowledgeIndexer:
         # 2. 删除旧的文档向量（段落、句子）
         self.conn.execute('DELETE FROM document_vectors WHERE doc_id = ?', (doc_id,))
 
-        # 3. 删除旧的标签关联
-        self.conn.execute('DELETE FROM document_tags WHERE doc_id = ?', (doc_id,))
-
-        # 4. 更新文档记录（包含 content_hash）
+        # 3. 更新文档记录（包含 content_hash）
         tags_str = ','.join(document.get('tags', []))
         # content 包含完整内容
         full_content = document.get('content', '')
@@ -1051,14 +1043,7 @@ class KnowledgeIndexer:
             doc_id
         ))
 
-        # 5. 插入新的标签
-        for tag in document.get('tags', []):
-            self.conn.execute(
-                'INSERT OR IGNORE INTO document_tags (doc_id, tag) VALUES (?, ?)',
-                (doc_id, tag)
-            )
-
-        # 6. 生成新的 N-gram
+        # 5. 生成新的 N-gram
         ngrams = self.ngram_processor.process_document(document)
 
         for ngram in ngrams:
@@ -1246,25 +1231,15 @@ class KnowledgeIndexer:
     def clear_all(self):
         """清空所有索引数据
 
-        保留向量缓存以加速重建：
-        - 删除 documents、ngrams、document_tags 表的所有记录
-        - 仅删除 document_vectors 和 ngram_vectors 表中 vector_data 为 NULL 的记录（元数据）
-        - 保留 vector_data 不为 NULL 的记录作为缓存
-        - 清除缓存记录的 faiss_idx 和 doc_id（避免 UNIQUE 冲突）
+        策略：
+        - 删除 documents、ngrams 表的所有记录
+        - 删除 document_vectors 和 ngram_vectors 的所有记录（元数据）
+        - 保留 vector_cache 表（向量缓存以加速重建）
         """
         self.conn.execute('DELETE FROM documents')
         self.conn.execute('DELETE FROM ngrams')
-        self.conn.execute('DELETE FROM document_tags')
-
-        # 只删除没有向量数据的元数据记录，保留缓存
-        self.conn.execute('DELETE FROM document_vectors WHERE vector_data IS NULL')
-        self.conn.execute('DELETE FROM ngram_vectors WHERE vector_data IS NULL')
-
-        # 清除缓存记录的 faiss_idx 和 doc_id（避免 UNIQUE 冲突和外键引用问题）
-        # 设置 doc_id = -1 作为缓存记录的标记（因为有 NOT NULL 约束）
-        # 缓存查找通过 content_hash 进行，不依赖 doc_id
-        self.conn.execute('UPDATE document_vectors SET faiss_idx = NULL, doc_id = -1 WHERE vector_data IS NOT NULL')
-        self.conn.execute('UPDATE ngram_vectors SET faiss_idx = NULL WHERE vector_data IS NOT NULL')
+        self.conn.execute('DELETE FROM document_vectors')
+        self.conn.execute('DELETE FROM ngram_vectors')
         self.conn.commit()
 
         # 重建FAISS索引
@@ -1273,6 +1248,21 @@ class KnowledgeIndexer:
         self.index_to_doc_id.clear()
         self.vector_cache.clear()
         self._save_index()
+
+    def clean_vector_cache(self, days: int = 30):
+        """清理长时间未使用的向量缓存
+
+        Args:
+            days: 清理多少天未使用的缓存
+        """
+        self.conn.execute('''
+            DELETE FROM vector_cache
+            WHERE last_used < datetime('now', '-' || ? || ' days')
+        ''', (days,))
+        deleted = self.conn.total_changes
+        self.conn.commit()
+        print(f"✓ 清理了 {deleted} 个超过 {days} 天未使用的向量缓存")
+        return deleted
 
     def close(self):
         """关闭连接"""
