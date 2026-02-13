@@ -74,7 +74,7 @@ class ActivationSearch:
         # 使用参数化查询防止SQL注入
         placeholders = ','.join(['?'] * len(query_ngrams))
         query = f'''
-            SELECT doc_id, content, gram_type, gram_size, section, position
+            SELECT doc_id, content, gram_type, gram_size, section
             FROM ngrams
             WHERE content IN ({placeholders})
             LIMIT 1000
@@ -88,8 +88,7 @@ class ActivationSearch:
                 'content': row[1],
                 'gram_type': row[2],
                 'gram_size': row[3],
-                'section': row[4],
-                'position': row[5]
+                'section': row[4]
             })
 
         return matches

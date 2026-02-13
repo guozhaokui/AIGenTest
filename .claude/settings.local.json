@@ -12,7 +12,12 @@
       "Bash(npm install:*)",
       "mcp__lessons-recorder__search_lessons",
       "mcp__lessons-recorder__read_lesson",
-      "mcp__lessons-recorder__record_lesson"
+      "mcp__lessons-recorder__record_lesson",
+      "mcp__plugin_claude-mem_mcp-search__save_memory",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(more:*)",
+      "Bash(powershell -Command:*)"
     ]
   }
 }

@@ -463,9 +463,9 @@ class KnowledgeIndexer:
 
             # 保存元数据到 document_vectors（不包含 vector_data）
             self.conn.execute('''
-                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (doc_id, 'paragraph', para_content, content_hash, faiss_idx, i))
+                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (doc_id, 'paragraph', para_content, content_hash, faiss_idx))
 
             total_vectors += 1
 
@@ -512,9 +512,9 @@ class KnowledgeIndexer:
 
             # 保存元数据到 document_vectors（不包含 vector_data）
             self.conn.execute('''
-                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (doc_id, 'sentence', sent_content, content_hash, faiss_idx, i))
+                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (doc_id, 'sentence', sent_content, content_hash, faiss_idx))
 
             total_vectors += 1
 
@@ -781,15 +781,14 @@ class KnowledgeIndexer:
         ngrams = self.ngram_processor.process_document(document)
         for ngram in ngrams:
             self.conn.execute('''
-                INSERT INTO ngrams (doc_id, content, gram_type, gram_size, section, position)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO ngrams (doc_id, content, gram_type, gram_size, section)
+                VALUES (?, ?, ?, ?, ?)
             ''', (
                 doc_id,
                 ngram['content'],
                 ngram['gram_type'],
                 ngram['gram_size'],
-                ngram['section'],
-                ngram['position']
+                ngram['section']
             ))
 
         print(f"   重新生成 {len(ngrams)} 个n-grams")
@@ -817,9 +816,9 @@ class KnowledgeIndexer:
 
             # 保存元数据到 document_vectors 表（不包含 vector_data）
             self.conn.execute('''
-                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0))
+                INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx)
+                VALUES (?, ?, ?, ?, ?)
+            ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx))
 
             print(f"   生成新的文档向量 (FAISS idx={faiss_idx})")
 
@@ -887,15 +886,14 @@ class KnowledgeIndexer:
         # 3. 插入n-gram
         for ngram in ngrams:
             self.conn.execute('''
-                INSERT INTO ngrams (doc_id, content, gram_type, gram_size, section, position)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO ngrams (doc_id, content, gram_type, gram_size, section)
+                VALUES (?, ?, ?, ?, ?)
             ''', (
                 doc_id,
                 ngram['content'],
                 ngram['gram_type'],
                 ngram['gram_size'],
-                ngram['section'],
-                ngram['position']
+                ngram['section']
             ))
 
         # 5. 生成文档嵌入向量（带缓存）
@@ -916,9 +914,9 @@ class KnowledgeIndexer:
 
                 # 保存元数据到 document_vectors 表（向量已在缓存中）
                 self.conn.execute('''
-                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0))
+                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx))
 
             except Exception as e:
                 print(f"⚠️  复用向量失败，将重新生成: {e}")
@@ -948,9 +946,9 @@ class KnowledgeIndexer:
 
                 # 保存元数据到 document_vectors 表（不包含 vector_data）
                 self.conn.execute('''
-                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx, position)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx, 0))
+                    INSERT INTO document_vectors (doc_id, granularity, content, content_hash, faiss_idx)
+                    VALUES (?, ?, ?, ?, ?)
+                ''', (doc_id, 'full', full_content[:500], content_hash, faiss_idx))
 
                 print(f"✓ 生成新文档向量 (doc_id={doc_id}, faiss_idx={faiss_idx}, hash={content_hash[:8]}...)")
 
@@ -1048,15 +1046,14 @@ class KnowledgeIndexer:
 
         for ngram in ngrams:
             self.conn.execute('''
-                INSERT INTO ngrams (doc_id, content, gram_type, gram_size, section, position)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO ngrams (doc_id, content, gram_type, gram_size, section)
+                VALUES (?, ?, ?, ?, ?)
             ''', (
                 doc_id,
                 ngram['content'],
                 ngram['gram_type'],
                 ngram['gram_size'],
-                ngram['section'],
-                ngram['position']
+                ngram['section']
             ))
 
         # 7. 更新文档向量（整篇，带缓存）
